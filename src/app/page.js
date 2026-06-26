@@ -2171,22 +2171,19 @@ export default function Home() {
         }}>
           {/* Logo Branding */}
           <div style={{ textAlign: 'center', marginBottom: '32px' }}>
-            <div style={{
-              width: '48px',
-              height: '48px',
-              background: 'linear-gradient(135deg, var(--accent-indigo), var(--accent-purple))',
-              borderRadius: '12px',
-              display: 'inline-flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: '#FFF',
-              fontWeight: 'bold',
-              fontSize: '1.5rem',
-              marginBottom: '16px',
-              boxShadow: '0 4px 12px rgba(99, 102, 241, 0.3)'
-            }}>
-              A
-            </div>
+            <img 
+              src="/apple-touch-icon.png" 
+              alt="AURA Logo" 
+              style={{
+                width: '64px',
+                height: '64px',
+                borderRadius: '16px',
+                marginBottom: '16px',
+                boxShadow: '0 8px 16px rgba(99, 102, 241, 0.2)',
+                objectFit: 'cover'
+              }}
+            />
+
             <h2 style={{ fontSize: '1.5rem', fontWeight: '800', color: 'var(--text-primary)', margin: '0 0 6px 0', letterSpacing: '-0.5px' }}>
               AURA Workspace
             </h2>
