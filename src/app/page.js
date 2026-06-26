@@ -11,9 +11,10 @@ import 'jspdf-autotable';
 import * as XLSX from 'xlsx';
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = typeof window !== 'undefined' ? (process.env.NEXT_PUBLIC_SUPABASE_URL || '') : '';
-const supabaseAnonKey = typeof window !== 'undefined' ? (process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '') : '';
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || '';
 const supabase = (supabaseUrl && supabaseAnonKey) ? createClient(supabaseUrl, supabaseAnonKey) : null;
+
 
 // ==========================================================================
 // Seed Data
@@ -120,10 +121,11 @@ export default function Home() {
   const [user, setUser] = useState(null);
 
   // Authentication States
-  const [authMethod, setAuthMethod] = useState('email');
-  const [authInput, setAuthInput] = useState('');
-  const [otpSent, setOtpSent] = useState(false);
-  const [otpCode, setOtpCode] = useState('');
+  const [authEmail, setAuthEmail] = useState('');
+  const [authPassword, setAuthPassword] = useState('');
+  const [authMode, setAuthMode] = useState('login'); // 'login' | 'signup'
+  const [authLoading, setAuthLoading] = useState(false);
+
 
   // Time Tracker State
   const [focusActive, setFocusActive] = useState(false);
@@ -248,37 +250,164 @@ export default function Home() {
     { sender: 'bot', text: 'Hello! I am your Invoice AI assistant. I can predict payment risks, suggest payment reminder templates, or summarize invoice parameters.' }
   ]);
 
-  // Load state on mount
-  useEffect(() => {
-    const savedClients = localStorage.getItem("aura_clients_v7");
-    const savedProjects = localStorage.getItem("aura_projects_v7");
-    const savedTasks = localStorage.getItem("aura_tasks_v7");
-    const savedInvoices = localStorage.getItem("aura_invoices_v7");
-    const savedReminders = localStorage.getItem("aura_reminders_v7");
-    const savedUser = localStorage.getItem("aura_user_v7");
-    const savedPersonalTasks = localStorage.getItem("aura_personal_tasks_v7");
-    const savedHabits = localStorage.getItem("aura_habits_v7");
-    const savedPersonalNotes = localStorage.getItem("aura_personal_notes_v7");
-    const savedMeetings = localStorage.getItem("aura_meetings_v7");
-    const savedBirthdays = localStorage.getItem("aura_birthdays_v7");
+  // Fetch all user records from Supabase tables
+  const fetchAllUserData = async (userId) => {
+    if (!supabase) return;
+    try {
+      // 1. Fetch Clients
+      const { data: dbClients, error: errClients } = await supabase
+        .from('clients')
+        .select('*')
+        .order('name', { ascending: true });
+      if (!errClients && dbClients) setClients(dbClients);
 
-    setClients(savedClients ? JSON.parse(savedClients) : DEFAULT_CLIENTS);
-    setProjects(savedProjects ? JSON.parse(savedProjects) : DEFAULT_PROJECTS);
-    setTasks(savedTasks ? JSON.parse(savedTasks) : DEFAULT_TASKS);
-    setInvoices(savedInvoices ? JSON.parse(savedInvoices) : DEFAULT_INVOICES);
-    setReminders(savedReminders ? JSON.parse(savedReminders) : DEFAULT_REMINDERS);
-    setPersonalTasks(savedPersonalTasks ? JSON.parse(savedPersonalTasks) : DEFAULT_PERSONAL_TASKS);
-    setHabits(savedHabits ? JSON.parse(savedHabits) : DEFAULT_HABITS);
-    setPersonalNotes(savedPersonalNotes ? savedPersonalNotes : 'Focus on healthy habits and coding tutorials this week!');
-    setMeetings(savedMeetings ? JSON.parse(savedMeetings) : DEFAULT_MEETINGS);
-    setBirthdays(savedBirthdays ? JSON.parse(savedBirthdays) : DEFAULT_BIRTHDAYS);
-    setActivities([
-      { id: "a1", text: "Drawing uploaded", time: "2 hours ago" },
-      { id: "a2", text: "Payment received", time: "4 hours ago" },
-      { id: "a3", text: "Client approved Revision 2", time: "Yesterday" }
-    ]);
-    if (savedUser) setUser(JSON.parse(savedUser));
+      // 2. Fetch Projects
+      const { data: dbProjects, error: errProjects } = await supabase
+        .from('projects')
+        .select('*')
+        .order('deadline', { ascending: true });
+      if (!errProjects && dbProjects) {
+        // Map quoteAmount keys to match frontend mock keys
+        const mapped = dbProjects.map(p => ({
+          ...p,
+          quoteAmount: parseFloat(p.quote_amount) || 0,
+          paidAmount: parseFloat(p.paid_amount) || 0,
+          balanceAmount: parseFloat(p.balance_amount) || 0,
+          clientId: p.client_id,
+          cadType: p.cad_type,
+          fileNotes: p.file_notes
+        }));
+        setProjects(mapped);
+      }
+
+      // 3. Fetch Tasks
+      const { data: dbTasks, error: errTasks } = await supabase
+        .from('tasks')
+        .select('*')
+        .order('due_date', { ascending: true });
+      if (!errTasks && dbTasks) {
+        const mapped = dbTasks.map(t => ({
+          ...t,
+          dueDate: t.due_date,
+          projectId: t.project_id
+        }));
+        setTasks(mapped);
+      }
+
+      // 4. Fetch Reminders
+      const { data: dbReminders, error: errReminders } = await supabase
+        .from('reminders')
+        .select('*')
+        .order('reminder_date', { ascending: true });
+      if (!errReminders && dbReminders) {
+        const mapped = dbReminders.map(r => ({
+          ...r,
+          due_date: r.reminder_date
+        }));
+        setReminders(mapped);
+      }
+
+      // 5. Fetch Invoices
+      const { data: dbInvoices, error: errInvoices } = await supabase
+        .from('invoices')
+        .select('*')
+        .order('invoice_number', { ascending: false });
+      if (!errInvoices && dbInvoices) {
+        const mapped = dbInvoices.map(i => ({
+          ...i,
+          project_amount: parseFloat(i.project_amount) || 0,
+          advance_paid: parseFloat(i.advance_paid) || 0,
+          balance_due: parseFloat(i.balance_due) || 0,
+          gst_percentage: parseFloat(i.gst_percentage) || 18,
+          gst_amount: parseFloat(i.gst_amount) || 0,
+          discount: parseFloat(i.discount) || 0,
+          grand_total: parseFloat(i.grand_total) || 0
+        }));
+        setInvoices(mapped);
+      }
+
+      // 6. Fetch Meetings
+      const { data: dbMeetings, error: errMeetings } = await supabase
+        .from('client_meetings')
+        .select('*')
+        .order('meeting_date', { ascending: true });
+      if (!errMeetings && dbMeetings) {
+        const mapped = dbMeetings.map(m => ({
+          ...m,
+          date: m.meeting_date,
+          time: m.meeting_time,
+          clientId: m.client_id
+        }));
+        setMeetings(mapped);
+      }
+
+      // 7. Fetch Personal Tasks
+      const { data: dbPersonalTasks, error: errPersonal } = await supabase
+        .from('personal_tasks')
+        .select('*')
+        .order('due_date', { ascending: true });
+      if (!errPersonal && dbPersonalTasks) setPersonalTasks(dbPersonalTasks);
+
+      // 8. Fetch Habits
+      const { data: dbHabits, error: errHabits } = await supabase
+        .from('habits')
+        .select('*')
+        .order('habit_name', { ascending: true });
+      if (!errHabits && dbHabits) setHabits(dbHabits);
+
+      // Load activities
+      setActivities([
+        { id: "a1", text: "Database synchronized", time: "Just now" },
+        { id: "a2", text: "All services connected", time: "Recently" }
+      ]);
+
+    } catch (err) {
+      console.error("Error synchronizing Supabase data:", err);
+    }
+  };
+
+  // Auth & State Hydration Mount Effect
+  useEffect(() => {
+    // 1. Initial Local State Hydration Fallback
+    const savedUser = localStorage.getItem("aura_user_v7");
+    if (savedUser) {
+      const parsed = JSON.parse(savedUser);
+      setUser(parsed);
+      fetchAllUserData(parsed.id);
+    }
+
+    if (!supabase) return;
+
+    // 2. Real-time Supabase Auth Listener
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (session?.user) {
+        const loggedUser = {
+          id: session.user.id,
+          email: session.user.email,
+          name: session.user.email.split('@')[0]
+        };
+        setUser(loggedUser);
+        saveState("aura_user_v7", loggedUser);
+        fetchAllUserData(session.user.id);
+      } else {
+        setUser(null);
+        localStorage.removeItem("aura_user_v7");
+        setClients([]);
+        setProjects([]);
+        setTasks([]);
+        setReminders([]);
+        setInvoices([]);
+        setMeetings([]);
+        setPersonalTasks([]);
+        setHabits([]);
+      }
+    });
+
+    return () => {
+      subscription?.unsubscribe();
+    };
   }, []);
+
 
   const saveState = (key, data) => {
     localStorage.setItem(key, JSON.stringify(data));
@@ -303,33 +432,67 @@ export default function Home() {
     setTimeout(() => setToastMessage(null), 3500);
   };
 
-  // OTP Login Handles
-  const handleRequestOtp = (e) => {
+  // Supabase Authentication Handles
+  const handleAuthSubmit = async (e) => {
     e.preventDefault();
-    if (!authInput) return alert("Please enter details.");
-    setOtpSent(true);
-    alert(`AURA Security: OTP code sent. Use passcode '1234' to verify.`);
-  };
+    if (!authEmail || !authPassword) {
+      alert("Please enter both email and password.");
+      return;
+    }
+    if (!supabase) {
+      alert("Supabase is not configured. Please check your environment variables.");
+      return;
+    }
 
-  const handleVerifyOtp = (e) => {
-    e.preventDefault();
-    if (otpCode === '1234') {
-      const loggedUser = { name: "Ashok", email: authMethod === 'email' ? authInput : 'ashok@cadfreelancer.in' };
-      setUser(loggedUser);
-      saveState("aura_user_v7", loggedUser);
-      setOtpSent(false);
-      setAuthInput('');
-      setOtpCode('');
-    } else {
-      alert("Invalid verification code. Try '1234'.");
+    setAuthLoading(true);
+    try {
+      if (authMode === 'signup') {
+        const { data, error } = await supabase.auth.signUp({
+          email: authEmail,
+          password: authPassword,
+        });
+        if (error) {
+          alert(`Sign Up Error: ${error.message}`);
+        } else {
+          alert("Sign up successful! Please check your email for the confirmation link (or login if email confirmation is disabled).");
+          setAuthMode('login');
+        }
+      } else {
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email: authEmail,
+          password: authPassword,
+        });
+        if (error) {
+          alert(`Sign In Error: ${error.message}`);
+        } else if (data?.user) {
+          const loggedUser = {
+            id: data.user.id,
+            email: data.user.email,
+            name: data.user.email.split('@')[0],
+          };
+          setUser(loggedUser);
+          saveState("aura_user_v7", loggedUser);
+          triggerToast("Logged in successfully!");
+        }
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Authentication failed. Please check network connection.");
+    } finally {
+      setAuthLoading(false);
     }
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    if (supabase) {
+      await supabase.auth.signOut();
+    }
     setUser(null);
     localStorage.removeItem("aura_user_v7");
     setActiveTab('dashboard');
+    triggerToast("Logged out successfully.");
   };
+
 
   // File Upload Handlers
   const handleAgreementFilesChange = (e) => {
@@ -439,71 +602,198 @@ export default function Home() {
     });
   };
 
-  // Dynamic additions
-  const handleAddClient = (e) => {
+  const handleAddClient = async (e) => {
     e.preventDefault();
     if (!newClient.name) return;
-    const added = { ...newClient, id: 'c_' + Date.now(), projectHistory: 'None yet', agreement_documents: uploadedAgreementFiles };
-    const updated = [...clients, added];
-    setClients(updated);
-    saveState("aura_clients_v7", updated);
+
+    const record = {
+      name: newClient.name,
+      phone: newClient.phone || '',
+      email: newClient.email || '',
+      company: newClient.company || '',
+      notes: newClient.notes || '',
+      project_history: 'None yet',
+      agreement_documents: uploadedAgreementFiles,
+      user_id: user?.id
+    };
+
+    let savedToSupabase = false;
+    if (supabase && user?.id) {
+      try {
+        const { data, error } = await supabase
+          .from('clients')
+          .insert([record])
+          .select();
+        
+        if (!error && data) {
+          savedToSupabase = true;
+          const inserted = data[0];
+          setClients(prev => [...prev, inserted]);
+        } else {
+          console.error("Supabase insert client error:", error);
+        }
+      } catch (err) {
+        console.error("Supabase client insertion error:", err);
+      }
+    }
+
+    if (!savedToSupabase) {
+      const added = { ...newClient, id: 'c_' + Date.now(), projectHistory: 'None yet', agreement_documents: uploadedAgreementFiles };
+      const updated = [...clients, added];
+      setClients(updated);
+      saveState("aura_clients_v7", updated);
+    }
+
     setNewClient({ name: '', phone: '', email: '', company: '', notes: '' });
     setUploadedAgreementFiles([]);
     setShowClientModal(false);
     triggerToast("Client added successfully.");
   };
 
-  const handleAddProject = (e) => {
+
+  const handleAddProject = async (e) => {
     e.preventDefault();
     if (!newProject.title || !newProject.clientId) return;
     const quote = parseFloat(newProject.quoteAmount) || 0;
     const paid = parseFloat(newProject.paidAmount) || 0;
-    const added = {
-      id: 'p_' + Date.now(),
+
+    const record = {
       title: newProject.title,
-      clientId: newProject.clientId,
-      cadType: newProject.cadType,
+      client_id: newProject.clientId,
+      cad_type: newProject.cadType,
       status: newProject.status || 'In Progress',
-      deadline: newProject.deadline,
-      quoteAmount: quote,
-      paidAmount: paid,
-      balanceAmount: quote - paid,
-      fileNotes: newProject.fileNotes || '',
-      progress: 0
+      deadline: newProject.deadline || null,
+      quote_amount: quote,
+      paid_amount: paid,
+      balance_amount: quote - paid,
+      file_notes: newProject.fileNotes || '',
+      progress: 0,
+      user_id: user?.id
     };
-    const updated = [...projects, added];
-    setProjects(updated);
-    saveState("aura_projects_v7", updated);
+
+    let savedToSupabase = false;
+    if (supabase && user?.id) {
+      try {
+        const { data, error } = await supabase
+          .from('projects')
+          .insert([record])
+          .select();
+
+        if (!error && data) {
+          savedToSupabase = true;
+          const inserted = data[0];
+          setProjects(prev => [...prev, {
+            ...inserted,
+            quoteAmount: parseFloat(inserted.quote_amount) || 0,
+            paidAmount: parseFloat(inserted.paid_amount) || 0,
+            balanceAmount: parseFloat(inserted.balance_amount) || 0,
+            clientId: inserted.client_id,
+            cadType: inserted.cad_type,
+            fileNotes: inserted.file_notes
+          }]);
+        } else {
+          console.error("Supabase project insert error:", error);
+        }
+      } catch (err) {
+        console.error("Supabase project execution error:", err);
+      }
+    }
+
+    if (!savedToSupabase) {
+      const added = {
+        id: 'p_' + Date.now(),
+        title: newProject.title,
+        clientId: newProject.clientId,
+        cadType: newProject.cadType,
+        status: newProject.status || 'In Progress',
+        deadline: newProject.deadline,
+        quoteAmount: quote,
+        paidAmount: paid,
+        balanceAmount: quote - paid,
+        fileNotes: newProject.fileNotes || '',
+        progress: 0
+      };
+      const updated = [...projects, added];
+      setProjects(updated);
+      saveState("aura_projects_v7", updated);
+    }
+
     setNewProject({ title: '', clientId: '', cadType: 'AutoCAD 2D', status: 'In Progress', deadline: '', quoteAmount: '', paidAmount: '', fileNotes: '' });
     setShowProjectModal(false);
     triggerToast("Project created successfully.");
   };
 
-  const handleAddTask = (e) => {
+
+  const handleAddTask = async (e) => {
     e.preventDefault();
     if (!newTask.title) return;
-    const added = { 
-      ...newTask, 
-      id: 't_' + Date.now(), 
-      completed: false, 
-      time: newTask.dueDate ? "09:00" : "10:00",
+
+    const record = {
+      title: newTask.title,
+      priority: newTask.priority || 'Medium',
+      due_date: newTask.dueDate || null,
       task_time: newTask.dueDate ? "09:00" : "10:00",
+      completed: false,
       status: 'Pending',
+      completion_percentage: 0,
+      qc_status: 'Not Checked',
+      sent_to_qc: false,
       notes: '',
-      project_id: '',
-      due_date: newTask.dueDate,
-      user_id: user?.name || 'Ashok',
+      project_id: null,
+      user_id: user?.id,
       updated_at: new Date().toISOString()
     };
-    const updated = [...tasks, added];
-    setTasks(updated);
-    saveState("aura_tasks_v7", updated);
+
+    let savedToSupabase = false;
+    if (supabase && user?.id) {
+      try {
+        const { data, error } = await supabase
+          .from('tasks')
+          .insert([record])
+          .select();
+
+        if (!error && data) {
+          savedToSupabase = true;
+          const inserted = data[0];
+          setTasks(prev => [...prev, {
+            ...inserted,
+            dueDate: inserted.due_date,
+            projectId: inserted.project_id
+          }]);
+        } else {
+          console.error("Supabase insert task error:", error);
+        }
+      } catch (err) {
+        console.error("Supabase insert task execution error:", err);
+      }
+    }
+
+    if (!savedToSupabase) {
+      const added = { 
+        ...newTask, 
+        id: 't_' + Date.now(), 
+        completed: false, 
+        time: newTask.dueDate ? "09:00" : "10:00",
+        task_time: newTask.dueDate ? "09:00" : "10:00",
+        status: 'Pending',
+        notes: '',
+        project_id: '',
+        due_date: newTask.dueDate,
+        user_id: user?.name || 'Ashok',
+        updated_at: new Date().toISOString()
+      };
+      const updated = [...tasks, added];
+      setTasks(updated);
+      saveState("aura_tasks_v7", updated);
+    }
+
     setNewTask({ title: '', priority: 'Medium', dueDate: '', reminder: false });
     setShowTaskModal(false);
     triggerToast("Task created successfully.");
   };
 
-  const handleUpdateProjectStatus = (e) => {
+
+  const handleUpdateProjectStatus = async (e) => {
     e.preventDefault();
     if (!editingProject) return;
 
@@ -532,59 +822,125 @@ export default function Home() {
       return;
     }
 
+    const updateFields = {
+      status: editingProject.status,
+      progress: pct,
+      qc_status: editingProject.qc_status || 'Not Checked',
+      revision_count: parseInt(editingProject.revision_count) || 0,
+      delivery_status: editingProject.delivery_status || 'Not Delivered',
+      updated_at: new Date().toISOString()
+    };
+
+    let savedToSupabase = false;
+    // Check if ID is a valid Supabase UUID (usually not starting with 'p_')
+    if (supabase && user?.id && !String(editingProject.id).startsWith('p_')) {
+      try {
+        const { error } = await supabase
+          .from('projects')
+          .update({
+            status: updateFields.status,
+            progress: updateFields.progress,
+            qc_status: updateFields.qc_status,
+            revision_count: updateFields.revision_count,
+            delivery_status: updateFields.delivery_status,
+            updated_at: updateFields.updated_at
+          })
+          .eq('id', editingProject.id);
+
+        if (!error) {
+          savedToSupabase = true;
+        } else {
+          console.error("Supabase project update error:", error);
+        }
+      } catch (err) {
+        console.error("Supabase project update execution error:", err);
+      }
+    }
+
     const updated = projects.map(p => {
       if (p.id === editingProject.id) {
         return {
           ...p,
-          status: editingProject.status,
-          progress: pct,
-          completion_percentage: pct,
-          project_name: p.title,
-          qc_status: editingProject.qc_status || 'Not Checked',
-          revision_count: parseInt(editingProject.revision_count) || 0,
-          delivery_status: editingProject.delivery_status || 'Not Delivered',
-          user_id: user?.name || 'Ashok',
-          updated_at: new Date().toISOString()
+          ...updateFields,
+          balanceAmount: p.quoteAmount - p.paidAmount
         };
       }
       return p;
     });
 
     setProjects(updated);
-    saveState("aura_projects_v7", updated);
+    if (!savedToSupabase) {
+      saveState("aura_projects_v7", updated);
+    }
     setShowProjectEditModal(false);
     setEditingProject(null);
     triggerToast("Project status updated successfully.");
   };
 
-  const handleDeleteTask = (id) => {
+
+  const handleDeleteTask = async (id) => {
+    let deletedFromSupabase = false;
+    if (supabase && user?.id && !String(id).startsWith('t_')) {
+      try {
+        const { error } = await supabase
+          .from('tasks')
+          .delete()
+          .eq('id', id);
+        if (!error) deletedFromSupabase = true;
+      } catch (err) {
+        console.error("Supabase task delete error:", err);
+      }
+    }
+
     const updated = tasks.filter(t => t.id !== id);
     setTasks(updated);
-    saveState("aura_tasks_v7", updated);
+    if (!deletedFromSupabase) {
+      saveState("aura_tasks_v7", updated);
+    }
     triggerToast("Task deleted successfully.");
   };
 
-  const handleMarkTaskStatus = (id, newStatus) => {
+  const handleMarkTaskStatus = async (id, newStatus) => {
+    const isDone = newStatus === 'Done';
+    const updatedFields = {
+      status: newStatus,
+      completed: isDone,
+      completion_percentage: isDone ? 100 : 0,
+      sent_to_qc: false,
+      updated_at: new Date().toISOString()
+    };
+
+    let savedToSupabase = false;
+    if (supabase && user?.id && !String(id).startsWith('t_')) {
+      try {
+        const { error } = await supabase
+          .from('tasks')
+          .update(updatedFields)
+          .eq('id', id);
+        if (!error) savedToSupabase = true;
+      } catch (err) {
+        console.error("Supabase status toggle error:", err);
+      }
+    }
+
     const updated = tasks.map(t => {
       if (t.id === id) {
-        const isDone = newStatus === 'Done';
         return {
           ...t,
-          status: newStatus,
-          completed: isDone,
-          completion_percentage: isDone ? 100 : 0,
-          sent_to_qc: false,
-          updated_at: new Date().toISOString()
+          ...updatedFields
         };
       }
       return t;
     });
+
     setTasks(updated);
-    saveState("aura_tasks_v7", updated);
+    if (!savedToSupabase) {
+      saveState("aura_tasks_v7", updated);
+    }
     triggerToast(`Task marked as ${newStatus} successfully.`);
   };
 
-  const handleUpdateTask = (e) => {
+  const handleUpdateTask = async (e) => {
     e.preventDefault();
     if (!editingTask) return;
 
@@ -619,40 +975,64 @@ export default function Home() {
       }
     }
 
+    const updateFields = {
+      title: editingTask.title,
+      task_time: editingTask.time,
+      priority: editingTask.priority,
+      status: status,
+      completed: status === 'Done',
+      project_id: editingTask.project_id || editingTask.projectId || null,
+      notes: editingTask.notes || '',
+      due_date: editingTask.due_date || editingTask.dueDate || null,
+      completion_percentage: completion,
+      qc_status: editingTask.qc_status || 'Not Checked',
+      qc_checked_by: editingTask.qc_checked_by || null,
+      qc_notes: editingTask.qc_notes || null,
+      qc_date: editingTask.qc_date || null,
+      sent_to_qc: editingTask.sent_to_qc || false,
+      updated_at: new Date().toISOString()
+    };
+
+    let savedToSupabase = false;
+    if (supabase && user?.id && !String(editingTask.id).startsWith('t_')) {
+      try {
+        const { error } = await supabase
+          .from('tasks')
+          .update(updateFields)
+          .eq('id', editingTask.id);
+
+        if (!error) {
+          savedToSupabase = true;
+        } else {
+          console.error("Supabase update task error:", error);
+        }
+      } catch (err) {
+        console.error("Supabase update task execution error:", err);
+      }
+    }
+
     const updated = tasks.map(t => {
       if (t.id === editingTask.id) {
         return {
           ...t,
-          title: editingTask.title,
-          time: editingTask.time,
-          task_time: editingTask.time,
-          priority: editingTask.priority,
-          status: status,
-          completed: status === 'Done',
-          project_id: editingTask.project_id || editingTask.projectId || '',
-          projectId: editingTask.project_id || editingTask.projectId || '',
-          notes: editingTask.notes || '',
-          due_date: editingTask.due_date || editingTask.dueDate || '',
-          dueDate: editingTask.due_date || editingTask.dueDate || '',
-          completion_percentage: completion,
-          qc_status: editingTask.qc_status || 'Not Checked',
-          qc_checked_by: editingTask.qc_checked_by || '',
-          qc_notes: editingTask.qc_notes || '',
-          qc_date: editingTask.qc_date || '',
-          sent_to_qc: editingTask.sent_to_qc || false,
-          user_id: user?.name || 'Ashok',
-          updated_at: new Date().toISOString()
+          ...updateFields,
+          time: updateFields.task_time,
+          dueDate: updateFields.due_date,
+          projectId: updateFields.project_id
         };
       }
       return t;
     });
 
     setTasks(updated);
-    saveState("aura_tasks_v7", updated);
+    if (!savedToSupabase) {
+      saveState("aura_tasks_v7", updated);
+    }
     setShowTaskEditModal(false);
     setEditingTask(null);
     triggerToast("Task updated successfully.");
   };
+
 
   const renderTaskActions = (t) => {
     const isMenuOpen = activeTaskMenuId === t.id;
@@ -1515,10 +1895,35 @@ export default function Home() {
       doc.save(fileName);
       console.log(`Development Log: PDF generated successfully as ${fileName}`);
 
-      // 2. Simulate Upload to Supabase Storage bucket 'invoice-pdfs'
+      // 2. Upload to Supabase Storage bucket 'invoice-pdfs'
       const pdfBlob = doc.output('blob');
-      const publicUrl = `https://supabase.co/storage/v1/object/private/invoice-pdfs/${user.name}/${Date.now()}_${fileName}`;
-      console.log(`Development Log: PDF uploaded successfully to Supabase Storage bucket 'invoice-pdfs' -> URL: ${publicUrl}`);
+      const storagePath = `${user.id}/${Date.now()}_${fileName}`;
+      let publicUrl = `https://supabase.co/storage/v1/object/private/invoice-pdfs/${storagePath}`;
+
+      if (supabase) {
+        try {
+          const { data, error } = await supabase.storage
+            .from('invoice-pdfs')
+            .upload(storagePath, pdfBlob, {
+              contentType: 'application/pdf',
+              upsert: true
+            });
+          
+          if (!error && data) {
+            const { data: publicData } = supabase.storage
+              .from('invoice-pdfs')
+              .getPublicUrl(storagePath);
+            if (publicData?.publicUrl) {
+              publicUrl = publicData.publicUrl;
+            }
+            console.log("PDF uploaded to Supabase Storage. URL:", publicUrl);
+          } else {
+            console.error("Supabase Storage PDF upload error:", error);
+          }
+        } catch (err) {
+          console.error("Supabase Storage execution error:", err);
+        }
+      }
 
       setInvoiceLoading('');
       triggerToast("PDF downloaded and synced with Cloud storage successfully!");
@@ -1538,19 +1943,67 @@ export default function Home() {
     setInvoiceLoading('Saving...');
     setInvoiceError('');
     try {
-      // Enforce RLS by attaching logged-in user identification parameters
-      const addedDraft = {
-        ...invoiceForm,
-        id: 'inv_' + Date.now(),
+      const dbRecord = {
+        invoice_number: invoiceForm.invoice_number,
+        client_id: invoiceForm.client_id,
+        project_id: invoiceForm.project_id,
+        invoice_date: invoiceForm.invoice_date,
+        due_date: invoiceForm.due_date || null,
+        project_amount: invoiceForm.project_amount,
+        advance_paid: invoiceForm.advance_paid,
+        balance_due: invoiceForm.balance_due,
+        gst_percentage: invoiceForm.gst_percentage,
+        gst_amount: invoiceForm.gst_amount,
+        discount: invoiceForm.discount,
+        grand_total: invoiceForm.grand_total,
         payment_status: 'Draft',
-        created_by: user.name, // RLS filter parameter
-        pdf_url: `https://supabase.co/storage/v1/object/private/invoice-pdfs/${user.name}/${invoiceForm.invoice_number}.pdf`
+        payment_method: invoiceForm.payment_method,
+        notes: invoiceForm.notes,
+        pdf_url: `https://supabase.co/storage/v1/object/private/invoice-pdfs/${user.id}/${invoiceForm.invoice_number}.pdf`,
+        user_id: user.id
       };
 
-      // Simulating Supabase insert: const { data, error } = await supabase.from('invoices').insert([addedDraft])
-      const updated = [...invoices, addedDraft];
-      setInvoices(updated);
-      saveState("aura_invoices_v7", updated);
+      let savedToSupabase = false;
+      if (supabase) {
+        const { data, error } = await supabase
+          .from('invoices')
+          .insert([dbRecord])
+          .select();
+
+        if (!error && data) {
+          savedToSupabase = true;
+          const inserted = data[0];
+          setInvoices(prev => [
+            ...prev,
+            {
+              ...inserted,
+              project_amount: parseFloat(inserted.project_amount) || 0,
+              advance_paid: parseFloat(inserted.advance_paid) || 0,
+              balance_due: parseFloat(inserted.balance_due) || 0,
+              gst_percentage: parseFloat(inserted.gst_percentage) || 18,
+              gst_amount: parseFloat(inserted.gst_amount) || 0,
+              discount: parseFloat(inserted.discount) || 0,
+              grand_total: parseFloat(inserted.grand_total) || 0
+            }
+          ]);
+        } else {
+          console.error("Supabase insert invoice error:", error);
+        }
+      }
+
+      if (!savedToSupabase) {
+        const addedDraft = {
+          ...invoiceForm,
+          id: 'inv_' + Date.now(),
+          payment_status: 'Draft',
+          created_by: user.name, // RLS filter parameter
+          pdf_url: dbRecord.pdf_url
+        };
+        const updated = [...invoices, addedDraft];
+        setInvoices(updated);
+        saveState("aura_invoices_v7", updated);
+      }
+
       console.log(`Development Log: Invoice saved successfully to Supabase 'invoices' table.`);
 
       setInvoiceLoading('');
@@ -1564,19 +2017,55 @@ export default function Home() {
   };
 
   // Invoices Actions
-  const handleMarkPaid = (id) => {
+  const handleMarkPaid = async (id) => {
+    let savedToSupabase = false;
+    if (supabase && user?.id && !String(id).startsWith('inv_')) {
+      try {
+        const { error } = await supabase
+          .from('invoices')
+          .update({
+            payment_status: 'Paid',
+            balance_due: 0,
+            grand_total: 0
+          })
+          .eq('id', id);
+        
+        if (!error) savedToSupabase = true;
+      } catch (err) {
+        console.error("Supabase update invoice paid error:", err);
+      }
+    }
+
     const updated = invoices.map(inv => inv.id === id ? { ...inv, payment_status: 'Paid', balance_due: 0, grand_total: 0 } : inv);
     setInvoices(updated);
-    saveState("aura_invoices_v7", updated);
+    if (!savedToSupabase) {
+      saveState("aura_invoices_v7", updated);
+    }
     triggerToast("Invoice marked as Paid.");
   };
 
-  const handleDeleteInvoice = (id) => {
+  const handleDeleteInvoice = async (id) => {
+    let deletedFromSupabase = false;
+    if (supabase && user?.id && !String(id).startsWith('inv_')) {
+      try {
+        const { error } = await supabase
+          .from('invoices')
+          .delete()
+          .eq('id', id);
+        if (!error) deletedFromSupabase = true;
+      } catch (err) {
+        console.error("Supabase invoice delete error:", err);
+      }
+    }
+
     const updated = invoices.filter(inv => inv.id !== id);
     setInvoices(updated);
-    saveState("aura_invoices_v7", updated);
+    if (!deletedFromSupabase) {
+      saveState("aura_invoices_v7", updated);
+    }
     triggerToast("Invoice deleted.");
   };
+
 
   const sendEmail = (inv) => {
     const client = clients.find(c => c.id === inv.client_id);
@@ -1706,147 +2195,101 @@ export default function Home() {
             </p>
           </div>
 
-          {/* Tabs: Email / Phone */}
-          {!otpSent && (
-            <div style={{
-              display: 'flex',
-              background: '#F1F5F9',
-              padding: '4px',
-              borderRadius: '8px',
-              marginBottom: '24px'
-            }}>
-              <button
-                type="button"
-                className="btn"
-                style={{
-                  flex: 1,
-                  justifyContent: 'center',
-                  padding: '8px',
-                  fontSize: '0.85rem',
-                  borderRadius: '6px',
-                  border: 'none',
-                  background: authMethod === 'email' ? '#FFFFFF' : 'transparent',
-                  color: authMethod === 'email' ? 'var(--text-primary)' : 'var(--text-secondary)',
-                  boxShadow: authMethod === 'email' ? '0 1px 3px rgba(0,0,0,0.05)' : 'none',
-                  fontWeight: authMethod === 'email' ? '600' : 'normal'
-                }}
-                onClick={() => { setAuthMethod('email'); setAuthInput(''); }}
-              >
-                Email Address
-              </button>
-              <button
-                type="button"
-                className="btn"
-                style={{
-                  flex: 1,
-                  justifyContent: 'center',
-                  padding: '8px',
-                  fontSize: '0.85rem',
-                  borderRadius: '6px',
-                  border: 'none',
-                  background: authMethod === 'phone' ? '#FFFFFF' : 'transparent',
-                  color: authMethod === 'phone' ? 'var(--text-primary)' : 'var(--text-secondary)',
-                  boxShadow: authMethod === 'phone' ? '0 1px 3px rgba(0,0,0,0.05)' : 'none',
-                  fontWeight: authMethod === 'phone' ? '600' : 'normal'
-                }}
-                onClick={() => { setAuthMethod('phone'); setAuthInput(''); }}
-              >
-                Phone Number
-              </button>
-            </div>
-          )}
+          {/* Tabs: Sign In / Sign Up */}
+          <div style={{
+            display: 'flex',
+            background: '#F1F5F9',
+            padding: '4px',
+            borderRadius: '8px',
+            marginBottom: '24px'
+          }}>
+            <button
+              type="button"
+              className="btn"
+              style={{
+                flex: 1,
+                justifyContent: 'center',
+                padding: '8px',
+                fontSize: '0.85rem',
+                borderRadius: '6px',
+                border: 'none',
+                background: authMode === 'login' ? '#FFFFFF' : 'transparent',
+                color: authMode === 'login' ? 'var(--text-primary)' : 'var(--text-secondary)',
+                boxShadow: authMode === 'login' ? '0 1px 3px rgba(0,0,0,0.05)' : 'none',
+                fontWeight: authMode === 'login' ? '600' : 'normal'
+              }}
+              onClick={() => setAuthMode('login')}
+            >
+              Sign In
+            </button>
+            <button
+              type="button"
+              className="btn"
+              style={{
+                flex: 1,
+                justifyContent: 'center',
+                padding: '8px',
+                fontSize: '0.85rem',
+                borderRadius: '6px',
+                border: 'none',
+                background: authMode === 'signup' ? '#FFFFFF' : 'transparent',
+                color: authMode === 'signup' ? 'var(--text-primary)' : 'var(--text-secondary)',
+                boxShadow: authMode === 'signup' ? '0 1px 3px rgba(0,0,0,0.05)' : 'none',
+                fontWeight: authMode === 'signup' ? '600' : 'normal'
+              }}
+              onClick={() => setAuthMode('signup')}
+            >
+              Sign Up
+            </button>
+          </div>
 
           {/* Form */}
-          {!otpSent ? (
-            <form onSubmit={handleRequestOtp}>
-              <div className="form-group" style={{ marginBottom: '20px' }}>
-                <label className="form-label">
-                  {authMethod === 'email' ? 'Email Address' : 'Phone Number'}
-                </label>
-                <input
-                  type={authMethod === 'email' ? 'email' : 'tel'}
-                  placeholder={authMethod === 'email' ? 'ashok@cadfreelancer.in' : '+91 99999 88888'}
-                  className="form-input"
-                  value={authInput}
-                  onChange={(e) => setAuthInput(e.target.value)}
-                  required
-                  style={{ width: '100%' }}
-                />
-              </div>
-              <button
-                type="submit"
-                className="btn btn-primary"
-                style={{
-                  width: '100%',
-                  justifyContent: 'center',
-                  padding: '12px',
-                  borderRadius: '8px',
-                  fontWeight: '600',
-                  background: 'var(--accent)',
-                  color: '#white',
-                  border: 'none'
-                }}
-              >
-                Send Verification Code
-              </button>
-            </form>
-          ) : (
-            <form onSubmit={handleVerifyOtp}>
-              <div style={{
-                background: '#EEF2F6',
-                padding: '12px 16px',
+          <form onSubmit={handleAuthSubmit}>
+            <div className="form-group" style={{ marginBottom: '16px' }}>
+              <label className="form-label">Email Address</label>
+              <input
+                type="email"
+                placeholder="ashok@cadfreelancer.in"
+                className="form-input"
+                value={authEmail}
+                onChange={(e) => setAuthEmail(e.target.value)}
+                required
+                style={{ width: '100%' }}
+              />
+            </div>
+            
+            <div className="form-group" style={{ marginBottom: '24px' }}>
+              <label className="form-label">Password</label>
+              <input
+                type="password"
+                placeholder="••••••••"
+                className="form-input"
+                value={authPassword}
+                onChange={(e) => setAuthPassword(e.target.value)}
+                required
+                style={{ width: '100%' }}
+              />
+            </div>
+
+            <button
+              type="submit"
+              className="btn btn-primary"
+              disabled={authLoading}
+              style={{
+                width: '100%',
+                justifyContent: 'center',
+                padding: '12px',
                 borderRadius: '8px',
-                fontSize: '0.8rem',
-                color: 'var(--text-secondary)',
-                marginBottom: '20px',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px'
-              }}>
-                <KeyRound size={16} style={{ color: 'var(--accent)' }} />
-                <span>Verification code sent to <strong>{authInput}</strong></span>
-              </div>
-              <div className="form-group" style={{ marginBottom: '20px' }}>
-                <label className="form-label">Enter 4-Digit OTP Code</label>
-                <input
-                  type="text"
-                  placeholder="e.g. 1234"
-                  maxLength={4}
-                  className="form-input"
-                  value={otpCode}
-                  onChange={(e) => setOtpCode(e.target.value)}
-                  required
-                  style={{
-                    width: '100%',
-                    letterSpacing: '8px',
-                    textAlign: 'center',
-                    fontSize: '1.2rem',
-                    fontWeight: 'bold'
-                  }}
-                />
-                <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '6px', display: 'block' }}>
-                  Demo Mode: Enter '1234' to authenticate.
-                </span>
-              </div>
-              <div style={{ display: 'flex', gap: '8px' }}>
-                <button
-                  type="button"
-                  className="btn btn-secondary"
-                  style={{ flex: 1, justifyContent: 'center' }}
-                  onClick={() => { setOtpSent(false); setOtpCode(''); }}
-                >
-                  Back
-                </button>
-                <button
-                  type="submit"
-                  className="btn btn-primary"
-                  style={{ flex: 2, justifyContent: 'center', fontWeight: '600' }}
-                >
-                  Verify & Log In
-                </button>
-              </div>
-            </form>
-          )}
+                fontWeight: '600',
+                background: 'var(--accent)',
+                color: 'white',
+                border: 'none'
+              }}
+            >
+              {authLoading ? 'Authenticating...' : authMode === 'login' ? 'Sign In' : 'Create Account'}
+            </button>
+          </form>
+
         </div>
       </div>
     );
