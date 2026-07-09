@@ -10,6 +10,9 @@ import { jsPDF } from 'jspdf';
 import 'jspdf-autotable';
 import * as XLSX from 'xlsx';
 import { createClient } from '@supabase/supabase-js';
+import { hasPermission } from './utils/permissions';
+import QuotationsModule from './components/QuotationsModule';
+
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || '';
@@ -124,7 +127,41 @@ export default function Home() {
   const [authEmail, setAuthEmail] = useState('');
   const [authPassword, setAuthPassword] = useState('');
   const [authMode, setAuthMode] = useState('login'); // 'login' | 'signup'
+  const [regSubmitted, setRegSubmitted] = useState(false);
   const [authLoading, setAuthLoading] = useState(false);
+
+  // New Registration fields
+  const [regFirstName, setRegFirstName] = useState('');
+  const [regLastName, setRegLastName] = useState('');
+  const [regUsername, setRegUsername] = useState('');
+  const [regEmail, setRegEmail] = useState('');
+  const [regMobile, setRegMobile] = useState('');
+  const [regDept, setRegDept] = useState('');
+  const [regDesignation, setRegDesignation] = useState('');
+  const [regEmpId, setRegEmpId] = useState('');
+  const [regPassword, setRegPassword] = useState('');
+  const [regConfirmPassword, setRegConfirmPassword] = useState('');
+  const [regAgreed, setRegAgreed] = useState(false);
+
+  // Admin User Management states
+  const [adminUsers, setAdminUsers] = useState([]);
+  const [adminLogs, setAdminLogs] = useState([]);
+  const [adminActiveSubTab, setAdminActiveSubTab] = useState('Pending'); // 'Pending' | 'Approved' | 'Rejected' | 'Disabled' | 'AuditLogs'
+  const [adminLoading, setAdminLoading] = useState(false);
+  const [viewingUserDetails, setViewingUserDetails] = useState(null);
+
+  // Admin approval form modal states
+  const [approvingUser, setApprovingUser] = useState(null);
+  const [approveRole, setApproveRole] = useState('Employee');
+  const [approveDept, setApproveDept] = useState('Naval Architecture');
+  const [approveDesignation, setApproveDesignation] = useState('Design Engineer');
+  const [approveEmpId, setApproveEmpId] = useState('');
+  const [approveIsManualId, setApproveIsManualId] = useState(false);
+  const [approveManager, setApproveManager] = useState('');
+
+  // Responsive & Dark Theme States
+  const [theme, setTheme] = useState('system'); // 'light' | 'dark' | 'system'
+  const [drawerOpen, setDrawerOpen] = useState(false);
 
 
   // Time Tracker State
@@ -251,15 +288,17 @@ export default function Home() {
   ]);
 
   // Fetch all user records from Supabase tables
-  const fetchAllUserData = async (userId) => {
+  const fetchAllUserData = async (userId, userRole = 'Employee') => {
     if (!supabase) return;
     try {
-      // 1. Fetch Clients
-      const { data: dbClients, error: errClients } = await supabase
-        .from('clients')
-        .select('*')
-        .order('name', { ascending: true });
-      if (!errClients && dbClients) setClients(dbClients);
+      // 1. Fetch Clients (restricted to role capability)
+      if (hasPermission(userRole, 'canManageUsers')) {
+        const { data: dbClients, error: errClients } = await supabase
+          .from('clients')
+          .select('*')
+          .order('name', { ascending: true });
+        if (!errClients && dbClients) setClients(dbClients);
+      }
 
       // 2. Fetch Projects
       const { data: dbProjects, error: errProjects } = await supabase
@@ -307,23 +346,25 @@ export default function Home() {
         setReminders(mapped);
       }
 
-      // 5. Fetch Invoices
-      const { data: dbInvoices, error: errInvoices } = await supabase
-        .from('invoices')
-        .select('*')
-        .order('invoice_number', { ascending: false });
-      if (!errInvoices && dbInvoices) {
-        const mapped = dbInvoices.map(i => ({
-          ...i,
-          project_amount: parseFloat(i.project_amount) || 0,
-          advance_paid: parseFloat(i.advance_paid) || 0,
-          balance_due: parseFloat(i.balance_due) || 0,
-          gst_percentage: parseFloat(i.gst_percentage) || 18,
-          gst_amount: parseFloat(i.gst_amount) || 0,
-          discount: parseFloat(i.discount) || 0,
-          grand_total: parseFloat(i.grand_total) || 0
-        }));
-        setInvoices(mapped);
+      // 5. Fetch Invoices (restricted to role capability)
+      if (hasPermission(userRole, 'canViewInvoices')) {
+        const { data: dbInvoices, error: errInvoices } = await supabase
+          .from('invoices')
+          .select('*')
+          .order('invoice_number', { ascending: false });
+        if (!errInvoices && dbInvoices) {
+          const mapped = dbInvoices.map(i => ({
+            ...i,
+            project_amount: parseFloat(i.project_amount) || 0,
+            advance_paid: parseFloat(i.advance_paid) || 0,
+            balance_due: parseFloat(i.balance_due) || 0,
+            gst_percentage: parseFloat(i.gst_percentage) || 18,
+            gst_amount: parseFloat(i.gst_amount) || 0,
+            discount: parseFloat(i.discount) || 0,
+            grand_total: parseFloat(i.grand_total) || 0
+          }));
+          setInvoices(mapped);
+        }
       }
 
       // 6. Fetch Meetings
@@ -366,46 +407,45 @@ export default function Home() {
     }
   };
 
+  const applyTheme = (currentTheme) => {
+    if (typeof window === 'undefined') return;
+    const root = document.documentElement;
+    if (currentTheme === 'dark') {
+      root.classList.add('dark');
+    } else if (currentTheme === 'light') {
+      root.classList.remove('dark');
+    } else {
+      const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      if (isDark) {
+        root.classList.add('dark');
+      } else {
+        root.classList.remove('dark');
+      }
+    }
+  };
+
+  const handleThemeChange = (newTheme) => {
+    setTheme(newTheme);
+    localStorage.setItem('aura_theme', newTheme);
+    applyTheme(newTheme);
+  };
+
   // Auth & State Hydration Mount Effect
   useEffect(() => {
+    const savedTheme = localStorage.getItem("aura_theme") || "system";
+    setTheme(savedTheme);
+    applyTheme(savedTheme);
+
     // 1. Initial Local State Hydration Fallback
     const savedUser = localStorage.getItem("aura_user_v7");
     if (savedUser) {
       const parsed = JSON.parse(savedUser);
       setUser(parsed);
-      fetchAllUserData(parsed.id);
+      fetchAllUserData(parsed.id, parsed.role);
     }
 
     if (!supabase) return;
-
-    // 2. Real-time Supabase Auth Listener
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (session?.user) {
-        const loggedUser = {
-          id: session.user.id,
-          email: session.user.email,
-          name: session.user.email.split('@')[0]
-        };
-        setUser(loggedUser);
-        saveState("aura_user_v7", loggedUser);
-        fetchAllUserData(session.user.id);
-      } else {
-        setUser(null);
-        localStorage.removeItem("aura_user_v7");
-        setClients([]);
-        setProjects([]);
-        setTasks([]);
-        setReminders([]);
-        setInvoices([]);
-        setMeetings([]);
-        setPersonalTasks([]);
-        setHabits([]);
-      }
-    });
-
-    return () => {
-      subscription?.unsubscribe();
-    };
+    // Custom JWT Auth handles session locally, no onAuthStateChange listener needed.
   }, []);
 
 
@@ -432,61 +472,223 @@ export default function Home() {
     setTimeout(() => setToastMessage(null), 3500);
   };
 
-  // Supabase Authentication Handles
-  const handleAuthSubmit = async (e) => {
-    e.preventDefault();
-    if (!authEmail || !authPassword) {
-      alert("Please enter both email and password.");
-      return;
-    }
-    if (!supabase) {
-      alert("Supabase is not configured. Please check your environment variables.");
-      return;
-    }
-
-    setAuthLoading(true);
+  const fetchAdminUsers = async () => {
+    setAdminLoading(true);
     try {
-      if (authMode === 'signup') {
-        const { data, error } = await supabase.auth.signUp({
-          email: authEmail,
-          password: authPassword,
-        });
-        if (error) {
-          alert(`Sign Up Error: ${error.message}`);
-        } else {
-          alert("Sign up successful! Please check your email for the confirmation link (or login if email confirmation is disabled).");
-          setAuthMode('login');
-        }
+      const res = await fetch('/api/admin/users');
+      const data = await res.json();
+      if (data.success) {
+        setAdminUsers(data.users);
       } else {
-        const { data, error } = await supabase.auth.signInWithPassword({
-          email: authEmail,
-          password: authPassword,
-        });
-        if (error) {
-          alert(`Sign In Error: ${error.message}`);
-        } else if (data?.user) {
-          const loggedUser = {
-            id: data.user.id,
-            email: data.user.email,
-            name: data.user.email.split('@')[0],
-          };
-          setUser(loggedUser);
-          saveState("aura_user_v7", loggedUser);
-          triggerToast("Logged in successfully!");
-        }
+        console.error("Failed to load admin users:", data.error);
       }
     } catch (err) {
       console.error(err);
-      alert("Authentication failed. Please check network connection.");
     } finally {
-      setAuthLoading(false);
+      setAdminLoading(false);
+    }
+  };
+
+  const fetchAdminLogs = async () => {
+    setAdminLoading(true);
+    try {
+      const res = await fetch('/api/admin/audit-logs');
+      const data = await res.json();
+      if (data.success) {
+        setAdminLogs(data.logs);
+      } else {
+        console.error("Failed to load admin logs:", data.error);
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setAdminLoading(false);
+    }
+  };
+
+  const handleUpdateUserStatus = async (userId, newStatus, newRole) => {
+    try {
+      const res = await fetch('/api/admin/users', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId, newStatus, newRole })
+      });
+      const data = await res.json();
+      if (data.success) {
+        triggerToast(`User details updated successfully`);
+        fetchAdminUsers();
+        fetchAdminLogs();
+      } else {
+        alert(`Failed to update user: ${data.error}`);
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Error updating user details.");
+    }
+  };
+
+  const handleStartUserApproval = (targetUser) => {
+    // Generate auto ID count e.g. AURA-0005 based on adminUsers length
+    const nextNum = adminUsers.length + 1;
+    const autoId = 'AURA-' + String(nextNum).padStart(4, '0');
+    
+    setApprovingUser(targetUser);
+    setApproveRole('Employee');
+    setApproveDept('Naval Architecture');
+    setApproveDesignation('Design Engineer');
+    setApproveEmpId(autoId);
+    setApproveIsManualId(false);
+    setApproveManager('');
+  };
+
+  const handleApproveSubmit = async (e) => {
+    e.preventDefault();
+    if (!approvingUser) return;
+
+    try {
+      const res = await fetch('/api/admin/users', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: approvingUser.id,
+          newStatus: 'Approved',
+          newRole: approveRole,
+          department: approveDept,
+          designation: approveDesignation,
+          employee_id: approveEmpId,
+          reporting_manager: approveManager
+        })
+      });
+      const data = await res.json();
+      if (data.success) {
+        triggerToast(`Account for ${approvingUser.first_name} has been approved and activated!`);
+        setApprovingUser(null);
+        fetchAdminUsers();
+        fetchAdminLogs();
+      } else {
+        alert(`Failed to approve user: ${data.error}`);
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Error approving user.");
+    }
+  };
+
+  useEffect(() => {
+    if (activeTab === 'admin') {
+      fetchAdminUsers();
+      fetchAdminLogs();
+    }
+  }, [activeTab]);
+
+  // Secure Authentication & Access Request Handlers
+  const handleAuthSubmit = async (e) => {
+    e.preventDefault();
+
+    if (authMode === 'signup') {
+      // Validate fields
+      if (!regFirstName || !regLastName || !regUsername || !regEmail || !regPassword) {
+        alert("Please fill in all required fields.");
+        return;
+      }
+      if (regPassword !== regConfirmPassword) {
+        alert("Passwords do not match.");
+        return;
+      }
+      if (!regAgreed) {
+        alert("Please agree to the Terms of Use and Privacy Policy.");
+        return;
+      }
+
+      setAuthLoading(true);
+      try {
+        const res = await fetch('/api/auth/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            first_name: regFirstName,
+            last_name: regLastName,
+            username: regUsername,
+            email: regEmail,
+            password: regPassword,
+            confirm_password: regConfirmPassword
+          })
+        });
+
+        const data = await res.json();
+        if (!res.ok || data.error) {
+          alert(`Registration Error: ${data.error}`);
+        } else {
+          // Clear registration form
+          setRegFirstName('');
+          setRegLastName('');
+          setRegUsername('');
+          setRegEmail('');
+          setRegMobile('');
+          setRegDept('');
+          setRegDesignation('');
+          setRegEmpId('');
+          setRegPassword('');
+          setRegConfirmPassword('');
+          setRegSubmitted(true);
+        }
+      } catch (err) {
+        console.error(err);
+        alert("Registration failed. Please check network connection.");
+      } finally {
+        setAuthLoading(false);
+      }
+    } else {
+      // Login flow
+      if (!authEmail || !authPassword) {
+        alert("Please enter both email/username and password.");
+        return;
+      }
+
+      setAuthLoading(true);
+      try {
+        const res = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            identifier: authEmail,
+            password: authPassword
+          })
+        });
+
+        const data = await res.json();
+        if (!res.ok || data.error) {
+          alert(`Login Error: ${data.error}`);
+        } else if (data?.success && data?.user) {
+          const loggedUser = {
+            id: data.user.id,
+            email: data.user.email,
+            name: `${data.user.first_name} ${data.user.last_name}`,
+            username: data.user.username,
+            role: data.user.role,
+            status: data.user.status
+          };
+          setUser(loggedUser);
+          saveState("aura_user_v7", loggedUser);
+          fetchAllUserData(data.user.id, data.user.role);
+          triggerToast("Logged in successfully!");
+          // Clear credentials form
+          setAuthEmail('');
+          setAuthPassword('');
+        }
+      } catch (err) {
+        console.error(err);
+        alert("Authentication failed. Please check network connection.");
+      } finally {
+        setAuthLoading(false);
+      }
     }
   };
 
   const handleLogout = async () => {
-    if (supabase) {
-      await supabase.auth.signOut();
-    }
+    // Clear cookie by hitting an endpoint or just removing local session details
+    // We can also fetch a dummy logout api if needed, or simply delete cookies
+    document.cookie = 'aura_token=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;';
     setUser(null);
     localStorage.removeItem("aura_user_v7");
     setActiveTab('dashboard');
@@ -2140,15 +2342,13 @@ export default function Home() {
     });
 
   // Authentication Guard Render View
+  // Authentication Guard Render View
   if (!user) {
     return (
       <div style={{
         minHeight: '100vh',
         display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        background: 'linear-gradient(135deg, #F8FAFC 0%, #E2E8F0 100%)',
-        padding: '20px',
+        background: 'linear-gradient(135deg, #F8FAFC 0%, #EEF2FF 100%)',
         fontFamily: 'system-ui, -apple-system, sans-serif'
       }}>
         {/* Toast Notification Banner */}
@@ -2159,134 +2359,380 @@ export default function Home() {
           </div>
         )}
 
-        <div className="card" style={{
-          maxWidth: '420px',
-          width: '100%',
-          padding: '40px 32px',
-          borderRadius: '16px',
-          background: '#ffffff',
-          boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
-          border: '1px solid #E2E8F0',
-          margin: 0
+        {/* Left Panel: Branding and Illustration (Desktop Only) */}
+        <div className="auth-left-panel" style={{
+          width: '45%',
+          background: 'linear-gradient(135deg, #6C4DFF 0%, #8B5CF6 100%)',
+          color: 'white',
+          padding: '48px',
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'center',
+          alignItems: 'flex-start',
+          position: 'relative',
+          overflow: 'hidden'
         }}>
-          {/* Logo Branding */}
-          <div style={{ textAlign: 'center', marginBottom: '32px' }}>
-            <img 
-              src="/apple-touch-icon.png" 
-              alt="AURA Logo" 
-              style={{
-                width: '64px',
-                height: '64px',
-                borderRadius: '16px',
-                marginBottom: '16px',
-                boxShadow: '0 8px 16px rgba(99, 102, 241, 0.2)',
-                objectFit: 'cover'
-              }}
-            />
+          {/* Subtle abstract geometric background shapes */}
+          <div style={{ position: 'absolute', top: '-10%', right: '-10%', width: '400px', height: '400px', borderRadius: '50%', background: 'rgba(255,255,255,0.06)', filter: 'blur(40px)' }}></div>
+          <div style={{ position: 'absolute', bottom: '-15%', left: '-10%', width: '350px', height: '350px', borderRadius: '50%', background: 'rgba(255,255,255,0.08)', filter: 'blur(30px)' }}></div>
 
-            <h2 style={{ fontSize: '1.5rem', fontWeight: '800', color: 'var(--text-primary)', margin: '0 0 6px 0', letterSpacing: '-0.5px' }}>
+          <div style={{ maxWidth: '440px', position: 'relative', zIndex: 2 }}>
+            {/* App Logo */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '28px' }}>
+              <img src="/logo.png" alt="AURA" style={{ width: '48px', height: '48px', borderRadius: '12px', objectFit: 'contain' }} />
+              <div>
+                <span style={{ fontSize: '1.5rem', fontWeight: '850', letterSpacing: '-0.5px' }}>AURA</span>
+              </div>
+            </div>
+
+            <h1 style={{ fontSize: '2.5rem', fontWeight: '850', lineHeight: '1.15', marginBottom: '16px', letterSpacing: '-0.8px' }}>
               AURA Workspace
-            </h2>
-            <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', margin: 0 }}>
-              Productivity Portal for CAD Freelancers
+            </h1>
+            <p style={{ color: 'rgba(255, 255, 255, 0.85)', fontSize: '1.05rem', lineHeight: '1.6', marginBottom: '40px' }}>
+              Your Engineering Productivity Platform. Manage active CAD files, track progress updates, check daily planners, and access AI assistant modules.
             </p>
-          </div>
 
-          {/* Tabs: Sign In / Sign Up */}
-          <div style={{
-            display: 'flex',
-            background: '#F1F5F9',
-            padding: '4px',
-            borderRadius: '8px',
-            marginBottom: '24px'
-          }}>
-            <button
-              type="button"
-              className="btn"
-              style={{
-                flex: 1,
-                justifyContent: 'center',
-                padding: '8px',
-                fontSize: '0.85rem',
-                borderRadius: '6px',
-                border: 'none',
-                background: authMode === 'login' ? '#FFFFFF' : 'transparent',
-                color: authMode === 'login' ? 'var(--text-primary)' : 'var(--text-secondary)',
-                boxShadow: authMode === 'login' ? '0 1px 3px rgba(0,0,0,0.05)' : 'none',
-                fontWeight: authMode === 'login' ? '600' : 'normal'
-              }}
-              onClick={() => setAuthMode('login')}
-            >
-              Sign In
-            </button>
-            <button
-              type="button"
-              className="btn"
-              style={{
-                flex: 1,
-                justifyContent: 'center',
-                padding: '8px',
-                fontSize: '0.85rem',
-                borderRadius: '6px',
-                border: 'none',
-                background: authMode === 'signup' ? '#FFFFFF' : 'transparent',
-                color: authMode === 'signup' ? 'var(--text-primary)' : 'var(--text-secondary)',
-                boxShadow: authMode === 'signup' ? '0 1px 3px rgba(0,0,0,0.05)' : 'none',
-                fontWeight: authMode === 'signup' ? '600' : 'normal'
-              }}
-              onClick={() => setAuthMode('signup')}
-            >
-              Sign Up
-            </button>
-          </div>
-
-          {/* Form */}
-          <form onSubmit={handleAuthSubmit}>
-            <div className="form-group" style={{ marginBottom: '16px' }}>
-              <label className="form-label">Email Address</label>
-              <input
-                type="email"
-                placeholder="ashok@cadfreelancer.in"
-                className="form-input"
-                value={authEmail}
-                onChange={(e) => setAuthEmail(e.target.value)}
-                required
-                style={{ width: '100%' }}
-              />
+            {/* Feature Cards */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              {[
+                { title: 'Project Management', desc: 'Track drawing deadlines, files, quotes, and revisions.' },
+                { title: 'Daily Planner', desc: 'Prioritize hourly tasks, check habits, and sync schedules.' },
+                { title: 'AI Productivity Assistant', desc: 'Get smart billing risk estimates and document reminders.' }
+              ].map((feat, index) => (
+                <div key={index} style={{
+                  background: 'rgba(255, 255, 255, 0.08)',
+                  border: '1px solid rgba(255, 255, 255, 0.12)',
+                  borderRadius: '16px',
+                  padding: '16px 20px',
+                  backdropFilter: 'blur(10px)',
+                  display: 'flex',
+                  gap: '12px',
+                  alignItems: 'flex-start'
+                }}>
+                  <div style={{ color: '#34D399', fontSize: '1.1rem', marginTop: '2px' }}>✔</div>
+                  <div>
+                    <h3 style={{ fontSize: '0.95rem', fontWeight: '700', margin: 0 }}>{feat.title}</h3>
+                    <p style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.7)', margin: '4px 0 0 0', lineHeight: '1.4' }}>{feat.desc}</p>
+                  </div>
+                </div>
+              ))}
             </div>
+          </div>
+        </div>
+
+        {/* Right Panel: Content Panel */}
+        <div className="auth-right-panel" style={{
+          flex: 1,
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'center',
+          alignItems: 'center',
+          padding: '40px 24px',
+          overflowY: 'auto'
+        }}>
+          <div style={{ maxWidth: '540px', width: '100%', padding: '24px 0' }}>
             
-            <div className="form-group" style={{ marginBottom: '24px' }}>
-              <label className="form-label">Password</label>
-              <input
-                type="password"
-                placeholder="••••••••"
-                className="form-input"
-                value={authPassword}
-                onChange={(e) => setAuthPassword(e.target.value)}
-                required
-                style={{ width: '100%' }}
-              />
+            {/* Branding header on mobile/tablets */}
+            <div className="mobile-only-logo" style={{ textAlign: 'center', marginBottom: '28px' }}>
+              <img src="/logo.png" alt="A" style={{ width: '76px', height: '76px', borderRadius: '16px', marginBottom: '12px', objectFit: 'contain' }} />
+              <h2 style={{ fontSize: '1.4rem', fontWeight: '800', color: 'var(--text-primary)', margin: '0 0 4px 0', letterSpacing: '-0.3px' }}>AURA Workspace</h2>
+              <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Engineering Productivity Platform</span>
             </div>
 
-            <button
-              type="submit"
-              className="btn btn-primary"
-              disabled={authLoading}
-              style={{
-                width: '100%',
-                justifyContent: 'center',
-                padding: '12px',
-                borderRadius: '8px',
-                fontWeight: '600',
-                background: 'var(--accent)',
-                color: 'white',
-                border: 'none'
-              }}
-            >
-              {authLoading ? 'Authenticating...' : authMode === 'login' ? 'Sign In' : 'Create Account'}
-            </button>
-          </form>
+            {regSubmitted ? (
+              /* Registration Success Confirmation Screen */
+              <div className="card" style={{
+                background: 'white',
+                border: '1px solid #E2E8F0',
+                borderRadius: '24px',
+                padding: '40px 32px',
+                textAlign: 'center',
+                boxShadow: '0 10px 25px -5px rgba(0,0,0,0.05)',
+                margin: 0
+              }}>
+                <div style={{ width: '64px', height: '64px', borderRadius: '50%', background: '#DCFCE7', color: '#15803D', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.8rem', marginBottom: '20px', fontWeight: 'bold' }}>
+                  ✓
+                </div>
+                <h2 style={{ fontSize: '1.4rem', fontWeight: '800', color: 'var(--text-primary)', marginBottom: '8px' }}>
+                  Request Submitted
+                </h2>
+                <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', lineHeight: '1.6', marginBottom: '28px' }}>
+                  Your registration request has been successfully sent to the system administrator for verification. Once approved, you will receive an activation email and can sign in to your dashboard.
+                </p>
+                <div style={{ padding: '16px', background: '#F8FAFC', borderRadius: '12px', marginBottom: '28px', textAlign: 'left', border: '1px solid #F1F5F9' }}>
+                  <span style={{ fontSize: '0.75rem', fontWeight: '600', color: 'var(--text-muted)', textTransform: 'uppercase', display: 'block', marginBottom: '4px' }}>Need assistance?</span>
+                  <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Contact your IT administrator or email <a href="mailto:chandrunavalarch@gmail.com" style={{ color: '#6C4DFF', fontWeight: '600' }}>chandrunavalarch@gmail.com</a>.</span>
+                </div>
 
+                <button
+                  type="button"
+                  style={{
+                    width: '100%',
+                    height: '48px',
+                    background: 'linear-gradient(135deg, #6C4DFF 0%, #8B5CF6 100%)',
+                    border: 'none',
+                    borderRadius: '12px',
+                    color: 'white',
+                    fontWeight: '700',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }}
+                  onClick={() => {
+                    setRegSubmitted(false);
+                    setAuthMode('login');
+                  }}
+                >
+                  Return to Sign In
+                </button>
+              </div>
+            ) : (
+              /* Normal Sign In / Request Access Card */
+              <div className="card" style={{
+                background: 'white',
+                border: '1px solid #E2E8F0',
+                borderRadius: '24px',
+                padding: '40px 36px',
+                boxShadow: '0 15px 30px -10px rgba(0,0,0,0.04)',
+                margin: 0
+              }}>
+                {/* Center Brand Logo Focal Point (Only on Desktop) */}
+                <div className="desktop-only-logo-header" style={{ textAlign: 'center', marginBottom: '28px' }}>
+                  <img src="/logo.png" alt="AURA Logo" style={{ width: '80px', height: '80px', borderRadius: '18px', marginBottom: '12px', objectFit: 'contain' }} />
+                  <h2 style={{ fontSize: '1.4rem', fontWeight: '850', color: '#111827', margin: 0, letterSpacing: '-0.3px' }}>AURA Workspace</h2>
+                  <p style={{ fontSize: '0.85rem', color: '#6B7280', margin: '4px 0 0 0' }}>Engineering Productivity Platform</p>
+                </div>
+
+                {/* Mode Toggles */}
+                <div style={{
+                  display: 'flex',
+                  borderBottom: '1px solid #E2E8F0',
+                  paddingBottom: '12px',
+                  marginBottom: '32px',
+                  gap: '12px'
+                }}>
+                  <button
+                    type="button"
+                    style={{
+                      flex: 1,
+                      height: '44px',
+                      borderRadius: '22px',
+                      border: 'none',
+                      background: authMode === 'login' ? 'linear-gradient(135deg, #6C4DFF 0%, #8B5CF6 100%)' : 'transparent',
+                      color: authMode === 'login' ? 'white' : 'var(--text-secondary)',
+                      fontWeight: '700',
+                      fontSize: '0.9rem',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s ease',
+                      boxShadow: authMode === 'login' ? '0 4px 12px rgba(108, 77, 255, 0.25)' : 'none'
+                    }}
+                    onClick={() => setAuthMode('login')}
+                  >
+                    Sign In
+                  </button>
+                  <button
+                    type="button"
+                    style={{
+                      flex: 1,
+                      height: '44px',
+                      borderRadius: '22px',
+                      border: 'none',
+                      background: authMode === 'signup' ? 'linear-gradient(135deg, #6C4DFF 0%, #8B5CF6 100%)' : 'transparent',
+                      color: authMode === 'signup' ? 'white' : 'var(--text-secondary)',
+                      fontWeight: '700',
+                      fontSize: '0.9rem',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s ease',
+                      boxShadow: authMode === 'signup' ? '0 4px 12px rgba(108, 77, 255, 0.25)' : 'none'
+                    }}
+                    onClick={() => setAuthMode('signup')}
+                  >
+                    Request Access
+                  </button>
+                </div>
+
+                <form onSubmit={handleAuthSubmit}>
+                  {authMode === 'login' ? (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                      <div className="form-group" style={{ margin: 0 }}>
+                        <label className="form-label" style={{ fontWeight: '600', marginBottom: '6px', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Email or Username</label>
+                        <input
+                          type="text"
+                          placeholder="name@company.com"
+                          className="form-input auth-input"
+                          value={authEmail}
+                          onChange={(e) => setAuthEmail(e.target.value)}
+                          required
+                          style={{
+                            width: '100%',
+                            height: '48px',
+                            borderRadius: '10px',
+                            padding: '12px 16px',
+                            fontSize: '0.9rem'
+                          }}
+                        />
+                      </div>
+                      
+                      <div className="form-group" style={{ margin: 0 }}>
+                        <label className="form-label" style={{ fontWeight: '600', marginBottom: '6px', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Password</label>
+                        <input
+                          type="password"
+                          placeholder="••••••••"
+                          className="form-input auth-input"
+                          value={authPassword}
+                          onChange={(e) => setAuthPassword(e.target.value)}
+                          required
+                          style={{
+                            width: '100%',
+                            height: '48px',
+                            borderRadius: '10px',
+                            padding: '12px 16px',
+                            fontSize: '0.9rem'
+                          }}
+                        />
+                      </div>
+                    </div>
+                  ) : (
+                    /* Request Access Form with 2-Column Responsive Layout */
+                    <div style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '16px'
+                    }}>
+                      <div style={{
+                        display: 'grid',
+                        gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+                        gap: '16px 20px'
+                      }}>
+                        <div className="form-group" style={{ margin: 0 }}>
+                          <label className="form-label" style={{ fontWeight: '600', marginBottom: '6px', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>First Name *</label>
+                          <input
+                            type="text"
+                            placeholder="John"
+                            className="form-input auth-input"
+                            value={regFirstName}
+                            onChange={(e) => setRegFirstName(e.target.value)}
+                            required
+                            style={{ width: '100%', height: '46px', borderRadius: '10px', padding: '12px 16px', fontSize: '0.9rem' }}
+                          />
+                        </div>
+                        <div className="form-group" style={{ margin: 0 }}>
+                          <label className="form-label" style={{ fontWeight: '600', marginBottom: '6px', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Last Name *</label>
+                          <input
+                            type="text"
+                            placeholder="Doe"
+                            className="form-input auth-input"
+                            value={regLastName}
+                            onChange={(e) => setRegLastName(e.target.value)}
+                            required
+                            style={{ width: '100%', height: '46px', borderRadius: '10px', padding: '12px 16px', fontSize: '0.9rem' }}
+                          />
+                        </div>
+                      </div>
+
+                      <div className="form-group" style={{ margin: 0 }}>
+                        <label className="form-label" style={{ fontWeight: '600', marginBottom: '6px', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Username *</label>
+                        <input
+                          type="text"
+                          placeholder="johndoe"
+                          className="form-input auth-input"
+                          value={regUsername}
+                          onChange={(e) => setRegUsername(e.target.value)}
+                          required
+                          style={{ width: '100%', height: '46px', borderRadius: '10px', padding: '12px 16px', fontSize: '0.9rem' }}
+                        />
+                      </div>
+
+                      <div className="form-group" style={{ margin: 0 }}>
+                        <label className="form-label" style={{ fontWeight: '600', marginBottom: '6px', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Email Address *</label>
+                        <input
+                          type="email"
+                          placeholder="john@company.com"
+                          className="form-input auth-input"
+                          value={regEmail}
+                          onChange={(e) => setRegEmail(e.target.value)}
+                          required
+                          style={{ width: '100%', height: '46px', borderRadius: '10px', padding: '12px 16px', fontSize: '0.9rem' }}
+                        />
+                      </div>
+
+                      <div style={{
+                        display: 'grid',
+                        gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+                        gap: '16px 20px'
+                      }}>
+                        <div className="form-group" style={{ margin: 0 }}>
+                          <label className="form-label" style={{ fontWeight: '600', marginBottom: '6px', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Password *</label>
+                          <input
+                            type="password"
+                            placeholder="••••••••"
+                            className="form-input auth-input"
+                            value={regPassword}
+                            onChange={(e) => setRegPassword(e.target.value)}
+                            required
+                            style={{ width: '100%', height: '46px', borderRadius: '10px', padding: '12px 16px', fontSize: '0.9rem' }}
+                          />
+                        </div>
+                        <div className="form-group" style={{ margin: 0 }}>
+                          <label className="form-label" style={{ fontWeight: '600', marginBottom: '6px', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Confirm Password *</label>
+                          <input
+                            type="password"
+                            placeholder="••••••••"
+                            className="form-input auth-input"
+                            value={regConfirmPassword}
+                            onChange={(e) => setRegConfirmPassword(e.target.value)}
+                            required
+                            style={{ width: '100%', height: '46px', borderRadius: '10px', padding: '12px 16px', fontSize: '0.9rem' }}
+                          />
+                        </div>
+                      </div>
+
+                      {/* Terms & Privacy checkbox */}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '8px' }}>
+                        <input 
+                          type="checkbox" 
+                          id="reg-agreed-checkbox"
+                          checked={regAgreed} 
+                          onChange={(e) => setRegAgreed(e.target.checked)} 
+                          style={{ width: '16px', height: '16px', accentColor: '#6C4DFF', cursor: 'pointer' }}
+                        />
+                        <label htmlFor="reg-agreed-checkbox" style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', cursor: 'pointer', userSelect: 'none' }}>
+                          I agree to the company's Terms of Use and Privacy Policy.
+                        </label>
+                      </div>
+                    </div>
+                  )}
+
+                  <button
+                    type="submit"
+                    disabled={authLoading}
+                    style={{
+                      width: '100%',
+                      height: '52px',
+                      background: 'linear-gradient(135deg, #6C4DFF 0%, #8B5CF6 100%)',
+                      border: 'none',
+                      borderRadius: '12px',
+                      color: 'white',
+                      fontWeight: '700',
+                      fontSize: '1rem',
+                      cursor: 'pointer',
+                      marginTop: '28px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      boxShadow: '0 4px 14px rgba(108, 77, 255, 0.3)',
+                      transition: 'all 0.2s ease'
+                    }}
+                    className="auth-primary-btn"
+                  >
+                    {authLoading ? 'Processing...' : authMode === 'login' ? 'Sign In to Workspace' : 'Submit Access Request'}
+                  </button>
+                </form>
+              </div>
+            )}
+
+          </div>
         </div>
       </div>
     );
@@ -2302,14 +2748,114 @@ export default function Home() {
         </div>
       )}
 
+      {/* Mobile Top Header Bar */}
+      <div className="mobile-header-bar" style={{ width: '100%' }}>
+        <button
+          type="button"
+          className="btn"
+          style={{ border: 'none', background: 'transparent', minWidth: 'auto', padding: '4px', height: '44px', display: 'flex', alignItems: 'center' }}
+          onClick={() => setDrawerOpen(true)}
+          aria-label="Open navigation menu"
+        >
+          <span style={{ fontSize: '1.6rem', color: 'var(--text-primary)' }}>☰</span>
+        </button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <img src="/logo.png" alt="A" style={{ width: '32px', height: '32px', borderRadius: '8px', objectFit: 'contain' }} />
+          <span style={{ fontWeight: '750', fontSize: '1.05rem', color: 'var(--text-primary)', letterSpacing: '-0.3px' }}>AURA</span>
+        </div>
+        <div
+          style={{ width: '36px', height: '36px', borderRadius: '50%', background: 'var(--accent)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '700', fontSize: '0.9rem', cursor: 'pointer', boxShadow: 'var(--shadow-card)' }}
+          onClick={() => setActiveTab('profile')}
+        >
+          {user?.name ? user.name[0].toUpperCase() : 'U'}
+        </div>
+      </div>
+
+      {/* Mobile Sidebar Navigation Drawer Overlay */}
+      {drawerOpen && (
+        <div
+          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 1000, display: 'flex' }}
+          onClick={() => setDrawerOpen(false)}
+        >
+          <div
+            style={{ width: '280px', height: '100%', background: 'var(--bg-sidebar)', padding: '24px 16px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', borderRight: '1px solid var(--border-color)', animation: 'slideIn 0.2s ease-out' }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <img src="/logo.png" alt="A" style={{ width: '36px', height: '36px', borderRadius: '8px', objectFit: 'contain' }} />
+                  <div>
+                    <h2 style={{ fontSize: '0.95rem', fontWeight: '700', letterSpacing: '-0.3px', margin: 0, color: 'var(--text-primary)' }}>AURA Workspace</h2>
+                    <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>OS Dashboard</span>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  className="btn"
+                  style={{ border: 'none', background: 'transparent', minWidth: 'auto', padding: '8px', fontSize: '1.2rem', color: 'var(--text-primary)' }}
+                  onClick={() => setDrawerOpen(false)}
+                >
+                  ✕
+                </button>
+              </div>
+
+              <nav style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <button className={`btn ${activeTab === 'dashboard' ? 'btn-primary' : 'btn-secondary'}`} style={{ border: 'none', justifyContent: 'flex-start' }} onClick={() => { setActiveTab('dashboard'); setDrawerOpen(false); }}>
+                  <LayoutDashboard size={18} /> Dashboard
+                </button>
+                {hasPermission(user?.role, 'canManageUsers') && (
+                  <button className={`btn ${activeTab === 'clients' ? 'btn-primary' : 'btn-secondary'}`} style={{ border: 'none', justifyContent: 'flex-start' }} onClick={() => { setActiveTab('clients'); setDrawerOpen(false); }}>
+                    <Users size={18} /> Clients
+                  </button>
+                )}
+                <button className={`btn ${activeTab === 'projects' ? 'btn-primary' : 'btn-secondary'}`} style={{ border: 'none', justifyContent: 'flex-start' }} onClick={() => { setActiveTab('projects'); setDrawerOpen(false); }}>
+                  <FolderKanban size={18} /> {user?.role === 'Employee' ? 'My Projects' : 'Projects'}
+                </button>
+                <button className={`btn ${activeTab === 'planner' ? 'btn-primary' : 'btn-secondary'}`} style={{ border: 'none', justifyContent: 'flex-start' }} onClick={() => { setActiveTab('planner'); setDrawerOpen(false); }}>
+                  <Calendar size={18} /> {user?.role === 'Employee' ? 'My Tasks' : 'Daily Planner'}
+                </button>
+                <button className={`btn ${activeTab === 'quotations' ? 'btn-primary' : 'btn-secondary'}`} style={{ border: 'none', justifyContent: 'flex-start' }} onClick={() => { setActiveTab('quotations'); setDrawerOpen(false); }}>
+                  <FileSpreadsheet size={18} /> Quotations
+                </button>
+                {hasPermission(user?.role, 'canViewInvoices') && (
+                  <button className={`btn ${activeTab === 'invoices' ? 'btn-primary' : 'btn-secondary'}`} style={{ border: 'none', justifyContent: 'flex-start' }} onClick={() => { setActiveTab('invoices'); setDrawerOpen(false); }}>
+                    <FileText size={18} /> Invoices
+                  </button>
+                )}
+                {user?.role === 'Employee' && (
+                  <button className={`btn ${activeTab === 'personal-tracker' ? 'btn-primary' : 'btn-secondary'}`} style={{ border: 'none', justifyContent: 'flex-start' }} onClick={() => { setActiveTab('personal-tracker'); setDrawerOpen(false); }}>
+                    <BrainCircuit size={18} /> Personal Tracker
+                  </button>
+                )}
+                {hasPermission(user?.role, 'canManageUsers') && (
+                  <button className={`btn ${activeTab === 'admin' ? 'btn-primary' : 'btn-secondary'}`} style={{ border: 'none', justifyContent: 'flex-start' }} onClick={() => { setActiveTab('admin'); setDrawerOpen(false); }}>
+                    <Users size={18} /> User Management
+                  </button>
+                )}
+              </nav>
+            </div>
+
+            <div>
+              <div style={{ padding: '12px 0', borderTop: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <p style={{ fontSize: '0.8rem', fontWeight: '600', color: 'var(--text-primary)', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis' }}>{user?.name || 'User'}</p>
+                  <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>{user?.role === 'Admin' ? 'Administrator' : 'Workspace User'}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Sidebar Navigation */}
       <aside className="sidebar">
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '24px' }}>
-            <div style={{ width: '32px', height: '32px', background: 'linear-gradient(135deg, var(--accent-indigo), var(--accent-purple))', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#FFF', fontWeight: 'bold' }}>A</div>
+            <img src="/logo.png" alt="A" style={{ width: '40px', height: '40px', borderRadius: '10px', objectFit: 'contain' }} />
             <div>
               <h2 style={{ fontSize: '0.95rem', fontWeight: '700', letterSpacing: '-0.3px', margin: 0 }}>AURA Workspace</h2>
-              <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>OS Dashboard</span>
+              <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block', lineHeight: '1.2' }}>Engineering Productivity Platform</span>
             </div>
           </div>
 
@@ -2317,29 +2863,43 @@ export default function Home() {
             <button className={`btn ${activeTab === 'dashboard' ? 'btn-primary' : 'btn-secondary'}`} style={{ border: 'none', justifyContent: 'flex-start' }} onClick={() => setActiveTab('dashboard')}>
               <LayoutDashboard size={18} /> Dashboard
             </button>
-            <button className={`btn ${activeTab === 'clients' ? 'btn-primary' : 'btn-secondary'}`} style={{ border: 'none', justifyContent: 'flex-start' }} onClick={() => setActiveTab('clients')}>
-              <Users size={18} /> Clients
-            </button>
+            {hasPermission(user?.role, 'canManageUsers') && (
+              <button className={`btn ${activeTab === 'clients' ? 'btn-primary' : 'btn-secondary'}`} style={{ border: 'none', justifyContent: 'flex-start' }} onClick={() => setActiveTab('clients')}>
+                <Users size={18} /> Clients
+              </button>
+            )}
             <button className={`btn ${activeTab === 'projects' ? 'btn-primary' : 'btn-secondary'}`} style={{ border: 'none', justifyContent: 'flex-start' }} onClick={() => setActiveTab('projects')}>
-              <FolderKanban size={18} /> Projects
+              <FolderKanban size={18} /> {user?.role === 'Employee' ? 'My Projects' : 'Projects'}
             </button>
             <button className={`btn ${activeTab === 'planner' ? 'btn-primary' : 'btn-secondary'}`} style={{ border: 'none', justifyContent: 'flex-start' }} onClick={() => setActiveTab('planner')}>
-              <Calendar size={18} /> Daily Planner
+              <Calendar size={18} /> {user?.role === 'Employee' ? 'My Tasks' : 'Daily Planner'}
             </button>
-            <button className={`btn ${activeTab === 'invoices' ? 'btn-primary' : 'btn-secondary'}`} style={{ border: 'none', justifyContent: 'flex-start' }} onClick={() => setActiveTab('invoices')}>
-              <FileText size={18} /> Invoices
+            <button className={`btn ${activeTab === 'quotations' ? 'btn-primary' : 'btn-secondary'}`} style={{ border: 'none', justifyContent: 'flex-start' }} onClick={() => setActiveTab('quotations')}>
+              <FileSpreadsheet size={18} /> Quotations
             </button>
-            <button className={`btn ${activeTab === 'personal-tracker' ? 'btn-primary' : 'btn-secondary'}`} style={{ border: 'none', justifyContent: 'flex-start' }} onClick={() => setActiveTab('personal-tracker')}>
-              <BrainCircuit size={18} /> Personal Tracker
-            </button>
+            {hasPermission(user?.role, 'canViewInvoices') && (
+              <button className={`btn ${activeTab === 'invoices' ? 'btn-primary' : 'btn-secondary'}`} style={{ border: 'none', justifyContent: 'flex-start' }} onClick={() => setActiveTab('invoices')}>
+                <FileText size={18} /> Invoices
+              </button>
+            )}
+            {user?.role === 'Employee' && (
+              <button className={`btn ${activeTab === 'personal-tracker' ? 'btn-primary' : 'btn-secondary'}`} style={{ border: 'none', justifyContent: 'flex-start' }} onClick={() => setActiveTab('personal-tracker')}>
+                <BrainCircuit size={18} /> Personal Tracker
+              </button>
+            )}
+            {hasPermission(user?.role, 'canManageUsers') && (
+              <button className={`btn ${activeTab === 'admin' ? 'btn-primary' : 'btn-secondary'}`} style={{ border: 'none', justifyContent: 'flex-start' }} onClick={() => setActiveTab('admin')}>
+                <Users size={18} /> User Management
+              </button>
+            )}
           </nav>
         </div>
 
         <div>
           <div style={{ padding: '12px', borderTop: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', gap: '10px' }}>
             <div style={{ flex: 1, minWidth: 0 }}>
-              <p style={{ fontSize: '0.8rem', fontWeight: '600', color: 'var(--text-primary)', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis' }}>Ashok</p>
-              <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>CAD Freelancer</span>
+              <p style={{ fontSize: '0.8rem', fontWeight: '600', color: 'var(--text-primary)', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis' }}>{user?.name || 'User'}</p>
+              <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>{user?.role === 'Admin' ? 'Administrator' : 'Workspace User'}</span>
             </div>
             <button className="btn btn-secondary" style={{ padding: '6px', minWidth: 0 }} onClick={handleLogout} title="Log Out">
               <LogOut size={16} />
@@ -2354,23 +2914,32 @@ export default function Home() {
         {activeTab === 'dashboard' && (
           <div>
             {/* Header */}
-            <div className="card" style={{ background: '#F8FAFC', marginBottom: '24px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '20px' }}>
-                <div>
-                  <h1 style={{ fontSize: '1.6rem', fontWeight: '700', letterSpacing: '-0.5px', margin: 0 }}>👋 Good Morning, Ashok</h1>
-                  <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginTop: '4px' }}>Friday, 26 June 2026</p>
+            <div className="card" style={{ background: 'var(--bg-sidebar)', marginBottom: '24px', padding: '24px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '16px' }}>
+                <div style={{ minWidth: '200px' }}>
+                  <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: '600', textTransform: 'uppercase' }}>OS Workspace</span>
+                  <h1 style={{ fontSize: '1.8rem', fontWeight: '800', letterSpacing: '-0.5px', margin: '4px 0 0 0', color: 'var(--text-primary)' }}>👋 Welcome back,</h1>
+                  <h2 style={{ fontSize: '1.5rem', fontWeight: '700', margin: 0, color: 'var(--accent)' }}>{user?.name || 'User'}</h2>
+                  <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginTop: '6px' }}>Dashboard Home</p>
                 </div>
                 
-                {/* Desktop Quick Actions Toolbar */}
-                <div className="quick-actions-toolbar" style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                  <button className="btn" style={{ background: '#DCFCE7', color: '#15803D', borderRadius: '10px', border: 'none' }} onClick={() => setShowTaskModal(true)}>
+                {/* Quick Actions Toolbar */}
+                <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', width: '100%', maxWidth: '450px' }}>
+                  <button className="btn btn-primary" style={{ flex: '1 1 120px', justifyContent: 'center', height: '44px', cursor: 'pointer' }} onClick={() => setShowTaskModal(true)}>
                     ✅ Add Task
                   </button>
-                  <button className="btn" style={{ background: '#D1FAE5', color: '#047857', borderRadius: '10px', border: 'none' }} onClick={triggerNewInvoiceFlow}>
-                    💰 Create Invoice
-                  </button>
-                  <button className="btn" style={{ background: '#F3E8FF', color: '#7E22CE', borderRadius: '10px', border: 'none' }} onClick={() => exportPDF('projects')}>
-                    📄 Generate Report
+                  {hasPermission(user?.role, 'canViewInvoices') && (
+                    <button className="btn btn-secondary" style={{ flex: '1 1 120px', justifyContent: 'center', height: '44px', cursor: 'pointer' }} onClick={triggerNewInvoiceFlow}>
+                      💰 Create Invoice
+                    </button>
+                  )}
+                  {hasPermission(user?.role, 'canManageUsers') && (
+                    <button className="btn btn-secondary" style={{ flex: '1 1 120px', justifyContent: 'center', height: '44px', cursor: 'pointer' }} onClick={() => setShowClientModal(true)}>
+                      👤 Add Client
+                    </button>
+                  )}
+                  <button className="btn btn-secondary" style={{ flex: '1 1 120px', justifyContent: 'center', height: '44px', cursor: 'pointer' }} onClick={() => { setActiveTab(user?.role === 'Employee' ? 'personal-tracker' : 'projects') }}>
+                    {user?.role === 'Employee' ? '🎯 My Tracker' : '📄 Manage Projects'}
                   </button>
                 </div>
               </div>
@@ -2393,41 +2962,94 @@ export default function Home() {
 
             {/* KPI Cards Row */}
             <div className="grid-3" style={{ marginBottom: '24px' }}>
-              <div className="card" style={{ margin: 0 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                  <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontWeight: '600' }}>TOTAL INVOICE AMOUNT</span>
-                  <IndianRupee size={16} style={{ color: 'var(--accent)' }} />
-                </div>
-                <span style={{ fontSize: '1.8rem', fontWeight: '700' }}>₹{invoices.reduce((sum, i) => sum + i.grand_total, 0).toLocaleString('en-IN')}</span>
-              </div>
+              {/* Financial KPIs - Only visible to Admins/SuperAdmins */}
+              {hasPermission(user?.role, 'canViewRevenue') && (
+                <>
+                  <div className="card" style={{ margin: 0 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                      <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontWeight: '600' }}>TOTAL REVENUE</span>
+                      <IndianRupee size={16} style={{ color: 'var(--accent)' }} />
+                    </div>
+                    <span style={{ fontSize: '1.8rem', fontWeight: '700' }}>₹{invoices.reduce((sum, i) => sum + i.grand_total, 0).toLocaleString('en-IN')}</span>
+                  </div>
 
-              <div className="card" style={{ margin: 0 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                  <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontWeight: '600' }}>PENDING PAYMENTS</span>
-                  <AlertCircle size={16} style={{ color: 'var(--color-danger)' }} />
-                </div>
-                <span style={{ fontSize: '1.8rem', fontWeight: '700' }}>₹{invoices.filter(i => i.payment_status === 'Pending').reduce((sum, i) => sum + i.grand_total, 0).toLocaleString('en-IN')}</span>
-              </div>
+                  <div className="card" style={{ margin: 0 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                      <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontWeight: '600' }}>PENDING PAYMENTS</span>
+                      <AlertCircle size={16} style={{ color: 'var(--color-danger)' }} />
+                    </div>
+                    <span style={{ fontSize: '1.8rem', fontWeight: '700' }}>₹{invoices.filter(i => i.payment_status === 'Pending').reduce((sum, i) => sum + i.grand_total, 0).toLocaleString('en-IN')}</span>
+                  </div>
 
-              <div className="card" style={{ margin: 0 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                  <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontWeight: '600' }}>PAID TODAY</span>
-                  <CheckCircle2 size={16} style={{ color: 'var(--color-success)' }} />
-                </div>
-                <span style={{ fontSize: '1.8rem', fontWeight: '700' }}>₹{invoices.filter(i => i.payment_status === 'Paid').reduce((sum, i) => sum + i.grand_total, 0).toLocaleString('en-IN')}</span>
-              </div>
+                  <div className="card" style={{ margin: 0 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                      <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontWeight: '600' }}>PAID TODAY</span>
+                      <CheckCircle2 size={16} style={{ color: 'var(--color-success)' }} />
+                    </div>
+                    <span style={{ fontSize: '1.8rem', fontWeight: '700' }}>₹{invoices.filter(i => i.payment_status === 'Paid').reduce((sum, i) => sum + i.grand_total, 0).toLocaleString('en-IN')}</span>
+                  </div>
 
-              <div className="card" style={{ margin: 0 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                  <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontWeight: '600' }}>OVERDUE INVOICES</span>
-                  <Clock size={16} style={{ color: 'var(--color-warning)' }} />
-                </div>
-                <span style={{ fontSize: '1.8rem', fontWeight: '700' }}>{invoices.filter(i => i.payment_status === 'Overdue').length}</span>
-              </div>
+                  <div className="card" style={{ margin: 0 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                      <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontWeight: '600' }}>OVERDUE INVOICES</span>
+                      <Clock size={16} style={{ color: 'var(--color-warning)' }} />
+                    </div>
+                    <span style={{ fontSize: '1.8rem', fontWeight: '700' }}>{invoices.filter(i => i.payment_status === 'Overdue').length}</span>
+                  </div>
+                </>
+              )}
 
+              {/* Employee Productivity Widgets */}
+              {user?.role === 'Employee' && (
+                <>
+                  <div className="card" style={{ margin: 0 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                      <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontWeight: '600' }}>MY OPEN TASKS</span>
+                      <Clock size={16} style={{ color: 'var(--accent)' }} />
+                    </div>
+                    <span style={{ fontSize: '1.8rem', fontWeight: '700' }}>{tasks.filter(t => !t.completed).length}</span>
+                  </div>
+                  <div className="card" style={{ margin: 0 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                      <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontWeight: '600' }}>COMPLETED TASKS</span>
+                      <CheckCircle2 size={16} style={{ color: 'var(--color-success)' }} />
+                    </div>
+                    <span style={{ fontSize: '1.8rem', fontWeight: '700' }}>{tasks.filter(t => t.completed).length}</span>
+                  </div>
+                  <div className="card" style={{ margin: 0 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                      <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontWeight: '600' }}>MY ACTIVE PROJECTS</span>
+                      <FolderKanban size={16} style={{ color: 'var(--color-info)' }} />
+                    </div>
+                    <span style={{ fontSize: '1.8rem', fontWeight: '700' }}>{projects.filter(p => p.status === 'In Progress').length}</span>
+                  </div>
+                </>
+              )}
+
+              {/* Manager Operations Widgets */}
+              {user?.role === 'Manager' && (
+                <>
+                  <div className="card" style={{ margin: 0 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                      <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontWeight: '600' }}>TEAM TASKS</span>
+                      <Clock size={16} style={{ color: 'var(--accent)' }} />
+                    </div>
+                    <span style={{ fontSize: '1.8rem', fontWeight: '700' }}>{tasks.length}</span>
+                  </div>
+                  <div className="card" style={{ margin: 0 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                      <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontWeight: '600' }}>ACTIVE TEAM PROJECTS</span>
+                      <FolderKanban size={16} style={{ color: 'var(--color-info)' }} />
+                    </div>
+                    <span style={{ fontSize: '1.8rem', fontWeight: '700' }}>{projects.filter(p => p.status === 'In Progress').length}</span>
+                  </div>
+                </>
+              )}
+
+              {/* Shared General Stats */}
               <div className="card" style={{ margin: 0 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                  <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontWeight: '600' }}>PRODUCTIVITY SCORE</span>
+                  <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontWeight: '600' }}>{user?.role === 'Employee' ? 'MY PRODUCTIVITY' : 'TEAM PRODUCTIVITY'}</span>
                   <CheckCircle2 size={16} style={{ color: 'var(--accent-purple)' }} />
                 </div>
                 <span style={{ fontSize: '1.8rem', fontWeight: '700' }}>92%</span>
@@ -3110,7 +3732,7 @@ export default function Home() {
               {filteredProjects.map(p => {
                 const client = clients.find(c => c.id === p.clientId);
                 return (
-                  <div key={p.id} className="card" style={{ margin: 0, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div key={p.id} className="card" style={{ margin: 0, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '16px' }}>
                     <div>
                       <h3 style={{ margin: 0 }}>{p.title}</h3>
                       <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Client: {client ? client.name : 'Unknown Client'} • Deadline: {p.deadline}</span>
@@ -3193,10 +3815,10 @@ export default function Home() {
             </div>
 
             {/* Invoice Split view layout (65% Invoice list, 35% AI Console) */}
-            <div style={{ display: 'grid', gridTemplateColumns: '65% 35%', gap: '24px' }}>
+            <div className="invoices-grid">
               
               {/* Invoices List table (65%) */}
-              <div className="card" style={{ padding: 0, overflowX: 'auto', margin: 0 }}>
+              <div className="card desktop-table-container" style={{ padding: 0, overflowX: 'auto', margin: 0, flex: 2 }}>
                 <table className="data-table">
                   <thead>
                     <tr>
@@ -3251,6 +3873,48 @@ export default function Home() {
                     )}
                   </tbody>
                 </table>
+              </div>
+
+              {/* Mobile Invoice Card List */}
+              <div className="mobile-card-list" style={{ width: '100%' }}>
+                {filteredInvoices.map(inv => {
+                  const client = clients.find(c => c.id === inv.client_id);
+                  const proj = projects.find(p => p.id === inv.project_id);
+                  return (
+                    <div key={inv.id} className="card" style={{ margin: 0, padding: '16px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                        <span style={{ fontWeight: '700', fontSize: '1rem', color: 'var(--text-primary)' }}>{inv.invoice_number}</span>
+                        <span className={`badge ${inv.payment_status === 'Paid' ? 'badge-success' : inv.payment_status === 'Draft' ? 'badge-info' : inv.payment_status === 'Pending' ? 'badge-warning' : 'badge-danger'}`}>{inv.payment_status}</span>
+                      </div>
+                      <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', display: 'flex', flexDirection: 'column', gap: '4px', marginBottom: '16px' }}>
+                        <div><strong>Client:</strong> {client ? client.name : 'N/A'}</div>
+                        <div><strong>Project:</strong> {proj ? proj.title : 'N/A'}</div>
+                        <div><strong>Due Date:</strong> {inv.due_date}</div>
+                        <div style={{ fontSize: '1.1rem', fontWeight: '800', color: 'var(--text-primary)', marginTop: '8px' }}>₹{inv.grand_total.toLocaleString('en-IN')}</div>
+                      </div>
+                      
+                      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                        <button className="btn btn-secondary" style={{ padding: '6px 12px', flex: 1, justifyContent: 'center' }} onClick={() => generateAndDownloadPDF(inv)}>
+                          <Download size={14} /> PDF
+                        </button>
+                        <button className="btn btn-secondary" style={{ padding: '6px 12px', flex: 1, justifyContent: 'center' }} onClick={() => sendEmail(inv)}>
+                          <Mail size={14} /> Mail
+                        </button>
+                        {inv.payment_status !== 'Paid' && (
+                          <button className="btn btn-primary" style={{ padding: '6px 12px', flex: 1, justifyContent: 'center', fontSize: '0.8rem' }} onClick={() => handleMarkPaid(inv.id)}>
+                            Mark Paid
+                          </button>
+                        )}
+                        <button className="btn btn-secondary" style={{ padding: '6px 12px', color: 'var(--color-danger)', borderColor: 'var(--border-color)' }} onClick={() => handleDeleteInvoice(inv.id)}>
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+                {filteredInvoices.length === 0 && (
+                  <div className="card" style={{ padding: '24px', textAlign: 'center', color: 'var(--text-muted)' }}>No invoices found.</div>
+                )}
               </div>
 
               {/* AI Assistant Console (35%) */}
@@ -3439,6 +4103,395 @@ export default function Home() {
           </div>
         )}
 
+        {activeTab === 'quotations' && (
+          <QuotationsModule user={user} triggerToast={triggerToast} />
+        )}
+
+        {activeTab === 'admin' && (
+          <div>
+            {/* Header */}
+            <div className="card" style={{ background: '#F8FAFC', marginBottom: '24px' }}>
+              <h1 style={{ fontSize: '1.6rem', fontWeight: '700', letterSpacing: '-0.5px', margin: 0 }}>🛡️ Administrative Controls</h1>
+              <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginTop: '4px' }}>
+                Manage user access approvals, roles, status changes, and track system security audit logs.
+              </p>
+            </div>
+
+            {/* Admin Management Sub-Tabs */}
+            <div className="card" style={{ padding: '16px', marginBottom: '24px' }}>
+              <div style={{ display: 'flex', gap: '8px', borderBottom: '1px solid var(--border-color)', paddingBottom: '12px', flexWrap: 'wrap' }}>
+                {['Pending', 'Approved', 'Rejected', 'Disabled', 'AuditLogs'].map((subTab) => {
+                  const filteredCount = adminUsers.filter(u => u.status === subTab).length;
+                  const label = subTab === 'AuditLogs' 
+                    ? '📋 Audit Logs' 
+                    : `${subTab} (${filteredCount})`;
+                  return (
+                    <button
+                      key={subTab}
+                      className="btn"
+                      style={{
+                        padding: '8px 16px',
+                        fontSize: '0.85rem',
+                        borderRadius: '6px',
+                        border: 'none',
+                        background: adminActiveSubTab === subTab ? 'var(--accent)' : 'transparent',
+                        color: adminActiveSubTab === subTab ? 'white' : 'var(--text-secondary)',
+                        fontWeight: adminActiveSubTab === subTab ? '600' : 'normal',
+                        cursor: 'pointer'
+                      }}
+                      onClick={() => setAdminActiveSubTab(subTab)}
+                    >
+                      {label}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Main Panel Content */}
+              <div style={{ marginTop: '20px' }}>
+                {adminLoading ? (
+                  <p style={{ textAlign: 'center', color: 'var(--text-secondary)', padding: '24px' }}>Loading administrative data...</p>
+                ) : adminActiveSubTab === 'AuditLogs' ? (
+                  <div>
+                    <h3 style={{ fontSize: '1rem', fontWeight: '700', marginBottom: '16px', color: 'var(--text-primary)' }}>System Security & Event History</h3>
+                    
+                    {/* Desktop View Table */}
+                    <div className="desktop-table-container" style={{ overflowX: 'auto' }}>
+                      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
+                        <thead>
+                          <tr style={{ borderBottom: '2px solid var(--border-color)', textAlign: 'left' }}>
+                            <th style={{ padding: '12px 8px', color: 'var(--text-secondary)' }}>Timestamp</th>
+                            <th style={{ padding: '12px 8px', color: 'var(--text-secondary)' }}>Event Type</th>
+                            <th style={{ padding: '12px 8px', color: 'var(--text-secondary)' }}>Target User</th>
+                            <th style={{ padding: '12px 8px', color: 'var(--text-secondary)' }}>Actor</th>
+                            <th style={{ padding: '12px 8px', color: 'var(--text-secondary)' }}>Details</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {adminLogs.length === 0 ? (
+                            <tr>
+                              <td colSpan={5} style={{ padding: '24px 8px', textAlign: 'center', color: 'var(--text-muted)' }}>No audit events logged.</td>
+                            </tr>
+                          ) : (
+                            adminLogs.map((log) => {
+                              let badgeColor = '#64748B';
+                              let badgeBg = '#F1F5F9';
+                              if (log.event_type.includes('success')) {
+                                badgeColor = '#166534';
+                                badgeBg = '#DCFCE7';
+                              } else if (log.event_type.includes('failed') || log.event_type.includes('rejected')) {
+                                badgeColor = '#991B1B';
+                                badgeBg = '#FEE2E2';
+                              } else if (log.event_type.includes('approved')) {
+                                badgeColor = '#155E75';
+                                badgeBg = '#ECFEFF';
+                              }
+
+                              return (
+                                <tr key={log.id} style={{ borderBottom: '1px solid var(--border-color)' }}>
+                                  <td style={{ padding: '12px 8px', color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>
+                                    {new Date(log.created_at).toLocaleString()}
+                                  </td>
+                                  <td style={{ padding: '12px 8px' }}>
+                                    <span style={{ padding: '2px 8px', borderRadius: '4px', fontSize: '0.75rem', fontWeight: '600', color: badgeColor, background: badgeBg }}>
+                                      {log.event_type}
+                                    </span>
+                                  </td>
+                                  <td style={{ padding: '12px 8px', fontWeight: '500', color: 'var(--text-primary)' }}>
+                                    {log.email} {log.username !== 'unknown' && `(${log.username})`}
+                                  </td>
+                                  <td style={{ padding: '12px 8px', color: 'var(--text-secondary)' }}>{log.actor}</td>
+                                  <td style={{ padding: '12px 8px', color: 'var(--text-secondary)' }}>{log.details}</td>
+                                </tr>
+                              );
+                            })
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+
+                    {/* Mobile View Card List */}
+                    <div className="mobile-card-list">
+                      {adminLogs.length === 0 ? (
+                        <div className="card" style={{ padding: '24px', textAlign: 'center', color: 'var(--text-muted)' }}>No audit events logged.</div>
+                      ) : (
+                        adminLogs.map((log) => (
+                          <div key={log.id} className="card" style={{ margin: 0, padding: '16px' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                              <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{new Date(log.created_at).toLocaleString()}</span>
+                              <span style={{ padding: '2px 8px', borderRadius: '4px', fontSize: '0.75rem', fontWeight: '600', color: log.event_type.includes('success') ? '#166534' : log.event_type.includes('failed') ? '#991B1B' : '#64748B', background: log.event_type.includes('success') ? '#DCFCE7' : log.event_type.includes('failed') ? '#FEE2E2' : '#F1F5F9' }}>
+                                {log.event_type}
+                              </span>
+                            </div>
+                            <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                              <div><strong>User:</strong> {log.email}</div>
+                              <div><strong>Actor:</strong> {log.actor}</div>
+                              <div style={{ marginTop: '6px', padding: '8px', background: 'var(--bg-main)', borderRadius: '6px', fontSize: '0.8rem', color: 'var(--text-primary)' }}>{log.details}</div>
+                            </div>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                ) : (
+                  <div>
+                    <h3 style={{ fontSize: '1rem', fontWeight: '700', marginBottom: '16px', color: 'var(--text-primary)' }}>{adminActiveSubTab} Access Accounts</h3>
+                    
+                    {/* Desktop View Table */}
+                    <div className="desktop-table-container" style={{ overflowX: 'auto' }}>
+                      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
+                        <thead>
+                          <tr style={{ borderBottom: '2px solid var(--border-color)', textAlign: 'left' }}>
+                            <th style={{ padding: '12px 8px', color: 'var(--text-secondary)' }}>User Details</th>
+                            <th style={{ padding: '12px 8px', color: 'var(--text-secondary)' }}>Department</th>
+                            <th style={{ padding: '12px 8px', color: 'var(--text-secondary)' }}>Designation</th>
+                            <th style={{ padding: '12px 8px', color: 'var(--text-secondary)' }}>Registered</th>
+                            <th style={{ padding: '12px 8px', color: 'var(--text-secondary)', textAlign: 'right' }}>Actions</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {adminUsers.filter(u => u.status === adminActiveSubTab).length === 0 ? (
+                            <tr>
+                              <td colSpan={5} style={{ padding: '24px 8px', textAlign: 'center', color: 'var(--text-muted)' }}>
+                                No users found in this category.
+                              </td>
+                            </tr>
+                          ) : (
+                            adminUsers.filter(u => u.status === adminActiveSubTab).map((item) => (
+                              <tr key={item.id} style={{ borderBottom: '1px solid var(--border-color)' }}>
+                                <td style={{ padding: '12px 8px' }}>
+                                  <div style={{ fontWeight: '600', color: 'var(--text-primary)' }}>{item.first_name} {item.last_name}</div>
+                                  <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>@{item.username} • {item.email}</div>
+                                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>📞 {item.mobile_number} {item.employee_id && `• Emp ID: ${item.employee_id}`}</div>
+                                  
+                                  {/* Role Select Dropdown */}
+                                  <div style={{ marginTop: '6px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                    <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Role:</span>
+                                    <select 
+                                      value={item.role || 'Employee'} 
+                                      onChange={(e) => handleUpdateUserStatus(item.id, item.status, e.target.value)}
+                                      style={{ padding: '2px 4px', fontSize: '0.75rem', borderRadius: '4px', border: '1px solid var(--border-color)', background: 'var(--bg-card)', color: 'var(--text-primary)' }}
+                                    >
+                                      <option value="Employee">Employee</option>
+                                      <option value="Manager">Manager</option>
+                                      <option value="Admin">Admin</option>
+                                      <option value="SuperAdmin">SuperAdmin</option>
+                                    </select>
+                                  </div>
+                                </td>
+                                <td style={{ padding: '12px 8px', color: 'var(--text-primary)' }}>{item.department}</td>
+                                <td style={{ padding: '12px 8px', color: 'var(--text-primary)' }}>{item.designation}</td>
+                                <td style={{ padding: '12px 8px', color: 'var(--text-secondary)' }}>
+                                  {new Date(item.created_at).toLocaleDateString()}
+                                </td>
+                                <td style={{ padding: '12px 8px', textAlign: 'right' }}>
+                                  {adminActiveSubTab === 'Pending' && (
+                                    <div style={{ display: 'flex', gap: '6px', justifyContent: 'flex-end' }}>
+                                      <button
+                                        className="btn btn-primary"
+                                        style={{ background: '#10B981', color: 'white', border: 'none', padding: '6px 12px', fontSize: '0.75rem', borderRadius: '4px', cursor: 'pointer' }}
+                                        onClick={() => handleStartUserApproval(item)}
+                                      >
+                                        Approve
+                                      </button>
+                                      <button
+                                        className="btn"
+                                        style={{ background: '#EF4444', color: 'white', border: 'none', padding: '6px 12px', fontSize: '0.75rem', borderRadius: '4px', cursor: 'pointer' }}
+                                        onClick={() => handleUpdateUserStatus(item.id, 'Rejected')}
+                                      >
+                                        Reject
+                                      </button>
+                                      <button
+                                        className="btn"
+                                        style={{ background: '#6C4DFF', color: 'white', border: 'none', padding: '6px 12px', fontSize: '0.75rem', borderRadius: '4px', cursor: 'pointer' }}
+                                        onClick={() => setViewingUserDetails(item)}
+                                      >
+                                        View Details
+                                      </button>
+                                    </div>
+                                  )}
+                                  {adminActiveSubTab === 'Approved' && (
+                                    <button
+                                      className="btn"
+                                      style={{ background: '#F59E0B', color: 'white', border: 'none', padding: '6px 12px', fontSize: '0.75rem', borderRadius: '4px', cursor: 'pointer' }}
+                                      onClick={() => handleUpdateUserStatus(item.id, 'Disabled')}
+                                    >
+                                      Disable
+                                    </button>
+                                  )}
+                                  {(adminActiveSubTab === 'Rejected' || adminActiveSubTab === 'Disabled') && (
+                                    <button
+                                      className="btn btn-primary"
+                                      style={{ background: '#10B981', color: 'white', border: 'none', padding: '6px 12px', fontSize: '0.75rem', borderRadius: '4px', cursor: 'pointer' }}
+                                      onClick={() => handleStartUserApproval(item)}
+                                    >
+                                      Re-Enable & Approve
+                                    </button>
+                                  )}
+                                </td>
+                              </tr>
+                            ))
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+
+                    {/* Mobile View Card List */}
+                    <div className="mobile-card-list">
+                      {adminUsers.filter(u => u.status === adminActiveSubTab).length === 0 ? (
+                        <div className="card" style={{ padding: '24px', textAlign: 'center', color: 'var(--text-muted)' }}>No users found in this category.</div>
+                      ) : (
+                        adminUsers.filter(u => u.status === adminActiveSubTab).map((item) => (
+                          <div key={item.id} className="card" style={{ margin: 0, padding: '16px' }}>
+                            <div style={{ fontWeight: '700', fontSize: '1rem', color: 'var(--text-primary)' }}>{item.first_name} {item.last_name}</div>
+                            <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '8px' }}>@{item.username} • {item.email}</div>
+                            
+                            <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', display: 'flex', flexDirection: 'column', gap: '4px', marginBottom: '12px' }}>
+                              <div><strong>Department:</strong> {item.department}</div>
+                              <div><strong>Designation:</strong> {item.designation}</div>
+                              {item.employee_id && <div><strong>Employee ID:</strong> {item.employee_id}</div>}
+                              <div><strong>Mobile:</strong> {item.mobile_number}</div>
+                              <div><strong>Registered:</strong> {new Date(item.created_at).toLocaleDateString()}</div>
+                              <div style={{ marginTop: '6px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                <strong>Role:</strong>
+                                <select 
+                                  value={item.role || 'Employee'} 
+                                  onChange={(e) => handleUpdateUserStatus(item.id, item.status, e.target.value)}
+                                  style={{ padding: '2px 4px', fontSize: '0.75rem', borderRadius: '4px', border: '1px solid var(--border-color)', background: 'var(--bg-card)', color: 'var(--text-primary)' }}
+                                >
+                                  <option value="Employee">Employee</option>
+                                  <option value="Manager">Manager</option>
+                                  <option value="Admin">Admin</option>
+                                  <option value="SuperAdmin">SuperAdmin</option>
+                                </select>
+                              </div>
+                            </div>
+
+                            <div style={{ display: 'flex', gap: '8px', justifyContent: 'stretch' }}>
+                              {adminActiveSubTab === 'Pending' && (
+                                <>
+                                  <button
+                                    className="btn btn-primary"
+                                    style={{ background: '#10B981', color: 'white', border: 'none', flex: 1, justifyContent: 'center', padding: '6px 12px', fontSize: '0.8rem', borderRadius: '6px', cursor: 'pointer' }}
+                                    onClick={() => handleStartUserApproval(item)}
+                                  >
+                                    Approve
+                                  </button>
+                                  <button
+                                    className="btn"
+                                    style={{ background: '#EF4444', color: 'white', border: 'none', flex: 1, justifyContent: 'center', padding: '6px 12px', fontSize: '0.8rem', borderRadius: '6px', cursor: 'pointer' }}
+                                    onClick={() => handleUpdateUserStatus(item.id, 'Rejected')}
+                                  >
+                                    Reject
+                                  </button>
+                                  <button
+                                    className="btn"
+                                    style={{ background: '#6C4DFF', color: 'white', border: 'none', flex: 1, justifyContent: 'center', padding: '6px 12px', fontSize: '0.8rem', borderRadius: '6px', cursor: 'pointer' }}
+                                    onClick={() => setViewingUserDetails(item)}
+                                  >
+                                    Details
+                                  </button>
+                                </>
+                              )}
+                              {adminActiveSubTab === 'Approved' && (
+                                <button
+                                  className="btn"
+                                  style={{ background: '#F59E0B', color: 'white', border: 'none', flex: 1, justifyContent: 'center', padding: '6px 12px', fontSize: '0.8rem', borderRadius: '6px', cursor: 'pointer' }}
+                                  onClick={() => handleUpdateUserStatus(item.id, 'Disabled')}
+                                >
+                                  Disable Account
+                                </button>
+                              )}
+                              {(adminActiveSubTab === 'Rejected' || adminActiveSubTab === 'Disabled') && (
+                                <button
+                                  className="btn btn-primary"
+                                  style={{ background: '#10B981', color: 'white', border: 'none', flex: 1, justifyContent: 'center', padding: '6px 12px', fontSize: '0.8rem', borderRadius: '6px', cursor: 'pointer' }}
+                                  onClick={() => handleStartUserApproval(item)}
+                                >
+                                  Re-Enable Account
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'profile' && (
+          <div>
+            <div className="card" style={{ background: '#F8FAFC', marginBottom: '24px' }}>
+              <h1 style={{ fontSize: '1.6rem', fontWeight: '700', letterSpacing: '-0.5px', margin: 0, color: 'var(--text-primary)' }}>👤 User Settings & Profile</h1>
+              <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginTop: '4px' }}>
+                Manage theme preferences and view account details.
+              </p>
+            </div>
+
+            <div className="card" style={{ padding: '24px', marginBottom: '24px' }}>
+              <h3 style={{ fontSize: '1.1rem', fontWeight: '700', marginBottom: '16px', color: 'var(--text-primary)' }}>🎨 Theme Preference</h3>
+              <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                {['light', 'dark', 'system'].map((t) => (
+                  <button
+                    key={t}
+                    type="button"
+                    className="btn"
+                    style={{
+                      flex: 1,
+                      justifyContent: 'center',
+                      background: theme === t ? 'var(--accent)' : 'var(--bg-card)',
+                      color: theme === t ? 'white' : 'var(--text-primary)',
+                      borderColor: 'var(--border-color)',
+                      textTransform: 'capitalize',
+                      cursor: 'pointer'
+                    }}
+                    onClick={() => handleThemeChange(t)}
+                  >
+                    {t} Mode
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="card" style={{ padding: '24px', marginBottom: '24px' }}>
+              <h3 style={{ fontSize: '1.1rem', fontWeight: '700', marginBottom: '16px', color: 'var(--text-primary)' }}>🔑 Account Information</h3>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <div>
+                  <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block' }}>FULL NAME</span>
+                  <span style={{ fontSize: '1rem', fontWeight: '600', color: 'var(--text-primary)' }}>{user?.name || 'User'}</span>
+                </div>
+                <div>
+                  <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block' }}>EMAIL ADDRESS</span>
+                  <span style={{ fontSize: '1rem', fontWeight: '600', color: 'var(--text-primary)' }}>{user?.email || 'N/A'}</span>
+                </div>
+                <div>
+                  <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block' }}>USERNAME</span>
+                  <span style={{ fontSize: '1rem', fontWeight: '600', color: 'var(--text-primary)' }}>@{user?.username || 'N/A'}</span>
+                </div>
+                <div>
+                  <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block' }}>ROLE</span>
+                  <span style={{ fontSize: '1.05rem', fontWeight: '750', color: 'var(--accent)' }}>
+                    {user?.role || 'User'}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              className="btn btn-danger"
+              style={{ width: '100%', justifyContent: 'center', padding: '14px', borderRadius: '12px', fontSize: '0.95rem', fontWeight: '700', cursor: 'pointer' }}
+              onClick={handleLogout}
+            >
+              Log Out of Account
+            </button>
+          </div>
+        )}
+
       </main>
 
       {/* Floating Action Button (Mobile Screen Only) */}
@@ -3467,6 +4520,57 @@ export default function Home() {
             )}
           </div>
         )}
+      </div>
+
+      {/* Mobile Bottom Navigation Bar */}
+      <div className="mobile-bottom-bar">
+        <button
+          type="button"
+          className="btn"
+          style={{ border: 'none', background: 'transparent', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', color: activeTab === 'dashboard' ? 'var(--accent)' : 'var(--text-secondary)', padding: '4px', flex: 1, minHeight: 'auto' }}
+          onClick={() => setActiveTab('dashboard')}
+        >
+          <LayoutDashboard size={20} />
+          <span style={{ fontSize: '0.65rem', fontWeight: '600' }}>Home</span>
+        </button>
+        <button
+          type="button"
+          className="btn"
+          style={{ border: 'none', background: 'transparent', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', color: activeTab === 'projects' ? 'var(--accent)' : 'var(--text-secondary)', padding: '4px', flex: 1, minHeight: 'auto' }}
+          onClick={() => setActiveTab('projects')}
+        >
+          <FolderKanban size={20} />
+          <span style={{ fontSize: '0.65rem', fontWeight: '600' }}>Projects</span>
+        </button>
+        <button
+          type="button"
+          className="btn"
+          style={{ border: 'none', background: 'transparent', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', color: activeTab === 'planner' ? 'var(--accent)' : 'var(--text-secondary)', padding: '4px', flex: 1, minHeight: 'auto' }}
+          onClick={() => setActiveTab('planner')}
+        >
+          <Calendar size={20} />
+          <span style={{ fontSize: '0.65rem', fontWeight: '600' }}>Planner</span>
+        </button>
+        {hasPermission(user?.role, 'canViewInvoices') && (
+          <button
+            type="button"
+            className="btn"
+            style={{ border: 'none', background: 'transparent', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', color: activeTab === 'invoices' ? 'var(--accent)' : 'var(--text-secondary)', padding: '4px', flex: 1, minHeight: 'auto' }}
+            onClick={() => setActiveTab('invoices')}
+          >
+            <FileText size={20} />
+            <span style={{ fontSize: '0.65rem', fontWeight: '600' }}>Invoices</span>
+          </button>
+        )}
+        <button
+          type="button"
+          className="btn"
+          style={{ border: 'none', background: 'transparent', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', color: activeTab === 'profile' ? 'var(--accent)' : 'var(--text-secondary)', padding: '4px', flex: 1, minHeight: 'auto' }}
+          onClick={() => setActiveTab('profile')}
+        >
+          <Users size={20} />
+          <span style={{ fontSize: '0.65rem', fontWeight: '600' }}>Profile</span>
+        </button>
       </div>
 
       {/* ==========================================================================
@@ -4572,6 +5676,252 @@ export default function Home() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Admin User Approval Modal */}
+      {approvingUser && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(15, 23, 42, 0.65)',
+          backdropFilter: 'blur(8px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 9999,
+          padding: '20px'
+        }}>
+          <div style={{
+            background: 'white',
+            borderRadius: '24px',
+            width: '100%',
+            maxWidth: '540px',
+            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+            border: '1px solid #E2E8F0',
+            overflow: 'hidden'
+          }}>
+            {/* Modal Header */}
+            <div style={{
+              background: 'linear-gradient(135deg, #6C4DFF 0%, #8B5CF6 100%)',
+              padding: '24px',
+              color: 'white'
+            }}>
+              <h2 style={{ fontSize: '1.25rem', fontWeight: '800', margin: 0 }}>🛡️ Admin User Approval</h2>
+              <p style={{ fontSize: '0.85rem', opacity: 0.9, marginTop: '4px', margin: 0 }}>
+                Configure organizational role, department, and ID for {approvingUser.first_name} {approvingUser.last_name}
+              </p>
+            </div>
+
+            {/* Modal Body */}
+            <form onSubmit={handleApproveSubmit} style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '18px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                <div>
+                  <label style={{ fontSize: '0.75rem', fontWeight: '600', color: 'var(--text-secondary)', display: 'block', marginBottom: '6px' }}>Employee Name</label>
+                  <input
+                    type="text"
+                    disabled
+                    value={`${approvingUser.first_name} ${approvingUser.last_name}`}
+                    style={{ width: '100%', height: '42px', padding: '8px 12px', border: '1px solid #E2E8F0', borderRadius: '8px', background: '#F8FAFC', color: 'var(--text-secondary)', fontSize: '0.85rem' }}
+                  />
+                </div>
+                <div>
+                  <label style={{ fontSize: '0.75rem', fontWeight: '600', color: 'var(--text-secondary)', display: 'block', marginBottom: '6px' }}>Email</label>
+                  <input
+                    type="text"
+                    disabled
+                    value={approvingUser.email}
+                    style={{ width: '100%', height: '42px', padding: '8px 12px', border: '1px solid #E2E8F0', borderRadius: '8px', background: '#F8FAFC', color: 'var(--text-secondary)', fontSize: '0.85rem' }}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label style={{ fontSize: '0.75rem', fontWeight: '600', color: 'var(--text-secondary)', display: 'block', marginBottom: '6px' }}>Role *</label>
+                <select
+                  value={approveRole}
+                  onChange={(e) => setApproveRole(e.target.value)}
+                  style={{ width: '100%', height: '42px', padding: '8px 12px', border: '1px solid #E2E8F0', borderRadius: '8px', background: 'white', color: '#111827', fontSize: '0.85rem' }}
+                  required
+                >
+                  <option value="Employee">Employee</option>
+                  <option value="Manager">Manager</option>
+                  <option value="Admin">Admin</option>
+                  <option value="SuperAdmin">SuperAdmin</option>
+                </select>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                <div>
+                  <label style={{ fontSize: '0.75rem', fontWeight: '600', color: 'var(--text-secondary)', display: 'block', marginBottom: '6px' }}>Department *</label>
+                  <select
+                    value={approveDept}
+                    onChange={(e) => setApproveDept(e.target.value)}
+                    style={{ width: '100%', height: '42px', padding: '8px 12px', border: '1px solid #E2E8F0', borderRadius: '8px', background: 'white', color: '#111827', fontSize: '0.85rem' }}
+                    required
+                  >
+                    {[
+                      "Naval Architecture", "Marine Engineering", "Mechanical Engineering", 
+                      "Structural Engineering", "Piping Engineering", "Electrical Engineering", 
+                      "BIM / CAD", "Project Management", "Administration", "HR", "Finance", "IT"
+                    ].map(d => <option key={d} value={d}>{d}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label style={{ fontSize: '0.75rem', fontWeight: '600', color: 'var(--text-secondary)', display: 'block', marginBottom: '6px' }}>Designation *</label>
+                  <select
+                    value={approveDesignation}
+                    onChange={(e) => setApproveDesignation(e.target.value)}
+                    style={{ width: '100%', height: '42px', padding: '8px 12px', border: '1px solid #E2E8F0', borderRadius: '8px', background: 'white', color: '#111827', fontSize: '0.85rem' }}
+                    required
+                  >
+                    {[
+                      "Trainee", "Junior Engineer", "Design Engineer", "Senior Engineer", 
+                      "Lead Engineer", "Project Engineer", "Project Manager", "Department Head", "Administrator"
+                    ].map(d => <option key={d} value={d}>{d}</option>)}
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                  <label style={{ fontSize: '0.75rem', fontWeight: '600', color: 'var(--text-secondary)' }}>Employee ID *</label>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.75rem', color: 'var(--text-muted)', cursor: 'pointer' }}>
+                    <input
+                      type="checkbox"
+                      checked={approveIsManualId}
+                      onChange={(e) => {
+                        setApproveIsManualId(e.target.checked);
+                        if (!e.target.checked) {
+                          const nextNum = adminUsers.length + 1;
+                          setApproveEmpId('AURA-' + String(nextNum).padStart(4, '0'));
+                        }
+                      }}
+                      style={{ accentColor: '#6C4DFF' }}
+                    />
+                    Manual override
+                  </label>
+                </div>
+                <input
+                  type="text"
+                  value={approveEmpId}
+                  onChange={(e) => setApproveEmpId(e.target.value)}
+                  disabled={!approveIsManualId}
+                  style={{ width: '100%', height: '42px', padding: '8px 12px', border: '1px solid #E2E8F0', borderRadius: '8px', background: approveIsManualId ? 'white' : '#F8FAFC', color: '#111827', fontSize: '0.85rem', fontWeight: '600' }}
+                  required
+                />
+              </div>
+
+              <div>
+                <label style={{ fontSize: '0.75rem', fontWeight: '600', color: 'var(--text-secondary)', display: 'block', marginBottom: '6px' }}>Reporting Manager</label>
+                <select
+                  value={approveManager}
+                  onChange={(e) => setApproveManager(e.target.value)}
+                  style={{ width: '100%', height: '42px', padding: '8px 12px', border: '1px solid #E2E8F0', borderRadius: '8px', background: 'white', color: '#111827', fontSize: '0.85rem' }}
+                >
+                  <option value="">None / Select Reporting Manager</option>
+                  {adminUsers
+                    .filter(u => u.role === 'Manager' || u.role === 'Admin' || u.role === 'SuperAdmin')
+                    .map(u => (
+                      <option key={u.id} value={`${u.first_name} ${u.last_name}`}>
+                        {u.first_name} {u.last_name} ({u.role})
+                      </option>
+                    ))
+                  }
+                </select>
+              </div>
+
+              <div>
+                <label style={{ fontSize: '0.75rem', fontWeight: '600', color: 'var(--text-secondary)', display: 'block', marginBottom: '6px' }}>Employment Status</label>
+                <input
+                  type="text"
+                  value="Active"
+                  disabled
+                  style={{ width: '100%', height: '42px', padding: '8px 12px', border: '1px solid #E2E8F0', borderRadius: '8px', background: '#F8FAFC', color: 'var(--text-secondary)', fontSize: '0.85rem' }}
+                />
+              </div>
+
+              <div style={{ display: 'flex', gap: '12px', marginTop: '12px' }}>
+                <button
+                  type="button"
+                  onClick={() => setApprovingUser(null)}
+                  style={{ flex: 1, height: '44px', border: '1px solid #E2E8F0', borderRadius: '10px', background: '#F8FAFC', color: 'var(--text-secondary)', fontWeight: '600', cursor: 'pointer' }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  style={{ flex: 1, height: '44px', border: 'none', borderRadius: '10px', background: 'linear-gradient(135deg, #6C4DFF 0%, #8B5CF6 100%)', color: 'white', fontWeight: '700', cursor: 'pointer', boxShadow: '0 4px 12px rgba(108, 77, 255, 0.25)' }}
+                >
+                  Approve User
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* View Details Modal */}
+      {viewingUserDetails && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(15, 23, 42, 0.6)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999, padding: '16px' }}>
+          <div style={{ width: '100%', maxWidth: '500px', background: 'white', borderRadius: '16px', padding: '24px', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)', color: '#1E293B', border: '1px solid #E2E8F0' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #E2E8F0', paddingBottom: '12px', marginBottom: '16px' }}>
+              <h3 style={{ fontSize: '1.25rem', fontWeight: '700', color: '#1E293B', margin: 0 }}>Registration Profile Details</h3>
+              <button 
+                onClick={() => setViewingUserDetails(null)}
+                style={{ background: 'transparent', border: 'none', fontSize: '1.5rem', color: '#64748B', cursor: 'pointer', lineHieght: 1 }}
+              >&times;</button>
+            </div>
+            
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid #F1F5F9' }}>
+                <span style={{ fontWeight: '600', color: '#64748B' }}>Full Name</span>
+                <span style={{ fontWeight: '500' }}>{viewingUserDetails.first_name} {viewingUserDetails.last_name}</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid #F1F5F9' }}>
+                <span style={{ fontWeight: '600', color: '#64748B' }}>Username</span>
+                <span style={{ fontWeight: '500' }}>@{viewingUserDetails.username}</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid #F1F5F9' }}>
+                <span style={{ fontWeight: '600', color: '#64748B' }}>Email Address</span>
+                <span style={{ fontWeight: '500' }}>{viewingUserDetails.email}</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid #F1F5F9' }}>
+                <span style={{ fontWeight: '600', color: '#64748B' }}>Role / Level</span>
+                <span style={{ fontWeight: '700', color: '#6C4DFF' }}>{viewingUserDetails.role || 'Employee'}</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid #F1F5F9' }}>
+                <span style={{ fontWeight: '600', color: '#64748B' }}>Request Status</span>
+                <span style={{ fontWeight: '700', color: viewingUserDetails.status === 'Approved' ? '#10B981' : viewingUserDetails.status === 'Pending' ? '#F59E0B' : '#EF4444' }}>
+                  {viewingUserDetails.status}
+                </span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid #F1F5F9' }}>
+                <span style={{ fontWeight: '600', color: '#64748B' }}>Registration Date</span>
+                <span style={{ fontWeight: '500' }}>{new Date(viewingUserDetails.created_at).toLocaleString()}</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid #F1F5F9' }}>
+                <span style={{ fontWeight: '600', color: '#64748B' }}>Department</span>
+                <span style={{ fontWeight: '500' }}>{viewingUserDetails.department || 'Not Assigned'}</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid #F1F5F9' }}>
+                <span style={{ fontWeight: '600', color: '#64748B' }}>Designation</span>
+                <span style={{ fontWeight: '500' }}>{viewingUserDetails.designation || 'Not Assigned'}</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid #F1F5F9' }}>
+                <span style={{ fontWeight: '600', color: '#64748B' }}>Employee ID</span>
+                <span style={{ fontWeight: '500' }}>{viewingUserDetails.employee_id || 'Not Assigned'}</span>
+              </div>
+            </div>
+
+            <button 
+              onClick={() => setViewingUserDetails(null)}
+              style={{ width: '100%', height: '42px', marginTop: '20px', border: 'none', borderRadius: '8px', background: '#6C4DFF', color: 'white', fontWeight: '700', cursor: 'pointer' }}
+            >Close Details</button>
           </div>
         </div>
       )}

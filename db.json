@@ -1,0 +1,540 @@
+{
+  "users": [
+    {
+      "first_name": "Super",
+      "last_name": "Admin",
+      "username": "admin",
+      "email": "admin@auraworkspace.local",
+      "password_hash": "$2b$10$ZHxjtNiP/JR1FOuF3WvdsuySJNVICqb9LqBk6KDXBAjz5EN8bSnWi",
+      "status": "Active",
+      "role": "SuperAdmin",
+      "mobile_number": "",
+      "department": "",
+      "designation": "",
+      "employee_id": "EMP-0001",
+      "reporting_manager": "",
+      "id": "u-1000",
+      "created_at": "2026-07-09T10:34:26.859Z",
+      "updated_at": "2026-07-09T10:34:26.859Z"
+    },
+    {
+      "first_name": "Chandru",
+      "last_name": "Admin",
+      "username": "chandru",
+      "email": "chandrunavalarch@gmail.com",
+      "password_hash": "$2b$10$ZHxjtNiP/JR1FOuF3WvdsuySJNVICqb9LqBk6KDXBAjz5EN8bSnWi",
+      "status": "Active",
+      "role": "SuperAdmin",
+      "mobile_number": "",
+      "department": "",
+      "designation": "",
+      "employee_id": "EMP-0002",
+      "reporting_manager": "",
+      "id": "u-1001",
+      "created_at": "2026-07-09T10:34:26.859Z",
+      "updated_at": "2026-07-09T10:34:26.859Z"
+    },
+    {
+      "first_name": "Jane",
+      "last_name": "Manager",
+      "username": "janemanager",
+      "email": "jane@auraworkspace.local",
+      "password_hash": "$2b$10$ZHxjtNiP/JR1FOuF3WvdsuySJNVICqb9LqBk6KDXBAjz5EN8bSnWi",
+      "status": "Active",
+      "role": "Manager",
+      "mobile_number": "",
+      "department": "Naval Architecture",
+      "designation": "Department Head",
+      "employee_id": "EMP-0003",
+      "reporting_manager": "Super Admin",
+      "id": "u-1002",
+      "created_at": "2026-07-09T10:34:26.859Z",
+      "updated_at": "2026-07-09T10:34:26.859Z"
+    },
+    {
+      "first_name": "John",
+      "last_name": "Supervisor",
+      "username": "johnsupervisor",
+      "email": "john@auraworkspace.local",
+      "password_hash": "$2b$10$ZHxjtNiP/JR1FOuF3WvdsuySJNVICqb9LqBk6KDXBAjz5EN8bSnWi",
+      "status": "Active",
+      "role": "Manager",
+      "mobile_number": "",
+      "department": "Marine Engineering",
+      "designation": "Project Manager",
+      "employee_id": "EMP-0004",
+      "reporting_manager": "Super Admin",
+      "id": "u-1003",
+      "created_at": "2026-07-09T10:34:26.859Z",
+      "updated_at": "2026-07-09T10:34:26.859Z"
+    },
+    {
+      "first_name": "Alice",
+      "last_name": "Smith",
+      "username": "alice",
+      "email": "alice@auraworkspace.local",
+      "password_hash": "$2b$10$ZHxjtNiP/JR1FOuF3WvdsuySJNVICqb9LqBk6KDXBAjz5EN8bSnWi",
+      "status": "Active",
+      "role": "Employee",
+      "mobile_number": "",
+      "department": "Naval Architecture",
+      "designation": "Design Engineer",
+      "employee_id": "EMP-0005",
+      "reporting_manager": "Jane Manager",
+      "id": "u-1004",
+      "created_at": "2026-07-09T10:34:26.859Z",
+      "updated_at": "2026-07-09T10:34:26.859Z"
+    },
+    {
+      "first_name": "Bob",
+      "last_name": "Jones",
+      "username": "bob",
+      "email": "bob@auraworkspace.local",
+      "password_hash": "$2b$10$ZHxjtNiP/JR1FOuF3WvdsuySJNVICqb9LqBk6KDXBAjz5EN8bSnWi",
+      "status": "Active",
+      "role": "Employee",
+      "mobile_number": "",
+      "department": "Marine Engineering",
+      "designation": "Design Engineer",
+      "employee_id": "EMP-0006",
+      "reporting_manager": "John Supervisor",
+      "id": "u-1005",
+      "created_at": "2026-07-09T10:34:26.859Z",
+      "updated_at": "2026-07-09T10:34:26.859Z"
+    },
+    {
+      "first_name": "Charlie",
+      "last_name": "Brown",
+      "username": "charlie",
+      "email": "charlie@auraworkspace.local",
+      "password_hash": "$2b$10$ZHxjtNiP/JR1FOuF3WvdsuySJNVICqb9LqBk6KDXBAjz5EN8bSnWi",
+      "status": "Active",
+      "role": "Employee",
+      "mobile_number": "",
+      "department": "Naval Architecture",
+      "designation": "Junior Engineer",
+      "employee_id": "EMP-0007",
+      "reporting_manager": "Jane Manager",
+      "id": "u-1006",
+      "created_at": "2026-07-09T10:34:26.859Z",
+      "updated_at": "2026-07-09T10:34:26.859Z"
+    },
+    {
+      "first_name": "David",
+      "last_name": "Miller",
+      "username": "david",
+      "email": "david@auraworkspace.local",
+      "password_hash": "$2b$10$ZHxjtNiP/JR1FOuF3WvdsuySJNVICqb9LqBk6KDXBAjz5EN8bSnWi",
+      "status": "Active",
+      "role": "Employee",
+      "mobile_number": "",
+      "department": "Structural Engineering",
+      "designation": "Senior Engineer",
+      "employee_id": "EMP-0008",
+      "reporting_manager": "Super Admin",
+      "id": "u-1007",
+      "created_at": "2026-07-09T10:34:26.859Z",
+      "updated_at": "2026-07-09T10:34:26.859Z"
+    },
+    {
+      "first_name": "Eve",
+      "last_name": "Davis",
+      "username": "eve",
+      "email": "eve@auraworkspace.local",
+      "password_hash": "$2b$10$ZHxjtNiP/JR1FOuF3WvdsuySJNVICqb9LqBk6KDXBAjz5EN8bSnWi",
+      "status": "Active",
+      "role": "Employee",
+      "mobile_number": "",
+      "department": "IT",
+      "designation": "Administrator",
+      "employee_id": "EMP-0009",
+      "reporting_manager": "Super Admin",
+      "id": "u-1008",
+      "created_at": "2026-07-09T10:34:26.859Z",
+      "updated_at": "2026-07-09T10:34:26.859Z"
+    }
+  ],
+  "audit_logs": [
+    {
+      "id": "log-1783593268086",
+      "event_type": "registration_submitted",
+      "username": "test_employee_1783593265654",
+      "email": "test_employee_1783593265654@company.com",
+      "actor": "system",
+      "details": "User registration submitted. Assigned role: Employee. Initial status: Pending.",
+      "created_at": "2026-07-09T10:34:28.086Z"
+    },
+    {
+      "id": "log-1783593394471",
+      "event_type": "login_attempt_success",
+      "email": "admin@auraworkspace.local",
+      "username": "admin",
+      "actor": "admin",
+      "details": "Successful login. Role: SuperAdmin.",
+      "created_at": "2026-07-09T10:36:34.471Z"
+    },
+    {
+      "id": "log-1783594045900",
+      "event_type": "quotation_created",
+      "username": "admin",
+      "email": "admin@auraworkspace.local",
+      "actor": "admin",
+      "details": "Created quotation request PMC-2026-0001 for chicago constructions.",
+      "created_at": "2026-07-09T10:47:25.900Z"
+    },
+    {
+      "id": "log-1783594094236",
+      "event_type": "quotation_updated",
+      "username": "admin",
+      "email": "admin@auraworkspace.local",
+      "actor": "admin",
+      "details": "Updated quotation PMC-2026-0001. Status: Draft.",
+      "created_at": "2026-07-09T10:48:14.236Z"
+    },
+    {
+      "id": "log-1783594159126",
+      "event_type": "quotation_updated",
+      "username": "admin",
+      "email": "admin@auraworkspace.local",
+      "actor": "admin",
+      "details": "Updated quotation PMC-2026-0001. Status: Draft.",
+      "created_at": "2026-07-09T10:49:19.126Z"
+    },
+    {
+      "id": "log-1783594480008",
+      "event_type": "quotation_updated",
+      "username": "admin",
+      "email": "admin@auraworkspace.local",
+      "actor": "admin",
+      "details": "Updated quotation PMC-2026-0001. Status: Draft.",
+      "created_at": "2026-07-09T10:54:40.008Z"
+    },
+    {
+      "id": "log-1783594509359",
+      "event_type": "quotation_updated",
+      "username": "admin",
+      "email": "admin@auraworkspace.local",
+      "actor": "admin",
+      "details": "Updated quotation PMC-2026-0001. Status: Draft.",
+      "created_at": "2026-07-09T10:55:09.359Z"
+    },
+    {
+      "id": "log-1783594539264",
+      "event_type": "quotation_updated",
+      "username": "admin",
+      "email": "admin@auraworkspace.local",
+      "actor": "admin",
+      "details": "Updated quotation PMC-2026-0001. Status: Draft.",
+      "created_at": "2026-07-09T10:55:39.264Z"
+    },
+    {
+      "id": "log-1783594569204",
+      "event_type": "quotation_updated",
+      "username": "admin",
+      "email": "admin@auraworkspace.local",
+      "actor": "admin",
+      "details": "Updated quotation PMC-2026-0001. Status: Draft.",
+      "created_at": "2026-07-09T10:56:09.204Z"
+    },
+    {
+      "id": "log-1783595167011",
+      "event_type": "login_attempt_success",
+      "email": "admin@auraworkspace.local",
+      "username": "admin",
+      "actor": "admin",
+      "details": "Successful login. Role: SuperAdmin.",
+      "created_at": "2026-07-09T11:06:07.011Z"
+    }
+  ],
+  "notifications": [
+    {
+      "id": "notif-1783593268109",
+      "title": "New Employee Registration Request",
+      "user_id": "u-1783593268084",
+      "name": "Test Employee",
+      "username": "test_employee_1783593265654",
+      "email": "test_employee_1783593265654@company.com",
+      "created_at": "2026-07-09T10:34:28.110Z",
+      "details": "Access request submitted by Test Employee (@test_employee_1783593265654)."
+    }
+  ],
+  "quotations": [
+    {
+      "id": "q-1783594045899",
+      "quotation_number": "PMC-2026-0001",
+      "client_name": "chicago constructions",
+      "contact_person": "akshay",
+      "project_name": "WATER TREATMENT PLANT",
+      "project_location": "",
+      "plant_capacity": "",
+      "currency": "INR",
+      "status": "Draft",
+      "created_by": "admin",
+      "approved_by": null,
+      "commercial_conditions": "1. Validity: 30 Days from date of offer.\n2. Payment Terms: 20% Advance, 50% on engineering design submittal, 30% upon final delivery.\n3. Revisions: Maximum 2 cycles included.",
+      "created_at": "2026-07-09T10:47:25.899Z",
+      "updated_at": "2026-07-09T10:56:09.204Z"
+    }
+  ],
+  "quotation_items": [
+    {
+      "id": "qi-1783594569204-0",
+      "quotation_id": "q-1783594045899",
+      "category": "Reports",
+      "deliverable": "Design Basis Report",
+      "included": true,
+      "estimated_hours": 34,
+      "remarks": ""
+    },
+    {
+      "id": "qi-1783594569204-1",
+      "quotation_id": "q-1783594045899",
+      "category": "Reports",
+      "deliverable": "Process Design Report",
+      "included": true,
+      "estimated_hours": 45,
+      "remarks": ""
+    },
+    {
+      "id": "qi-1783594569204-2",
+      "quotation_id": "q-1783594045899",
+      "category": "Reports",
+      "deliverable": "Hydraulic Calculation Report",
+      "included": true,
+      "estimated_hours": 24,
+      "remarks": ""
+    },
+    {
+      "id": "qi-1783594569204-3",
+      "quotation_id": "q-1783594045899",
+      "category": "Reports",
+      "deliverable": "Mechanical Design Report",
+      "included": true,
+      "estimated_hours": 67,
+      "remarks": ""
+    },
+    {
+      "id": "qi-1783594569204-4",
+      "quotation_id": "q-1783594045899",
+      "category": "Process",
+      "deliverable": "Process Flow Diagram (PFD)",
+      "included": true,
+      "estimated_hours": 50,
+      "remarks": ""
+    },
+    {
+      "id": "qi-1783594569204-5",
+      "quotation_id": "q-1783594045899",
+      "category": "Process",
+      "deliverable": "Piping & Instrumentation Diagram (P&ID)",
+      "included": true,
+      "estimated_hours": 80,
+      "remarks": ""
+    },
+    {
+      "id": "qi-1783594569204-6",
+      "quotation_id": "q-1783594045899",
+      "category": "Process",
+      "deliverable": "Hydraulic Profile",
+      "included": true,
+      "estimated_hours": 30,
+      "remarks": ""
+    },
+    {
+      "id": "qi-1783594569204-7",
+      "quotation_id": "q-1783594045899",
+      "category": "Process",
+      "deliverable": "Operating Philosophy",
+      "included": true,
+      "estimated_hours": 20,
+      "remarks": ""
+    },
+    {
+      "id": "qi-1783594569204-8",
+      "quotation_id": "q-1783594045899",
+      "category": "Mechanical",
+      "deliverable": "Mechanical Equipment Layout",
+      "included": true,
+      "estimated_hours": 40,
+      "remarks": ""
+    },
+    {
+      "id": "qi-1783594569204-9",
+      "quotation_id": "q-1783594045899",
+      "category": "Mechanical",
+      "deliverable": "Pump Room Layout",
+      "included": true,
+      "estimated_hours": 40,
+      "remarks": ""
+    },
+    {
+      "id": "qi-1783594569204-10",
+      "quotation_id": "q-1783594045899",
+      "category": "Mechanical",
+      "deliverable": "Pipe Gallery Layout",
+      "included": true,
+      "estimated_hours": 35,
+      "remarks": ""
+    },
+    {
+      "id": "qi-1783594569204-11",
+      "quotation_id": "q-1783594045899",
+      "category": "Mechanical",
+      "deliverable": "Filter Gallery Layout",
+      "included": true,
+      "estimated_hours": 35,
+      "remarks": ""
+    },
+    {
+      "id": "qi-1783594569204-12",
+      "quotation_id": "q-1783594045899",
+      "category": "Mechanical",
+      "deliverable": "Tank Mechanical Details",
+      "included": true,
+      "estimated_hours": 30,
+      "remarks": ""
+    },
+    {
+      "id": "qi-1783594569204-13",
+      "quotation_id": "q-1783594045899",
+      "category": "Mechanical",
+      "deliverable": "Equipment Installation Details",
+      "included": true,
+      "estimated_hours": 25,
+      "remarks": ""
+    },
+    {
+      "id": "qi-1783594569204-14",
+      "quotation_id": "q-1783594045899",
+      "category": "Calculations",
+      "deliverable": "Equipment Sizing",
+      "included": true,
+      "estimated_hours": 15,
+      "remarks": ""
+    },
+    {
+      "id": "qi-1783594569204-15",
+      "quotation_id": "q-1783594045899",
+      "category": "Calculations",
+      "deliverable": "Pipe Sizing",
+      "included": true,
+      "estimated_hours": 15,
+      "remarks": ""
+    },
+    {
+      "id": "qi-1783594569204-16",
+      "quotation_id": "q-1783594045899",
+      "category": "Calculations",
+      "deliverable": "Pump Selection",
+      "included": true,
+      "estimated_hours": 10,
+      "remarks": ""
+    },
+    {
+      "id": "qi-1783594569204-17",
+      "quotation_id": "q-1783594045899",
+      "category": "Calculations",
+      "deliverable": "Head Loss Calculations",
+      "included": true,
+      "estimated_hours": 15,
+      "remarks": ""
+    },
+    {
+      "id": "qi-1783594569204-18",
+      "quotation_id": "q-1783594045899",
+      "category": "Calculations",
+      "deliverable": "Backwash Calculations",
+      "included": true,
+      "estimated_hours": 10,
+      "remarks": ""
+    },
+    {
+      "id": "qi-1783594569204-19",
+      "quotation_id": "q-1783594045899",
+      "category": "Schedules",
+      "deliverable": "Equipment Schedule",
+      "included": true,
+      "estimated_hours": 12,
+      "remarks": ""
+    },
+    {
+      "id": "qi-1783594569204-20",
+      "quotation_id": "q-1783594045899",
+      "category": "Schedules",
+      "deliverable": "Valve Schedule",
+      "included": true,
+      "estimated_hours": 12,
+      "remarks": ""
+    },
+    {
+      "id": "qi-1783594569204-21",
+      "quotation_id": "q-1783594045899",
+      "category": "Schedules",
+      "deliverable": "Pipe Schedule",
+      "included": true,
+      "estimated_hours": 10,
+      "remarks": ""
+    },
+    {
+      "id": "qi-1783594569204-22",
+      "quotation_id": "q-1783594045899",
+      "category": "Schedules",
+      "deliverable": "Instrument Schedule",
+      "included": true,
+      "estimated_hours": 10,
+      "remarks": ""
+    },
+    {
+      "id": "qi-1783594569204-23",
+      "quotation_id": "q-1783594045899",
+      "category": "Schedules",
+      "deliverable": "Bill of Quantities (BOQ)",
+      "included": true,
+      "estimated_hours": 25,
+      "remarks": ""
+    },
+    {
+      "id": "qi-1783594569204-24",
+      "quotation_id": "q-1783594045899",
+      "category": "Specifications",
+      "deliverable": "Technical Specifications",
+      "included": true,
+      "estimated_hours": 20,
+      "remarks": ""
+    },
+    {
+      "id": "qi-1783594569204-25",
+      "quotation_id": "q-1783594045899",
+      "category": "Support",
+      "deliverable": "Vendor Drawing Review",
+      "included": true,
+      "estimated_hours": 30,
+      "remarks": ""
+    },
+    {
+      "id": "qi-1783594569204-26",
+      "quotation_id": "q-1783594045899",
+      "category": "Support",
+      "deliverable": "Construction Technical Support",
+      "included": true,
+      "estimated_hours": 80,
+      "remarks": ""
+    }
+  ],
+  "quotation_costings": [
+    {
+      "id": "qc-1783594045900",
+      "quotation_id": "q-1783594045899",
+      "hourly_rate": 1400,
+      "engineering_hours": 819,
+      "engineering_fee": 1146600,
+      "software_cost": 50000,
+      "contingency": 119660,
+      "subtotal": 1316260,
+      "gst": 236926.8,
+      "grand_total": 1553186.8,
+      "created_at": "2026-07-09T10:47:25.900Z"
+    }
+  ],
+  "quotation_revisions": []
+}
