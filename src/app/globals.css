@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+
 :root {
   /* Premium Dark Engineering Mode Palette */
   --bg-main: #0B0B0C;
@@ -44,7 +46,7 @@ html.dark {
 body {
   margin: 0;
   padding: 0;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   background-color: var(--bg-main);
   color: var(--text-primary);
   overflow-x: hidden;
@@ -231,10 +233,10 @@ body {
   text-transform: uppercase;
 }
 
-.badge-success { background: #DCFCE7; color: #15803D; }
-.badge-warning { background: #FEF3C7; color: #B45309; }
-.badge-danger { background: #FEE2E2; color: #B91C1C; }
-.badge-info { background: #DBEAFE; color: #1D4ED8; }
+.badge-success { background: rgba(46, 204, 113, 0.15); color: #2ECC71; }
+.badge-warning { background: rgba(243, 156, 18, 0.15); color: #F39C12; }
+.badge-danger { background: rgba(231, 76, 60, 0.15); color: #E74C3C; }
+.badge-info { background: rgba(52, 152, 219, 0.15); color: #3498DB; }
 
 /* Responsive Grid Layouts */
 .grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
@@ -381,28 +383,28 @@ body {
 /* Auth Primary Button hover state */
 .auth-primary-btn:hover {
   transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(99, 102, 241, 0.4) !important;
-  filter: brightness(1.05);
+  box-shadow: 0 6px 20px rgba(211, 47, 69, 0.4) !important;
+  filter: brightness(1.1);
 }
 
 /* Custom modern focus effects for clean input fields */
 .form-input:focus {
-  border-color: #6C4DFF !important;
-  box-shadow: 0 0 0 3px rgba(108, 77, 255, 0.15) !important;
+  border-color: var(--accent) !important;
+  box-shadow: 0 0 0 3px rgba(211, 47, 69, 0.2) !important;
   outline: none;
 }
 
-/* Auth Form Input Styling Override */
+/* Auth Form Input Styling Override — Dark Theme */
 .auth-input {
-  background-color: #FFFFFF !important;
-  color: #111827 !important;
-  border: 1px solid #D1D5DB !important;
+  background-color: #111111 !important;
+  color: #FFFFFF !important;
+  border: 1px solid #333333 !important;
   font-family: inherit;
   transition: border-color 0.2s, box-shadow 0.2s;
 }
 
 .auth-input::placeholder {
-  color: #9CA3AF !important;
+  color: #666666 !important;
   opacity: 1; /* Firefox */
 }
 
@@ -410,19 +412,19 @@ body {
 .auth-input:-webkit-autofill,
 .auth-input:-webkit-autofill:hover, 
 .auth-input:-webkit-autofill:focus {
-  -webkit-text-fill-color: #111827 !important;
-  -webkit-box-shadow: 0 0 0px 1000px #FFFFFF inset !important;
+  -webkit-text-fill-color: #FFFFFF !important;
+  -webkit-box-shadow: 0 0 0px 1000px #111111 inset !important;
   transition: background-color 5000s ease-in-out 0s;
 }
 
 /* Hover and Focus States */
 .auth-input:hover {
-  border-color: #9CA3AF !important;
+  border-color: #555555 !important;
 }
 
 .auth-input:focus {
-  border-color: #6C4DFF !important;
-  box-shadow: 0 0 0 3px rgba(108, 77, 255, 0.15) !important;
+  border-color: var(--accent) !important;
+  box-shadow: 0 0 0 3px rgba(211, 47, 69, 0.2) !important;
   outline: none;
 }
 

@@ -1027,6 +1027,33 @@
       "actor": "admin",
       "details": "Updated quotation PMC-2026-0001. Status: Draft.",
       "created_at": "2026-07-09T12:38:32.276Z"
+    },
+    {
+      "id": "log-1783602327371",
+      "event_type": "login_attempt_success",
+      "email": "admin@auraworkspace.local",
+      "username": "admin",
+      "actor": "admin",
+      "details": "Successful login. Role: SuperAdmin.",
+      "created_at": "2026-07-09T13:05:27.371Z"
+    },
+    {
+      "id": "log-1783603152225",
+      "event_type": "quotation_updated",
+      "username": "admin",
+      "email": "admin@auraworkspace.local",
+      "actor": "admin",
+      "details": "Updated quotation PMC-2026-0001. Status: Draft.",
+      "created_at": "2026-07-09T13:19:12.225Z"
+    },
+    {
+      "id": "log-1783603210149",
+      "event_type": "quotation_updated",
+      "username": "admin",
+      "email": "admin@auraworkspace.local",
+      "actor": "admin",
+      "details": "Updated quotation PMC-2026-0001. Status: Draft.",
+      "created_at": "2026-07-09T13:20:10.149Z"
     }
   ],
   "notifications": [
@@ -1056,12 +1083,12 @@
       "approved_by": null,
       "commercial_conditions": "Quotation Validity: This quotation is valid for 30 calendar days from the date of issue.\nScope of Work: The quotation covers only the deliverables specifically listed in this proposal. Any additional work requested by the Client shall be treated as a variation and quoted separately.\nPayment Terms: Payments shall be made according to the agreed milestone schedule. All invoices are payable within 15 calendar days from the invoice date.\nProject Commencement: Work will commence only after receipt of the agreed advance payment (where applicable) and all required technical inputs from the Client.\nEngineering Inputs: The Client shall provide all necessary drawings, specifications, design criteria, operational data, and approvals required to execute the work.\nDesign Reviews: Up to two (2) design review/revision cycles are included. Additional revisions arising from changes in scope or Client requirements will be billed at the agreed hourly rate.\nSoftware & QA/QC: Professional engineering software costs, internal quality assurance (QA/QC), and document checking are included in this quotation.\nTravel & Site Visits: Travel, accommodation, visa expenses, inspections, surveys, statutory fees, and third-party costs are excluded unless specifically stated.\nTaxes: Applicable taxes, duties, withholding taxes, or government levies shall be borne by the Client unless otherwise agreed in writing.\nIntellectual Property: All engineering calculations, models, drawings, reports, spreadsheets, and digital files remain the intellectual property of Primelisometrics Consultancy until full payment has been received.\nConfidentiality: Both parties shall maintain confidentiality of all technical and commercial information exchanged during the project.\nSuspension of Services: The Consultant reserves the right to suspend work on overdue invoices exceeding 30 calendar days without liability for schedule impacts.\nClient Delays: Delays caused by late information, approvals, or decisions from the Client may require adjustment of the project schedule and delivery dates.\nLiability: The Consultant's total liability arising from the services provided shall be limited to the value of the fees paid under this quotation.\nCurrency & Banking Charges: All payments shall be made in the agreed currency. Any international bank transfer charges shall be borne by the Client.\nAcceptance: Confirmation of this quotation by Purchase Order, signed acceptance, or written email approval shall constitute acceptance of these commercial conditions.",
       "created_at": "2026-07-09T10:47:25.899Z",
-      "updated_at": "2026-07-09T12:38:32.276Z"
+      "updated_at": "2026-07-09T13:20:10.149Z"
     }
   ],
   "quotation_items": [
     {
-      "id": "qi-1783600712276-0",
+      "id": "qi-1783603210149-0",
       "quotation_id": "q-1783594045899",
       "category": "Engineering",
       "deliverable": "Design Basis Report",
@@ -1070,7 +1097,7 @@
       "remarks": ""
     },
     {
-      "id": "qi-1783600712276-1",
+      "id": "qi-1783603210149-1",
       "quotation_id": "q-1783594045899",
       "category": "Engineering",
       "deliverable": "Process Design Report",
@@ -1079,7 +1106,7 @@
       "remarks": ""
     },
     {
-      "id": "qi-1783600712276-2",
+      "id": "qi-1783603210149-2",
       "quotation_id": "q-1783594045899",
       "category": "Engineering",
       "deliverable": "Hydraulic Calculation Report",
@@ -1088,7 +1115,7 @@
       "remarks": ""
     },
     {
-      "id": "qi-1783600712276-3",
+      "id": "qi-1783603210149-3",
       "quotation_id": "q-1783594045899",
       "category": "Engineering",
       "deliverable": "Mechanical Design Report",
@@ -1097,7 +1124,7 @@
       "remarks": ""
     },
     {
-      "id": "qi-1783600712276-4",
+      "id": "qi-1783603210149-4",
       "quotation_id": "q-1783594045899",
       "category": "Engineering",
       "deliverable": "Process Flow Diagram (PFD)",
@@ -1106,7 +1133,7 @@
       "remarks": ""
     },
     {
-      "id": "qi-1783600712276-5",
+      "id": "qi-1783603210149-5",
       "quotation_id": "q-1783594045899",
       "category": "Engineering",
       "deliverable": "Piping & Instrumentation Diagram (P&ID)",
@@ -1115,7 +1142,7 @@
       "remarks": ""
     },
     {
-      "id": "qi-1783600712276-6",
+      "id": "qi-1783603210149-6",
       "quotation_id": "q-1783594045899",
       "category": "Engineering",
       "deliverable": "Hydraulic Profile",
@@ -1124,7 +1151,7 @@
       "remarks": ""
     },
     {
-      "id": "qi-1783600712276-7",
+      "id": "qi-1783603210149-7",
       "quotation_id": "q-1783594045899",
       "category": "Engineering",
       "deliverable": "Operating Philosophy",
@@ -1133,7 +1160,7 @@
       "remarks": ""
     },
     {
-      "id": "qi-1783600712276-8",
+      "id": "qi-1783603210149-8",
       "quotation_id": "q-1783594045899",
       "category": "Engineering",
       "deliverable": "Mechanical Equipment Layout",
@@ -1142,7 +1169,7 @@
       "remarks": ""
     },
     {
-      "id": "qi-1783600712276-9",
+      "id": "qi-1783603210149-9",
       "quotation_id": "q-1783594045899",
       "category": "Engineering",
       "deliverable": "Pump Room Layout",
@@ -1151,7 +1178,7 @@
       "remarks": ""
     },
     {
-      "id": "qi-1783600712276-10",
+      "id": "qi-1783603210149-10",
       "quotation_id": "q-1783594045899",
       "category": "Engineering",
       "deliverable": "Pipe Gallery Layout",
@@ -1160,7 +1187,7 @@
       "remarks": ""
     },
     {
-      "id": "qi-1783600712276-11",
+      "id": "qi-1783603210149-11",
       "quotation_id": "q-1783594045899",
       "category": "Engineering",
       "deliverable": "Filter Gallery Layout",
@@ -1169,7 +1196,7 @@
       "remarks": ""
     },
     {
-      "id": "qi-1783600712276-12",
+      "id": "qi-1783603210149-12",
       "quotation_id": "q-1783594045899",
       "category": "Engineering",
       "deliverable": "Tank Mechanical Details",
@@ -1178,7 +1205,7 @@
       "remarks": ""
     },
     {
-      "id": "qi-1783600712276-13",
+      "id": "qi-1783603210149-13",
       "quotation_id": "q-1783594045899",
       "category": "Engineering",
       "deliverable": "Equipment Installation Details",
@@ -1187,7 +1214,7 @@
       "remarks": ""
     },
     {
-      "id": "qi-1783600712276-14",
+      "id": "qi-1783603210149-14",
       "quotation_id": "q-1783594045899",
       "category": "Engineering",
       "deliverable": "Equipment Sizing",
@@ -1196,7 +1223,7 @@
       "remarks": ""
     },
     {
-      "id": "qi-1783600712276-15",
+      "id": "qi-1783603210149-15",
       "quotation_id": "q-1783594045899",
       "category": "Engineering",
       "deliverable": "Pipe Sizing",
@@ -1205,7 +1232,7 @@
       "remarks": ""
     },
     {
-      "id": "qi-1783600712276-16",
+      "id": "qi-1783603210149-16",
       "quotation_id": "q-1783594045899",
       "category": "Engineering",
       "deliverable": "Pump Selection",
@@ -1214,7 +1241,7 @@
       "remarks": ""
     },
     {
-      "id": "qi-1783600712276-17",
+      "id": "qi-1783603210149-17",
       "quotation_id": "q-1783594045899",
       "category": "Engineering",
       "deliverable": "Head Loss Calculations",
@@ -1223,7 +1250,7 @@
       "remarks": ""
     },
     {
-      "id": "qi-1783600712276-18",
+      "id": "qi-1783603210149-18",
       "quotation_id": "q-1783594045899",
       "category": "Engineering",
       "deliverable": "Backwash Calculations",
@@ -1232,7 +1259,7 @@
       "remarks": ""
     },
     {
-      "id": "qi-1783600712276-19",
+      "id": "qi-1783603210149-19",
       "quotation_id": "q-1783594045899",
       "category": "Engineering",
       "deliverable": "Equipment Schedule",
@@ -1241,7 +1268,7 @@
       "remarks": ""
     },
     {
-      "id": "qi-1783600712276-20",
+      "id": "qi-1783603210149-20",
       "quotation_id": "q-1783594045899",
       "category": "Engineering",
       "deliverable": "Valve Schedule",
@@ -1250,7 +1277,7 @@
       "remarks": ""
     },
     {
-      "id": "qi-1783600712276-21",
+      "id": "qi-1783603210149-21",
       "quotation_id": "q-1783594045899",
       "category": "Engineering",
       "deliverable": "Pipe Schedule",
@@ -1259,7 +1286,7 @@
       "remarks": ""
     },
     {
-      "id": "qi-1783600712276-22",
+      "id": "qi-1783603210149-22",
       "quotation_id": "q-1783594045899",
       "category": "Engineering",
       "deliverable": "Instrument Schedule",
@@ -1268,7 +1295,7 @@
       "remarks": ""
     },
     {
-      "id": "qi-1783600712276-23",
+      "id": "qi-1783603210149-23",
       "quotation_id": "q-1783594045899",
       "category": "Engineering",
       "deliverable": "Bill of Quantities (BOQ)",
@@ -1277,7 +1304,7 @@
       "remarks": ""
     },
     {
-      "id": "qi-1783600712276-24",
+      "id": "qi-1783603210149-24",
       "quotation_id": "q-1783594045899",
       "category": "Engineering",
       "deliverable": "Technical Specifications",
@@ -1286,7 +1313,7 @@
       "remarks": ""
     },
     {
-      "id": "qi-1783600712276-25",
+      "id": "qi-1783603210149-25",
       "quotation_id": "q-1783594045899",
       "category": "Engineering",
       "deliverable": "Vendor Drawing Review",
@@ -1295,7 +1322,7 @@
       "remarks": ""
     },
     {
-      "id": "qi-1783600712276-26",
+      "id": "qi-1783603210149-26",
       "quotation_id": "q-1783594045899",
       "category": "Engineering",
       "deliverable": "Construction Technical Support",
@@ -1304,7 +1331,7 @@
       "remarks": ""
     },
     {
-      "id": "qi-1783600712276-27",
+      "id": "qi-1783603210149-27",
       "quotation_id": "q-1783594045899",
       "category": "Engineering",
       "deliverable": "3D Modelling",
@@ -1313,7 +1340,7 @@
       "remarks": ""
     },
     {
-      "id": "qi-1783600712276-28",
+      "id": "qi-1783603210149-28",
       "quotation_id": "q-1783594045899",
       "category": "Engineering",
       "deliverable": "Quality check/ Quality analysis",
@@ -1326,14 +1353,14 @@
     {
       "id": "qc-1783594045900",
       "quotation_id": "q-1783594045899",
-      "hourly_rate": 1000,
+      "hourly_rate": 1200,
       "engineering_hours": 1664,
-      "engineering_fee": 1664000,
+      "engineering_fee": 1996800,
       "software_cost": 50000,
-      "contingency": 171400,
-      "subtotal": 1885400,
-      "gst": 339372,
-      "grand_total": 2224772,
+      "contingency": 204680,
+      "subtotal": 2251480,
+      "gst": 405266.39999999997,
+      "grand_total": 2656746.4,
       "created_at": "2026-07-09T10:47:25.900Z"
     }
   ],

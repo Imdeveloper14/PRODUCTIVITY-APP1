@@ -808,6 +808,8 @@ export default function Home() {
     e.preventDefault();
     if (!newClient.name) return;
 
+    // Only send columns that actually exist in the Supabase `clients` table.
+    // agreement_documents is stored locally only (file uploads are not persisted to DB).
     const record = {
       name: newClient.name,
       phone: newClient.phone || '',
@@ -815,7 +817,6 @@ export default function Home() {
       company: newClient.company || '',
       notes: newClient.notes || '',
       project_history: 'None yet',
-      agreement_documents: uploadedAgreementFiles,
       user_id: user?.id
     };
 
@@ -830,26 +831,35 @@ export default function Home() {
         if (!error && data) {
           savedToSupabase = true;
           const inserted = data[0];
-          setClients(prev => [...prev, inserted]);
+          // Merge agreement_documents back in for frontend use (not in DB)
+          setClients(prev => [...prev, { ...inserted, agreement_documents: uploadedAgreementFiles }]);
         } else {
-          console.error("Supabase insert client error:", error);
+          // Log the full error so we can see the real cause
+          console.error('Supabase insert client error:', JSON.stringify({
+            message: error?.message,
+            code: error?.code,
+            details: error?.details,
+            hint: error?.hint
+          }, null, 2));
+          console.error('Full error object:', error);
         }
       } catch (err) {
-        console.error("Supabase client insertion error:", err);
+        console.error('Supabase client insertion exception:', err?.message || err);
       }
     }
 
     if (!savedToSupabase) {
+      // Fall back to local state + localStorage
       const added = { ...newClient, id: 'c_' + Date.now(), projectHistory: 'None yet', agreement_documents: uploadedAgreementFiles };
       const updated = [...clients, added];
       setClients(updated);
-      saveState("aura_clients_v7", updated);
+      saveState('aura_clients_v7', updated);
     }
 
     setNewClient({ name: '', phone: '', email: '', company: '', notes: '' });
     setUploadedAgreementFiles([]);
     setShowClientModal(false);
-    triggerToast("Client added successfully.");
+    triggerToast('Client added successfully.');
   };
 
 
@@ -1246,7 +1256,7 @@ export default function Home() {
           <button 
             type="button"
             className="btn" 
-            style={{ padding: '2px 6px', fontSize: '0.75rem', height: 'auto', minWidth: 'auto', border: '1px solid var(--border-color)', borderRadius: '6px', background: '#F8FAFC' }}
+            style={{ padding: '2px 6px', fontSize: '0.75rem', height: 'auto', minWidth: 'auto', border: '1px solid var(--border-color)', borderRadius: '6px', background: 'rgba(255,255,255,0.04)' }}
             onClick={(e) => { e.stopPropagation(); setEditingTask(t); setShowTaskEditModal(true); }}
           >
             Edit
@@ -1273,7 +1283,7 @@ export default function Home() {
           <button 
             type="button"
             className="btn" 
-            style={{ padding: '2px 6px', fontSize: '0.75rem', height: 'auto', minWidth: 'auto', border: 'none', color: 'var(--color-danger)', background: '#FEE2E2', borderRadius: '6px' }}
+            style={{ padding: '2px 6px', fontSize: '0.75rem', height: 'auto', minWidth: 'auto', border: 'none', color: 'var(--color-danger)', background: 'rgba(231,76,60,0.15)', borderRadius: '6px' }}
             onClick={(e) => { e.stopPropagation(); handleDeleteTask(t.id); }}
           >
             Delete
@@ -1295,7 +1305,7 @@ export default function Home() {
               position: 'absolute',
               right: 0,
               top: '28px',
-              background: 'white',
+              background: 'var(--bg-card)',
               border: '1px solid var(--border-color)',
               borderRadius: '8px',
               boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06)',
@@ -2443,15 +2453,15 @@ export default function Home() {
             {regSubmitted ? (
               /* Registration Success Confirmation Screen */
               <div className="card" style={{
-                background: 'white',
-                border: '1px solid #E2E8F0',
-                borderRadius: '24px',
+                background: 'var(--bg-card)',
+                border: '1px solid var(--border-color)',
+                borderRadius: '10px',
                 padding: '40px 32px',
                 textAlign: 'center',
-                boxShadow: '0 10px 25px -5px rgba(0,0,0,0.05)',
+                boxShadow: '0 10px 25px -5px rgba(0,0,0,0.4)',
                 margin: 0
               }}>
-                <div style={{ width: '64px', height: '64px', borderRadius: '50%', background: '#DCFCE7', color: '#15803D', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.8rem', marginBottom: '20px', fontWeight: 'bold' }}>
+                <div style={{ width: '64px', height: '64px', borderRadius: '50%', background: 'rgba(46, 204, 113, 0.15)', color: '#2ECC71', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.8rem', marginBottom: '20px', fontWeight: 'bold' }}>
                   ✓
                 </div>
                 <h2 style={{ fontSize: '1.4rem', fontWeight: '800', color: 'var(--text-primary)', marginBottom: '8px' }}>
@@ -2460,9 +2470,9 @@ export default function Home() {
                 <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', lineHeight: '1.6', marginBottom: '28px' }}>
                   Your registration request has been successfully sent to the system administrator for verification. Once approved, you will receive an activation email and can sign in to your dashboard.
                 </p>
-                <div style={{ padding: '16px', background: '#F8FAFC', borderRadius: '12px', marginBottom: '28px', textAlign: 'left', border: '1px solid #F1F5F9' }}>
+                <div style={{ padding: '16px', background: 'rgba(255,255,255,0.04)', borderRadius: '10px', marginBottom: '28px', textAlign: 'left', border: '1px solid var(--border-color)' }}>
                   <span style={{ fontSize: '0.75rem', fontWeight: '600', color: 'var(--text-muted)', textTransform: 'uppercase', display: 'block', marginBottom: '4px' }}>Need assistance?</span>
-                  <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Contact your IT administrator or email <a href="mailto:chandrunavalarch@gmail.com" style={{ color: '#6C4DFF', fontWeight: '600' }}>chandrunavalarch@gmail.com</a>.</span>
+                  <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Contact your IT administrator or email <a href="mailto:chandrunavalarch@gmail.com" style={{ color: 'var(--accent)', fontWeight: '600' }}>chandrunavalarch@gmail.com</a>.</span>
                 </div>
 
                 <button
@@ -2470,15 +2480,17 @@ export default function Home() {
                   style={{
                     width: '100%',
                     height: '48px',
-                    background: 'linear-gradient(135deg, #6C4DFF 0%, #8B5CF6 100%)',
+                    background: '#D32F45',
                     border: 'none',
-                    borderRadius: '12px',
+                    borderRadius: '10px',
                     color: 'white',
                     fontWeight: '700',
                     cursor: 'pointer',
                     display: 'flex',
                     alignItems: 'center',
-                    justifyContent: 'center'
+                    justifyContent: 'center',
+                    boxShadow: '0 4px 14px rgba(211, 47, 69, 0.3)',
+                    transition: 'all 0.2s ease'
                   }}
                   onClick={() => {
                     setRegSubmitted(false);
@@ -2958,7 +2970,7 @@ export default function Home() {
                 </div>
                 <div style={{ background: '#FFFBEB', padding: '8px 12px', borderRadius: '8px', border: '1px solid #FEF3C7', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '8px', marginLeft: 'auto' }}>
                   <BrainCircuit size={16} style={{ color: '#D97706' }} />
-                  <span style={{ color: '#92400E', fontWeight: '500' }}>AI says: Finish Apex drawings before 4 PM.</span>
+                  <span style={{ color: '#F39C12', fontWeight: '500' }}>AI says: Finish Apex drawings before 4 PM.</span>
                 </div>
               </div>
             </div>
@@ -3126,7 +3138,7 @@ export default function Home() {
                       <span style={{ fontSize: '1.8rem', fontWeight: '700' }}>{upcomingBills.length}</span>
                     </div>
 
-                    <div className="card" style={{ margin: 0, borderLeft: '4px solid #8B5CF6' }}>
+                    <div className="card" style={{ margin: 0, borderLeft: '4px solid var(--accent)' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
                         <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontWeight: '600' }}>PERSONAL REMINDERS</span>
                         <span style={{ fontSize: '1.2rem' }}>🔔</span>
@@ -3184,7 +3196,7 @@ export default function Home() {
                               <button 
                                 type="button"
                                 className="btn" 
-                                style={{ padding: '2px 6px', fontSize: '0.7rem', height: 'auto', minWidth: 'auto', border: '1px solid var(--border-color)', borderRadius: '4px', background: '#F8FAFC' }}
+                                style={{ padding: '2px 6px', fontSize: '0.7rem', height: 'auto', minWidth: 'auto', border: '1px solid var(--border-color)', borderRadius: '4px', background: 'rgba(255,255,255,0.04)' }}
                                 onClick={() => { setEditingProject(p); setShowProjectEditModal(true); }}
                               >
                                 Edit Status
@@ -3202,7 +3214,7 @@ export default function Home() {
                               <span style={{ fontWeight: '600' }}>{p.progress}%</span>
                             </span>
                           </div>
-                          <div style={{ width: '100%', height: '8px', background: '#E2E8F0', borderRadius: '4px', overflow: 'hidden' }}>
+                          <div style={{ width: '100%', height: '8px', background: 'var(--border-color)', borderRadius: '4px', overflow: 'hidden' }}>
                             <div style={{ width: `${p.progress}%`, height: '100%', background: 'linear-gradient(90deg, var(--accent-indigo), var(--accent-purple))', borderRadius: '4px' }}></div>
                           </div>
                         </div>
@@ -3218,7 +3230,7 @@ export default function Home() {
                     {invoices.slice(0, 3).map(inv => {
                       const client = clients.find(c => c.id === inv.client_id);
                       return (
-                        <div key={inv.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '12px', background: '#F8FAFC', borderRadius: '8px', border: '1px solid var(--border-color)', alignItems: 'center' }}>
+                        <div key={inv.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '12px', background: 'rgba(255,255,255,0.04)', borderRadius: '8px', border: '1px solid var(--border-color)', alignItems: 'center' }}>
                           <div>
                             <strong>{inv.invoice_number}</strong>
                             <p style={{ margin: '2px 0 0', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Client: {client ? client.name : 'N/A'} • Due: {inv.due_date}</p>
@@ -3237,7 +3249,7 @@ export default function Home() {
               {/* Right Column (35%) */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
                 {/* AI Assistant */}
-                <div className="card" style={{ margin: 0, background: '#EEF2F6', border: '1px solid var(--border-color)' }}>
+                <div className="card" style={{ margin: 0, background: 'var(--bg-card)', border: '1px solid var(--border-color)' }}>
                   <h3 style={{ fontSize: '1rem', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
                     <BrainCircuit size={18} style={{ color: 'var(--accent)' }} /> AI Assistant
                   </h3>
@@ -3326,7 +3338,7 @@ export default function Home() {
 
                   {/* View Toggles & AI Suggest Actions */}
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '8px', borderBottom: '1px solid var(--border-color)', paddingBottom: '12px' }}>
-                    <div style={{ display: 'flex', background: '#F1F5F9', borderRadius: '8px', padding: '2px', gap: '2px' }}>
+                    <div style={{ display: 'flex', background: 'rgba(255,255,255,0.04)', borderRadius: '8px', padding: '2px', gap: '2px' }}>
                       {['month', 'week', 'day'].map(view => (
                         <button
                           key={view}
@@ -3361,7 +3373,7 @@ export default function Home() {
                   </div>
 
                   {/* Dynamic Calendar Grid */}
-                  <div style={{ background: '#F8FAFC', borderRadius: '12px', padding: '12px', border: '1px solid var(--border-color)' }}>
+                  <div style={{ background: 'rgba(255,255,255,0.04)', borderRadius: '12px', padding: '12px', border: '1px solid var(--border-color)' }}>
                     
                     {calendarView === 'month' && (
                       <div>
@@ -3397,7 +3409,7 @@ export default function Home() {
                               });
                             }
                             if (calendarFilter === 'All' || calendarFilter === 'Projects') {
-                              dayEvents.projects.forEach(p => displayEvents.push({ id: p.id, type: 'project', label: p.title, color: '#8B5CF6', icon: '🟣' }));
+                              dayEvents.projects.forEach(p => displayEvents.push({ id: p.id, type: 'project', label: p.title, color: 'var(--accent)', icon: '🟣' }));
                             }
                             if (calendarFilter === 'All' || calendarFilter === 'Invoices') {
                               dayEvents.invoices.forEach(inv => displayEvents.push({ id: inv.id, type: 'invoice', label: inv.invoice_number, color: '#F59E0B', icon: '🟠' }));
@@ -3409,7 +3421,7 @@ export default function Home() {
                                   displayEvents.push({ id: pt.id, type: 'personal-task', label: pt.title, color: pt.status === 'Done' ? '#10B981' : '#EAB308', icon: pt.status === 'Done' ? '🟢' : '🟡' });
                                 }
                               });
-                              dayEvents.personalReminders.forEach(r => displayEvents.push({ id: r.id, type: 'personal-reminder', label: r.title, color: '#8B5CF6', icon: '⚙️' }));
+                              dayEvents.personalReminders.forEach(r => displayEvents.push({ id: r.id, type: 'personal-reminder', label: r.title, color: 'var(--accent)', icon: '⚙️' }));
                             }
                             if (calendarFilter === 'All' || calendarFilter === 'QC') {
                               dayEvents.qcTasks.forEach(q => displayEvents.push({ id: q.id, type: 'qc-task', label: q.title, color: '#6B7280', icon: '⚙️' }));
@@ -3531,7 +3543,7 @@ export default function Home() {
                             const count = dayEvents.tasks.length + dayEvents.meetings.length + dayEvents.projects.length;
 
                             return (
-                              <div key={idx} style={{ background: 'white', padding: '10px 12px', borderRadius: '8px', border: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                              <div key={idx} style={{ background: 'var(--bg-card)', padding: '10px 12px', borderRadius: '8px', border: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                 <div>
                                   <strong style={{ fontSize: '0.85rem' }}>{date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}</strong>
                                   <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '2px' }}>
@@ -3554,7 +3566,7 @@ export default function Home() {
                         <strong style={{ fontSize: '0.85rem', display: 'block', marginBottom: '8px' }}>Today's Tasks & Meetings</strong>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                           {tasks.slice(0, 5).map(t => (
-                            <div key={t.id} style={{ display: 'flex', gap: '12px', alignItems: 'center', background: 'white', padding: '8px 12px', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
+                            <div key={t.id} style={{ display: 'flex', gap: '12px', alignItems: 'center', background: 'var(--bg-card)', padding: '8px 12px', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
                               <span style={{ fontSize: '0.75rem', color: 'var(--color-info)', fontWeight: '600' }}>{t.task_time || '09:00'}</span>
                               <span style={{ fontSize: '0.85rem' }}>{t.title}</span>
                             </div>
@@ -3576,11 +3588,11 @@ export default function Home() {
 
                 {/* AI Planning suggestions & Heat Map & timeline */}
                 {showAiSuggestions && (
-                  <div className="card" style={{ margin: '16px 0 0 0', background: '#FAF5FF', border: '1px solid #E9D5FF' }}>
-                    <h4 style={{ margin: '0 0 8px 0', fontSize: '0.9rem', fontWeight: '700', color: '#6B46C1', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <div className="card" style={{ margin: '16px 0 0 0', background: 'rgba(211,47,69,0.08)', border: '1px solid var(--border-color)' }}>
+                    <h4 style={{ margin: '0 0 8px 0', fontSize: '0.9rem', fontWeight: '700', color: 'var(--accent)', display: 'flex', alignItems: 'center', gap: '6px' }}>
                       <BrainCircuit size={16} /> AI Calendar Suggestions
                     </h4>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '0.8rem', color: '#5B21B6' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '0.8rem', color: 'var(--accent)' }}>
                       <p style={{ margin: 0 }}>💡 <strong>Finish Villa Project before Friday.</strong> Your next milestone deadline is approaching.</p>
                       <p style={{ margin: 0 }}>💡 <strong>Move Review Meeting to tomorrow.</strong> Your afternoon slot today is fully booked with CAD assemblies.</p>
                       <p style={{ margin: 0 }}>💡 <strong>You have 6 hours free today.</strong> Ideal window for focused Revit modeling.</p>
@@ -3601,10 +3613,10 @@ export default function Home() {
                       const completedCount = events.completedTasks.length + events.habits.length;
                       
                       // Depth colors
-                      let bg = '#F1F5F9';
-                      if (completedCount > 0 && completedCount <= 1) bg = '#DDD6FE';
+                      let bg = 'rgba(255,255,255,0.04)';
+                      if (completedCount > 0 && completedCount <= 1) bg = 'rgba(211,47,69,0.15)';
                       else if (completedCount > 1 && completedCount <= 2) bg = '#C4B5FD';
-                      else if (completedCount > 2) bg = '#8B5CF6';
+                      else if (completedCount > 2) bg = 'var(--accent)';
 
                       return (
                         <div
@@ -3628,7 +3640,7 @@ export default function Home() {
                         <strong>Villa Project</strong>
                         <span style={{ color: 'var(--color-danger)' }}>Tomorrow 🔴</span>
                       </div>
-                      <div style={{ height: '6px', background: '#E2E8F0', borderRadius: '3px', overflow: 'hidden' }}>
+                      <div style={{ height: '6px', background: 'var(--border-color)', borderRadius: '3px', overflow: 'hidden' }}>
                         <div style={{ width: '90%', height: '100%', background: 'var(--color-danger)' }} />
                       </div>
                     </div>
@@ -3638,7 +3650,7 @@ export default function Home() {
                         <strong>Factory Layout</strong>
                         <span style={{ color: 'var(--color-warning)' }}>3 Days 🟠</span>
                       </div>
-                      <div style={{ height: '6px', background: '#E2E8F0', borderRadius: '3px', overflow: 'hidden' }}>
+                      <div style={{ height: '6px', background: 'var(--border-color)', borderRadius: '3px', overflow: 'hidden' }}>
                         <div style={{ width: '60%', height: '100%', background: 'var(--color-warning)' }} />
                       </div>
                     </div>
@@ -3648,7 +3660,7 @@ export default function Home() {
                         <strong>Invoice INV-2026-0001</strong>
                         <span style={{ color: 'var(--color-success)' }}>Today 🟢</span>
                       </div>
-                      <div style={{ height: '6px', background: '#E2E8F0', borderRadius: '3px', overflow: 'hidden' }}>
+                      <div style={{ height: '6px', background: 'var(--border-color)', borderRadius: '3px', overflow: 'hidden' }}>
                         <div style={{ width: '100%', height: '100%', background: 'var(--color-success)' }} />
                       </div>
                     </div>
@@ -3702,8 +3714,8 @@ export default function Home() {
             </div>
 
             {/* Project Filters Toolbar */}
-            <div className="card" style={{ background: '#F8FAFC', padding: '16px', marginBottom: '20px', display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'white', padding: '6px 12px', borderRadius: '8px', border: '1px solid var(--border-color)', flex: 1, minWidth: '200px' }}>
+            <div className="card" style={{ background: 'rgba(255,255,255,0.04)', padding: '16px', marginBottom: '20px', display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'var(--bg-card)', padding: '6px 12px', borderRadius: '8px', border: '1px solid var(--border-color)', flex: 1, minWidth: '200px' }}>
                 <Search size={16} style={{ color: 'var(--text-muted)' }} />
                 <input 
                   type="text" 
@@ -3740,7 +3752,7 @@ export default function Home() {
                       <h3 style={{ margin: 0 }}>{p.title}</h3>
                       <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Client: {client ? client.name : 'Unknown Client'} • Deadline: {p.deadline}</span>
                       {p.fileNotes && <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '4px' }}>📝 {p.fileNotes}</div>}
-                      <div style={{ width: '150px', height: '6px', background: '#E2E8F0', borderRadius: '3px', overflow: 'hidden', marginTop: '8px' }}>
+                      <div style={{ width: '150px', height: '6px', background: 'var(--border-color)', borderRadius: '3px', overflow: 'hidden', marginTop: '8px' }}>
                         <div style={{ width: `${p.progress}%`, height: '100%', background: 'var(--accent)' }}></div>
                       </div>
                     </div>
@@ -3785,8 +3797,8 @@ export default function Home() {
             </div>
 
             {/* Invoices Search & Filter Toolbar */}
-            <div className="card" style={{ background: '#F8FAFC', padding: '16px', marginBottom: '24px', display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'white', padding: '6px 12px', borderRadius: '8px', border: '1px solid var(--border-color)', flex: 1, minWidth: '200px' }}>
+            <div className="card" style={{ background: 'rgba(255,255,255,0.04)', padding: '16px', marginBottom: '24px', display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'var(--bg-card)', padding: '6px 12px', borderRadius: '8px', border: '1px solid var(--border-color)', flex: 1, minWidth: '200px' }}>
                 <Search size={16} style={{ color: 'var(--text-muted)' }} />
                 <input 
                   type="text" 
@@ -3798,7 +3810,7 @@ export default function Home() {
               </div>
 
               {/* Status Filter Subtabs (Drafts, Pending, Paid, Overdue) */}
-              <div style={{ display: 'flex', gap: '4px', background: '#F1F5F9', padding: '4px', borderRadius: '8px' }}>
+              <div style={{ display: 'flex', gap: '4px', background: 'rgba(255,255,255,0.04)', padding: '4px', borderRadius: '8px' }}>
                 {['All', 'Draft', 'Pending', 'Paid', 'Overdue'].map(tab => (
                   <button 
                     key={tab} 
@@ -3921,7 +3933,7 @@ export default function Home() {
               </div>
 
               {/* AI Assistant Console (35%) */}
-              <div className="card" style={{ margin: 0, display: 'flex', flexDirection: 'column', height: '450px', background: '#F8FAFC' }}>
+              <div className="card" style={{ margin: 0, display: 'flex', flexDirection: 'column', height: '450px', background: 'rgba(255,255,255,0.04)' }}>
                 <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <BrainCircuit style={{ color: 'var(--accent)' }} size={18} />
                   <strong style={{ fontSize: '0.85rem' }}>Billing & Invoicing AI</strong>
@@ -3933,7 +3945,7 @@ export default function Home() {
                   ))}
                 </div>
 
-                <div style={{ padding: '12px', borderTop: '1px solid var(--border-color)', display: 'flex', flexWrap: 'wrap', gap: '6px', background: 'white' }}>
+                <div style={{ padding: '12px', borderTop: '1px solid var(--border-color)', display: 'flex', flexWrap: 'wrap', gap: '6px', background: 'var(--bg-card)' }}>
                   <button className="btn btn-secondary" style={{ fontSize: '0.75rem', padding: '4px 8px' }} onClick={() => handleAIInvoiceCommand("Suggest Payment Reminder")}>🔔 Suggest Reminder</button>
                   <button className="btn btn-secondary" style={{ fontSize: '0.75rem', padding: '4px 8px' }} onClick={() => handleAIInvoiceCommand("Generate Follow-up Email")}>✉ Late Follow-up</button>
                   <button className="btn btn-secondary" style={{ fontSize: '0.75rem', padding: '4px 8px' }} onClick={() => handleAIInvoiceCommand("Summarize Invoice")}>📊 Summarize Ledger</button>
@@ -3992,29 +4004,29 @@ export default function Home() {
                   ) : (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                       {personalTasks.filter(t => personalTrackerCategoryFilter === 'All' || t.category === personalTrackerCategoryFilter).map(task => (
-                        <div key={task.id} style={{ display: 'flex', flexDirection: 'column', gap: '8px', background: '#F8FAFC', padding: '14px', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
+                        <div key={task.id} style={{ display: 'flex', flexDirection: 'column', gap: '8px', background: 'rgba(255,255,255,0.04)', padding: '14px', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
                           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                             <div>
                               <span style={{ fontSize: '0.9rem', fontWeight: '700', textDecoration: task.status === 'Done' ? 'line-through' : 'none', color: task.status === 'Done' ? 'var(--text-muted)' : 'var(--text-primary)' }}>{task.title}</span>
                               <div style={{ display: 'flex', gap: '6px', marginTop: '6px', flexWrap: 'wrap' }}>
                                 <span className="badge" style={{ background: '#F0FDF4', color: '#166534', fontSize: '0.7rem' }}>{task.category}</span>
                                 <span className={`badge ${task.priority === 'High' ? 'badge-danger' : task.priority === 'Medium' ? 'badge-warning' : 'badge-info'}`} style={{ fontSize: '0.7rem' }}>{task.priority}</span>
-                                <span className="badge" style={{ background: '#F1F5F9', color: '#475569', fontSize: '0.7rem' }}>🗓 Due: {task.due_date}</span>
+                                <span className="badge" style={{ background: 'rgba(255,255,255,0.04)', color: '#475569', fontSize: '0.7rem' }}>🗓 Due: {task.due_date}</span>
                                 {task.reminder_date && (
-                                  <span className="badge" style={{ background: '#FAF5FF', color: '#6B46C1', fontSize: '0.7rem' }}>🔔 Remind: {task.reminder_date}</span>
+                                  <span className="badge" style={{ background: 'rgba(211,47,69,0.08)', color: 'var(--accent)', fontSize: '0.7rem' }}>🔔 Remind: {task.reminder_date}</span>
                                 )}
                               </div>
                             </div>
                             <div style={{ display: 'flex', gap: '6px' }}>
                               {task.status !== 'Done' && (
-                                <button className="btn btn-secondary" style={{ padding: '4px 8px', fontSize: '0.75rem', background: '#DCFCE7', color: '#166534', border: 'none' }} onClick={() => handleMarkPersonalTaskDone(task.id)}>
+                                <button className="btn btn-secondary" style={{ padding: '4px 8px', fontSize: '0.75rem', background: 'rgba(46,204,113,0.15)', color: '#166534', border: 'none' }} onClick={() => handleMarkPersonalTaskDone(task.id)}>
                                   Done
                                 </button>
                               )}
                               <button className="btn btn-secondary" style={{ padding: '4px 8px', fontSize: '0.75rem' }} onClick={() => { setEditingPersonalTask(task); setPersonalTaskForm(task); setShowPersonalTaskModal(true); }}>
                                 Edit
                               </button>
-                              <button className="btn btn-secondary" style={{ padding: '4px 8px', fontSize: '0.75rem', background: '#FEE2E2', color: '#991B1B', border: 'none' }} onClick={() => handleDeletePersonalTask(task.id)}>
+                              <button className="btn btn-secondary" style={{ padding: '4px 8px', fontSize: '0.75rem', background: 'rgba(231,76,60,0.15)', color: '#991B1B', border: 'none' }} onClick={() => handleDeletePersonalTask(task.id)}>
                                 Delete
                               </button>
                             </div>
@@ -4022,7 +4034,7 @@ export default function Home() {
 
                           {/* Progress */}
                           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '4px' }}>
-                            <div style={{ flex: 1, height: '6px', background: '#E2E8F0', borderRadius: '3px', overflow: 'hidden' }}>
+                            <div style={{ flex: 1, height: '6px', background: 'var(--border-color)', borderRadius: '3px', overflow: 'hidden' }}>
                               <div style={{ width: `${task.completion_percentage}%`, height: '100%', background: task.status === 'Done' ? 'var(--color-success)' : 'var(--accent)', borderRadius: '3px' }} />
                             </div>
                             <span style={{ fontSize: '0.75rem', fontWeight: '600', color: 'var(--text-secondary)' }}>{task.completion_percentage}%</span>
@@ -4053,7 +4065,7 @@ export default function Home() {
                   ) : (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                       {habits.map(habit => (
-                        <div key={habit.id} style={{ background: '#F8FAFC', padding: '12px 14px', borderRadius: '12px', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                        <div key={habit.id} style={{ background: 'rgba(255,255,255,0.04)', padding: '12px 14px', borderRadius: '12px', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', gap: '8px' }}>
                           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                             <div>
                               <strong style={{ fontSize: '0.9rem', color: 'var(--text-primary)' }}>{habit.habit_name}</strong>
@@ -4076,7 +4088,7 @@ export default function Home() {
                             <button className="btn btn-secondary" style={{ padding: '4px 8px', fontSize: '0.75rem' }} onClick={() => handleResetHabit(habit.id)} title="Reset Streak">
                               Reset
                             </button>
-                            <button className="btn btn-secondary" style={{ padding: '4px', minWidth: 'auto', background: '#FEE2E2', color: '#991B1B', border: 'none' }} onClick={() => handleDeleteHabit(habit.id)}>
+                            <button className="btn btn-secondary" style={{ padding: '4px', minWidth: 'auto', background: 'rgba(231,76,60,0.15)', color: '#991B1B', border: 'none' }} onClick={() => handleDeleteHabit(habit.id)}>
                               🗑
                             </button>
                           </div>
@@ -4113,7 +4125,7 @@ export default function Home() {
         {activeTab === 'admin' && (
           <div>
             {/* Header */}
-            <div className="card" style={{ background: '#F8FAFC', marginBottom: '24px' }}>
+            <div className="card" style={{ background: 'rgba(255,255,255,0.04)', marginBottom: '24px' }}>
               <h1 style={{ fontSize: '1.6rem', fontWeight: '700', letterSpacing: '-0.5px', margin: 0 }}>🛡️ Administrative Controls</h1>
               <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginTop: '4px' }}>
                 Manage user access approvals, roles, status changes, and track system security audit logs.
@@ -4177,8 +4189,8 @@ export default function Home() {
                             </tr>
                           ) : (
                             adminLogs.map((log) => {
-                              let badgeColor = '#64748B';
-                              let badgeBg = '#F1F5F9';
+                              let badgeColor = 'var(--text-secondary)';
+                              let badgeBg = 'rgba(255,255,255,0.06)';
                               if (log.event_type.includes('success')) {
                                 badgeColor = '#166534';
                                 badgeBg = '#DCFCE7';
@@ -4306,7 +4318,7 @@ export default function Home() {
                                       </button>
                                       <button
                                         className="btn"
-                                        style={{ background: '#6C4DFF', color: 'white', border: 'none', padding: '6px 12px', fontSize: '0.75rem', borderRadius: '4px', cursor: 'pointer' }}
+                                        style={{ background: 'var(--accent)', color: 'white', border: 'none', padding: '6px 12px', fontSize: '0.75rem', borderRadius: '4px', cursor: 'pointer' }}
                                         onClick={() => setViewingUserDetails(item)}
                                       >
                                         View Details
@@ -4389,7 +4401,7 @@ export default function Home() {
                                   </button>
                                   <button
                                     className="btn"
-                                    style={{ background: '#6C4DFF', color: 'white', border: 'none', flex: 1, justifyContent: 'center', padding: '6px 12px', fontSize: '0.8rem', borderRadius: '6px', cursor: 'pointer' }}
+                                    style={{ background: 'var(--accent)', color: 'white', border: 'none', flex: 1, justifyContent: 'center', padding: '6px 12px', fontSize: '0.8rem', borderRadius: '6px', cursor: 'pointer' }}
                                     onClick={() => setViewingUserDetails(item)}
                                   >
                                     Details
@@ -4428,7 +4440,7 @@ export default function Home() {
 
         {activeTab === 'profile' && (
           <div>
-            <div className="card" style={{ background: '#F8FAFC', marginBottom: '24px' }}>
+            <div className="card" style={{ background: 'rgba(255,255,255,0.04)', marginBottom: '24px' }}>
               <h1 style={{ fontSize: '1.6rem', fontWeight: '700', letterSpacing: '-0.5px', margin: 0, color: 'var(--text-primary)' }}>👤 User Settings & Profile</h1>
               <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginTop: '4px' }}>
                 Manage theme preferences and view account details.
@@ -4508,7 +4520,7 @@ export default function Home() {
         </button>
 
         {speedDialOpen && (
-          <div style={{ position: 'absolute', bottom: '70px', right: '0', display: 'flex', flexDirection: 'column', gap: '8px', width: '180px', background: 'white', padding: '8px', borderRadius: '12px', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)', border: '1px solid var(--border-color)' }}>
+          <div style={{ position: 'absolute', bottom: '70px', right: '0', display: 'flex', flexDirection: 'column', gap: '8px', width: '180px', background: 'var(--bg-card)', padding: '8px', borderRadius: '12px', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)', border: '1px solid var(--border-color)' }}>
             {activeTab === 'clients' ? (
               <>
                 <button className="btn" style={{ background: '#E0F2FE', color: '#0369A1', fontSize: '0.8rem', width: '100%', justifyContent: 'flex-start', border: 'none' }} onClick={() => { setShowClientModal(true); setSpeedDialOpen(false); }}>➕ Add Client</button>
@@ -4516,9 +4528,9 @@ export default function Home() {
               </>
             ) : (
               <>
-                <button className="btn" style={{ background: '#DCFCE7', color: '#15803D', fontSize: '0.8rem', width: '100%', justifyContent: 'flex-start', border: 'none' }} onClick={() => { setShowTaskModal(true); setSpeedDialOpen(false); }}>✅ Add Task</button>
-                <button className="btn" style={{ background: '#D1FAE5', color: '#047857', fontSize: '0.8rem', width: '100%', justifyContent: 'flex-start', border: 'none' }} onClick={() => { triggerNewInvoiceFlow(); setSpeedDialOpen(false); }}>💰 Create Invoice</button>
-                <button className="btn" style={{ background: '#F3E8FF', color: '#7E22CE', fontSize: '0.8rem', width: '100%', justifyContent: 'flex-start', border: 'none' }} onClick={() => { exportPDF('projects'); setSpeedDialOpen(false); }}>📄 Generate Report</button>
+                <button className="btn" style={{ background: 'rgba(46,204,113,0.15)', color: '#2ECC71', fontSize: '0.8rem', width: '100%', justifyContent: 'flex-start', border: 'none' }} onClick={() => { setShowTaskModal(true); setSpeedDialOpen(false); }}>✅ Add Task</button>
+                <button className="btn" style={{ background: 'rgba(46,204,113,0.15)', color: '#047857', fontSize: '0.8rem', width: '100%', justifyContent: 'flex-start', border: 'none' }} onClick={() => { triggerNewInvoiceFlow(); setSpeedDialOpen(false); }}>💰 Create Invoice</button>
+                <button className="btn" style={{ background: 'rgba(211,47,69,0.06)', color: '#7E22CE', fontSize: '0.8rem', width: '100%', justifyContent: 'flex-start', border: 'none' }} onClick={() => { exportPDF('projects'); setSpeedDialOpen(false); }}>📄 Generate Report</button>
               </>
             )}
           </div>
@@ -4753,13 +4765,13 @@ export default function Home() {
             <h3 style={{ fontSize: '1.1rem', fontWeight: '700', marginBottom: '16px' }}>💰 Generate AURA Invoice</h3>
             
             {invoiceLoading && (
-              <div style={{ padding: '8px 12px', background: '#DBEAFE', color: '#1D4ED8', fontSize: '0.85rem', borderRadius: '8px', marginBottom: '12px', display: 'flex', gap: '8px', alignItems: 'center', fontWeight: '500' }}>
+              <div style={{ padding: '8px 12px', background: 'rgba(52,152,219,0.15)', color: '#3498DB', fontSize: '0.85rem', borderRadius: '8px', marginBottom: '12px', display: 'flex', gap: '8px', alignItems: 'center', fontWeight: '500' }}>
                 <Clock size={16} className="animate-spin" /> {invoiceLoading}
               </div>
             )}
             
             {invoiceError && (
-              <div style={{ padding: '8px 12px', background: '#FEE2E2', color: '#B91C1C', fontSize: '0.85rem', borderRadius: '8px', marginBottom: '12px' }}>
+              <div style={{ padding: '8px 12px', background: 'rgba(231,76,60,0.15)', color: '#E74C3C', fontSize: '0.85rem', borderRadius: '8px', marginBottom: '12px' }}>
                 ⚠️ {invoiceError}
               </div>
             )}
@@ -4769,7 +4781,7 @@ export default function Home() {
               <div className="grid-2">
                 <div className="form-group">
                   <label className="form-label">Invoice Number</label>
-                  <input type="text" className="form-input" value={invoiceForm.invoice_number} readOnly style={{ background: '#F1F5F9' }} />
+                  <input type="text" className="form-input" value={invoiceForm.invoice_number} readOnly style={{ background: 'rgba(255,255,255,0.04)' }} />
                 </div>
                 <div className="form-group">
                   <label className="form-label">Invoice Date</label>
@@ -4807,7 +4819,7 @@ export default function Home() {
                 </div>
                 <div className="form-group">
                   <label className="form-label">Balance Due (₹)</label>
-                  <input type="number" className="form-input" value={invoiceForm.balance_due} readOnly style={{ background: '#F1F5F9' }} />
+                  <input type="number" className="form-input" value={invoiceForm.balance_due} readOnly style={{ background: 'rgba(255,255,255,0.04)' }} />
                 </div>
               </div>
 
@@ -4818,7 +4830,7 @@ export default function Home() {
                 </div>
                 <div className="form-group">
                   <label className="form-label">GST Amt (₹)</label>
-                  <input type="number" className="form-input" value={invoiceForm.gst_amount} readOnly style={{ background: '#F1F5F9' }} />
+                  <input type="number" className="form-input" value={invoiceForm.gst_amount} readOnly style={{ background: 'rgba(255,255,255,0.04)' }} />
                 </div>
                 <div className="form-group">
                   <label className="form-label">Discount (₹)</label>
@@ -4833,7 +4845,7 @@ export default function Home() {
                 </div>
                 <div className="form-group">
                   <label className="form-label" style={{ color: 'var(--accent)', fontWeight: 'bold' }}>Grand Total Due (₹)</label>
-                  <input type="text" className="form-input" value={`₹ ${invoiceForm.grand_total.toLocaleString('en-IN')}`} readOnly style={{ background: '#EEF2F6', fontWeight: 'bold', color: 'var(--accent)' }} />
+                  <input type="text" className="form-input" value={`₹ ${invoiceForm.grand_total.toLocaleString('en-IN')}`} readOnly style={{ background: 'var(--bg-card)', fontWeight: 'bold', color: 'var(--accent)' }} />
                 </div>
               </div>
 
@@ -4882,7 +4894,7 @@ export default function Home() {
             <form onSubmit={handleUpdateProjectStatus}>
               <div className="form-group">
                 <label className="form-label">Project Name</label>
-                <input type="text" className="form-input" value={editingProject.title} readOnly style={{ background: '#F1F5F9' }} />
+                <input type="text" className="form-input" value={editingProject.title} readOnly style={{ background: 'rgba(255,255,255,0.04)' }} />
               </div>
               <div className="grid-2">
                 <div className="form-group">
@@ -5068,7 +5080,7 @@ export default function Home() {
               </div>
 
               {/* QC Tracking Section */}
-              <div style={{ background: '#F8FAFC', padding: '16px', borderRadius: '12px', border: '1px solid var(--border-color)', margin: '16px 0' }}>
+              <div style={{ background: 'rgba(255,255,255,0.04)', padding: '16px', borderRadius: '12px', border: '1px solid var(--border-color)', margin: '16px 0' }}>
                 <h4 style={{ margin: '0 0 12px 0', fontSize: '0.9rem', fontWeight: '700', color: 'var(--text-primary)' }}>🛠 QC & Verification</h4>
                 
                 <div className="form-group" style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
@@ -5184,7 +5196,7 @@ export default function Home() {
             <button 
               type="button" 
               className="btn btn-secondary" 
-              style={{ minWidth: 'auto', padding: '6px 12px', fontSize: '0.8rem', borderRadius: '8px', border: '1px solid var(--border-color)', background: '#F1F5F9' }} 
+              style={{ minWidth: 'auto', padding: '6px 12px', fontSize: '0.8rem', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'rgba(255,255,255,0.04)' }} 
               onClick={() => setShowSidePanel(false)}
             >
               Close
@@ -5208,7 +5220,7 @@ export default function Home() {
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                         {events.meetings.map(m => (
                           <div key={m.id} style={{ display: 'flex', flexDirection: 'column', background: '#EFF6FF', padding: '10px 12px', borderRadius: '8px', border: '1px solid #BFDBFE' }}>
-                            <span style={{ fontSize: '0.85rem', fontWeight: '700', color: '#1E40AF' }}>{m.title}</span>
+                            <span style={{ fontSize: '0.85rem', fontWeight: '700', color: '#3498DB' }}>{m.title}</span>
                             <span style={{ fontSize: '0.75rem', color: '#1E3A8A' }}>Time: {m.time} {m.notes && `• Notes: ${m.notes}`}</span>
                           </div>
                         ))}
@@ -5233,20 +5245,20 @@ export default function Home() {
                   {/* Client Project Deadlines */}
                   {events.projects.length > 0 && (
                     <div>
-                      <strong style={{ fontSize: '0.8rem', color: '#8B5CF6', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px' }}>🟣 Project Deadlines ({events.projects.length})</strong>
+                      <strong style={{ fontSize: '0.8rem', color: 'var(--accent)', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px' }}>🟣 Project Deadlines ({events.projects.length})</strong>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                         {events.projects.map(p => {
                           const client = clients.find(c => c.id === p.clientId);
                           return (
-                            <div key={p.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#FAF5FF', padding: '10px 12px', borderRadius: '8px', border: '1px solid #E9D5FF' }}>
+                            <div key={p.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(211,47,69,0.08)', padding: '10px 12px', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
                               <div>
-                                <span style={{ fontSize: '0.85rem', fontWeight: '700', color: '#6D28D9' }}>{p.title}</span>
+                                <span style={{ fontSize: '0.85rem', fontWeight: '700', color: 'var(--accent)' }}>{p.title}</span>
                                 <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginLeft: '8px' }}>({client ? client.name : 'Unknown'})</span>
                               </div>
                               <button 
                                 type="button" 
                                 className="btn btn-secondary" 
-                                style={{ padding: '2px 6px', fontSize: '0.7rem', height: 'auto', minWidth: 'auto', background: 'white' }}
+                                style={{ padding: '2px 6px', fontSize: '0.7rem', height: 'auto', minWidth: 'auto', background: 'var(--bg-card)' }}
                                 onClick={() => { setEditingProject(p); setShowProjectEditModal(true); }}
                               >
                                 Edit Status
@@ -5264,7 +5276,7 @@ export default function Home() {
                       <strong style={{ fontSize: '0.8rem', color: 'var(--accent)', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px' }}>🔵 Tasks ({events.tasks.length})</strong>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                         {events.tasks.map(t => (
-                          <div key={t.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#F8FAFC', padding: '10px 12px', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
+                          <div key={t.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(255,255,255,0.04)', padding: '10px 12px', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
                             <div style={{ flex: 1, minWidth: 0 }}>
                               <span style={{ fontSize: '0.85rem', fontWeight: '700', textDecoration: t.completed ? 'line-through' : 'none' }}>{t.title}</span>
                               <div style={{ display: 'flex', gap: '6px', marginTop: '4px', flexWrap: 'wrap' }}>
@@ -5307,7 +5319,7 @@ export default function Home() {
                         {events.qcTasks.map(q => (
                           <div key={q.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#F3F4F6', padding: '10px 12px', borderRadius: '8px', border: '1px solid #D1D5DB' }}>
                             <div>
-                              <span style={{ fontSize: '0.85rem', fontWeight: '700', color: '#374151' }}>{q.title}</span>
+                              <span style={{ fontSize: '0.85rem', fontWeight: '700', color: 'var(--text-secondary)' }}>{q.title}</span>
                               <span className="badge badge-warning" style={{ fontSize: '0.65rem', padding: '1px 4px', marginLeft: '6px' }}>QC: {q.qc_status}</span>
                             </div>
                             <button 
@@ -5369,17 +5381,17 @@ export default function Home() {
                         {events.invoices.map(inv => {
                           const client = clients.find(c => c.id === inv.client_id);
                           return (
-                            <div key={inv.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#FEF3C7', padding: '10px 12px', borderRadius: '8px', border: '1px solid #FDE68A' }}>
+                            <div key={inv.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(243,156,18,0.15)', padding: '10px 12px', borderRadius: '8px', border: '1px solid #FDE68A' }}>
                               <div>
-                                <span style={{ fontSize: '0.85rem', fontWeight: '700', color: '#92400E' }}>{inv.invoice_number}</span>
-                                <div style={{ fontSize: '0.75rem', color: '#92400E', marginTop: '2px' }}>
+                                <span style={{ fontSize: '0.85rem', fontWeight: '700', color: '#F39C12' }}>{inv.invoice_number}</span>
+                                <div style={{ fontSize: '0.75rem', color: '#F39C12', marginTop: '2px' }}>
                                   Client: {client ? client.name : 'N/A'} • <strong>₹{inv.grand_total.toLocaleString('en-IN')}</strong>
                                 </div>
                               </div>
                               <button 
                                 type="button" 
                                 className="btn btn-secondary" 
-                                style={{ padding: '2px 6px', fontSize: '0.7rem', height: 'auto', minWidth: 'auto', background: 'white' }}
+                                style={{ padding: '2px 6px', fontSize: '0.7rem', height: 'auto', minWidth: 'auto', background: 'var(--bg-card)' }}
                                 onClick={() => { setActiveTab('invoices'); setShowSidePanel(false); }}
                               >
                                 View
@@ -5394,18 +5406,18 @@ export default function Home() {
                   {/* Reminders & Personal Reminders */}
                   {(events.reminders.length > 0 || events.personalReminders.length > 0) && (
                     <div>
-                      <strong style={{ fontSize: '0.8rem', color: '#8B5CF6', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px' }}>🔔 Reminders ({events.reminders.length + events.personalReminders.length})</strong>
+                      <strong style={{ fontSize: '0.8rem', color: 'var(--accent)', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px' }}>🔔 Reminders ({events.reminders.length + events.personalReminders.length})</strong>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                         {events.reminders.map(r => (
-                          <div key={r.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#F3E8FF', padding: '10px 12px', borderRadius: '8px', border: '1px solid #E9D5FF' }}>
-                            <span style={{ fontSize: '0.85rem', color: '#6B46C1', fontWeight: '600' }}>🔔 {r.title}</span>
-                            <span style={{ fontSize: '0.7rem', color: '#6B46C1' }}>{r.time || 'All day'}</span>
+                          <div key={r.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(211,47,69,0.06)', padding: '10px 12px', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
+                            <span style={{ fontSize: '0.85rem', color: 'var(--accent)', fontWeight: '600' }}>🔔 {r.title}</span>
+                            <span style={{ fontSize: '0.7rem', color: 'var(--accent)' }}>{r.time || 'All day'}</span>
                           </div>
                         ))}
                         {events.personalReminders.map(pr => (
-                          <div key={pr.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#F5F3FF', padding: '10px 12px', borderRadius: '8px', border: '1px solid #DDD6FE' }}>
-                            <span style={{ fontSize: '0.85rem', color: '#5B21B6', fontWeight: '600' }}>🔔 {pr.title}</span>
-                            <span style={{ fontSize: '0.7rem', color: '#5B21B6' }}>{pr.category}</span>
+                          <div key={pr.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(211,47,69,0.06)', padding: '10px 12px', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
+                            <span style={{ fontSize: '0.85rem', color: 'var(--accent)', fontWeight: '600' }}>🔔 {pr.title}</span>
+                            <span style={{ fontSize: '0.7rem', color: 'var(--accent)' }}>{pr.category}</span>
                           </div>
                         ))}
                       </div>
@@ -5440,7 +5452,7 @@ export default function Home() {
           </div>
 
           {/* Quick Add Form Section (Always visible at bottom of drawer) */}
-          <div style={{ padding: '20px', borderTop: '1px solid var(--border-color)', background: '#F8FAFC' }}>
+          <div style={{ padding: '20px', borderTop: '1px solid var(--border-color)', background: 'rgba(255,255,255,0.04)' }}>
             <h4 style={{ margin: '0 0 10px 0', fontSize: '0.85rem', fontWeight: '800', color: 'var(--text-primary)' }}>⚡ Quick Add</h4>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
               <input 
@@ -5700,17 +5712,17 @@ export default function Home() {
           padding: '20px'
         }}>
           <div style={{
-            background: 'white',
+            background: 'var(--bg-card)',
             borderRadius: '24px',
             width: '100%',
             maxWidth: '540px',
             boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
-            border: '1px solid #E2E8F0',
+            border: '1px solid var(--border-color)',
             overflow: 'hidden'
           }}>
             {/* Modal Header */}
             <div style={{
-              background: 'linear-gradient(135deg, #6C4DFF 0%, #8B5CF6 100%)',
+              background: '#D32F45',
               padding: '24px',
               color: 'white'
             }}>
@@ -5729,7 +5741,7 @@ export default function Home() {
                     type="text"
                     disabled
                     value={`${approvingUser.first_name} ${approvingUser.last_name}`}
-                    style={{ width: '100%', height: '42px', padding: '8px 12px', border: '1px solid #E2E8F0', borderRadius: '8px', background: '#F8FAFC', color: 'var(--text-secondary)', fontSize: '0.85rem' }}
+                    style={{ width: '100%', height: '42px', padding: '8px 12px', border: '1px solid var(--border-color)', borderRadius: '8px', background: 'rgba(255,255,255,0.04)', color: 'var(--text-secondary)', fontSize: '0.85rem' }}
                   />
                 </div>
                 <div>
@@ -5738,7 +5750,7 @@ export default function Home() {
                     type="text"
                     disabled
                     value={approvingUser.email}
-                    style={{ width: '100%', height: '42px', padding: '8px 12px', border: '1px solid #E2E8F0', borderRadius: '8px', background: '#F8FAFC', color: 'var(--text-secondary)', fontSize: '0.85rem' }}
+                    style={{ width: '100%', height: '42px', padding: '8px 12px', border: '1px solid var(--border-color)', borderRadius: '8px', background: 'rgba(255,255,255,0.04)', color: 'var(--text-secondary)', fontSize: '0.85rem' }}
                   />
                 </div>
               </div>
@@ -5748,7 +5760,7 @@ export default function Home() {
                 <select
                   value={approveRole}
                   onChange={(e) => setApproveRole(e.target.value)}
-                  style={{ width: '100%', height: '42px', padding: '8px 12px', border: '1px solid #E2E8F0', borderRadius: '8px', background: 'white', color: '#111827', fontSize: '0.85rem' }}
+                  style={{ width: '100%', height: '42px', padding: '8px 12px', border: '1px solid var(--border-color)', borderRadius: '8px', background: 'var(--bg-card)', color: 'var(--text-primary)', fontSize: '0.85rem' }}
                   required
                 >
                   <option value="Employee">Employee</option>
@@ -5764,7 +5776,7 @@ export default function Home() {
                   <select
                     value={approveDept}
                     onChange={(e) => setApproveDept(e.target.value)}
-                    style={{ width: '100%', height: '42px', padding: '8px 12px', border: '1px solid #E2E8F0', borderRadius: '8px', background: 'white', color: '#111827', fontSize: '0.85rem' }}
+                    style={{ width: '100%', height: '42px', padding: '8px 12px', border: '1px solid var(--border-color)', borderRadius: '8px', background: 'var(--bg-card)', color: 'var(--text-primary)', fontSize: '0.85rem' }}
                     required
                   >
                     {[
@@ -5779,7 +5791,7 @@ export default function Home() {
                   <select
                     value={approveDesignation}
                     onChange={(e) => setApproveDesignation(e.target.value)}
-                    style={{ width: '100%', height: '42px', padding: '8px 12px', border: '1px solid #E2E8F0', borderRadius: '8px', background: 'white', color: '#111827', fontSize: '0.85rem' }}
+                    style={{ width: '100%', height: '42px', padding: '8px 12px', border: '1px solid var(--border-color)', borderRadius: '8px', background: 'var(--bg-card)', color: 'var(--text-primary)', fontSize: '0.85rem' }}
                     required
                   >
                     {[
@@ -5804,7 +5816,7 @@ export default function Home() {
                           setApproveEmpId('AURA-' + String(nextNum).padStart(4, '0'));
                         }
                       }}
-                      style={{ accentColor: '#6C4DFF' }}
+                      style={{ accentColor: 'var(--accent)' }}
                     />
                     Manual override
                   </label>
@@ -5814,7 +5826,7 @@ export default function Home() {
                   value={approveEmpId}
                   onChange={(e) => setApproveEmpId(e.target.value)}
                   disabled={!approveIsManualId}
-                  style={{ width: '100%', height: '42px', padding: '8px 12px', border: '1px solid #E2E8F0', borderRadius: '8px', background: approveIsManualId ? 'white' : '#F8FAFC', color: '#111827', fontSize: '0.85rem', fontWeight: '600' }}
+                  style={{ width: '100%', height: '42px', padding: '8px 12px', border: '1px solid var(--border-color)', borderRadius: '8px', background: approveIsManualId ? 'white' : '#F8FAFC', color: 'var(--text-primary)', fontSize: '0.85rem', fontWeight: '600' }}
                   required
                 />
               </div>
@@ -5824,7 +5836,7 @@ export default function Home() {
                 <select
                   value={approveManager}
                   onChange={(e) => setApproveManager(e.target.value)}
-                  style={{ width: '100%', height: '42px', padding: '8px 12px', border: '1px solid #E2E8F0', borderRadius: '8px', background: 'white', color: '#111827', fontSize: '0.85rem' }}
+                  style={{ width: '100%', height: '42px', padding: '8px 12px', border: '1px solid var(--border-color)', borderRadius: '8px', background: 'var(--bg-card)', color: 'var(--text-primary)', fontSize: '0.85rem' }}
                 >
                   <option value="">None / Select Reporting Manager</option>
                   {adminUsers
@@ -5844,7 +5856,7 @@ export default function Home() {
                   type="text"
                   value="Active"
                   disabled
-                  style={{ width: '100%', height: '42px', padding: '8px 12px', border: '1px solid #E2E8F0', borderRadius: '8px', background: '#F8FAFC', color: 'var(--text-secondary)', fontSize: '0.85rem' }}
+                  style={{ width: '100%', height: '42px', padding: '8px 12px', border: '1px solid var(--border-color)', borderRadius: '8px', background: 'rgba(255,255,255,0.04)', color: 'var(--text-secondary)', fontSize: '0.85rem' }}
                 />
               </div>
 
@@ -5852,13 +5864,13 @@ export default function Home() {
                 <button
                   type="button"
                   onClick={() => setApprovingUser(null)}
-                  style={{ flex: 1, height: '44px', border: '1px solid #E2E8F0', borderRadius: '10px', background: '#F8FAFC', color: 'var(--text-secondary)', fontWeight: '600', cursor: 'pointer' }}
+                  style={{ flex: 1, height: '44px', border: '1px solid var(--border-color)', borderRadius: '10px', background: 'rgba(255,255,255,0.04)', color: 'var(--text-secondary)', fontWeight: '600', cursor: 'pointer' }}
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  style={{ flex: 1, height: '44px', border: 'none', borderRadius: '10px', background: 'linear-gradient(135deg, #6C4DFF 0%, #8B5CF6 100%)', color: 'white', fontWeight: '700', cursor: 'pointer', boxShadow: '0 4px 12px rgba(108, 77, 255, 0.25)' }}
+                  style={{ flex: 1, height: '44px', border: 'none', borderRadius: '10px', background: '#D32F45', color: 'white', fontWeight: '700', cursor: 'pointer', boxShadow: '0 4px 12px rgba(211, 47, 69, 0.3)' }}
                 >
                   Approve User
                 </button>
@@ -5871,59 +5883,59 @@ export default function Home() {
       {/* View Details Modal */}
       {viewingUserDetails && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(15, 23, 42, 0.6)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999, padding: '16px' }}>
-          <div style={{ width: '100%', maxWidth: '500px', background: 'white', borderRadius: '16px', padding: '24px', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)', color: '#1E293B', border: '1px solid #E2E8F0' }}>
+          <div style={{ width: '100%', maxWidth: '500px', background: 'var(--bg-card)', borderRadius: '16px', padding: '24px', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)', color: 'var(--text-primary)', border: '1px solid var(--border-color)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #E2E8F0', paddingBottom: '12px', marginBottom: '16px' }}>
-              <h3 style={{ fontSize: '1.25rem', fontWeight: '700', color: '#1E293B', margin: 0 }}>Registration Profile Details</h3>
+              <h3 style={{ fontSize: '1.25rem', fontWeight: '700', color: 'var(--text-primary)', margin: 0 }}>Registration Profile Details</h3>
               <button 
                 onClick={() => setViewingUserDetails(null)}
-                style={{ background: 'transparent', border: 'none', fontSize: '1.5rem', color: '#64748B', cursor: 'pointer', lineHieght: 1 }}
+                style={{ background: 'transparent', border: 'none', fontSize: '1.5rem', color: 'var(--text-secondary)', cursor: 'pointer', lineHieght: 1 }}
               >&times;</button>
             </div>
             
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid #F1F5F9' }}>
-                <span style={{ fontWeight: '600', color: '#64748B' }}>Full Name</span>
+              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid var(--border-color)' }}>
+                <span style={{ fontWeight: '600', color: 'var(--text-secondary)' }}>Full Name</span>
                 <span style={{ fontWeight: '500' }}>{viewingUserDetails.first_name} {viewingUserDetails.last_name}</span>
               </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid #F1F5F9' }}>
-                <span style={{ fontWeight: '600', color: '#64748B' }}>Username</span>
+              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid var(--border-color)' }}>
+                <span style={{ fontWeight: '600', color: 'var(--text-secondary)' }}>Username</span>
                 <span style={{ fontWeight: '500' }}>@{viewingUserDetails.username}</span>
               </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid #F1F5F9' }}>
-                <span style={{ fontWeight: '600', color: '#64748B' }}>Email Address</span>
+              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid var(--border-color)' }}>
+                <span style={{ fontWeight: '600', color: 'var(--text-secondary)' }}>Email Address</span>
                 <span style={{ fontWeight: '500' }}>{viewingUserDetails.email}</span>
               </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid #F1F5F9' }}>
-                <span style={{ fontWeight: '600', color: '#64748B' }}>Role / Level</span>
-                <span style={{ fontWeight: '700', color: '#6C4DFF' }}>{viewingUserDetails.role || 'Employee'}</span>
+              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid var(--border-color)' }}>
+                <span style={{ fontWeight: '600', color: 'var(--text-secondary)' }}>Role / Level</span>
+                <span style={{ fontWeight: '700', color: 'var(--accent)' }}>{viewingUserDetails.role || 'Employee'}</span>
               </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid #F1F5F9' }}>
-                <span style={{ fontWeight: '600', color: '#64748B' }}>Request Status</span>
+              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid var(--border-color)' }}>
+                <span style={{ fontWeight: '600', color: 'var(--text-secondary)' }}>Request Status</span>
                 <span style={{ fontWeight: '700', color: viewingUserDetails.status === 'Approved' ? '#10B981' : viewingUserDetails.status === 'Pending' ? '#F59E0B' : '#EF4444' }}>
                   {viewingUserDetails.status}
                 </span>
               </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid #F1F5F9' }}>
-                <span style={{ fontWeight: '600', color: '#64748B' }}>Registration Date</span>
+              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid var(--border-color)' }}>
+                <span style={{ fontWeight: '600', color: 'var(--text-secondary)' }}>Registration Date</span>
                 <span style={{ fontWeight: '500' }}>{new Date(viewingUserDetails.created_at).toLocaleString()}</span>
               </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid #F1F5F9' }}>
-                <span style={{ fontWeight: '600', color: '#64748B' }}>Department</span>
+              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid var(--border-color)' }}>
+                <span style={{ fontWeight: '600', color: 'var(--text-secondary)' }}>Department</span>
                 <span style={{ fontWeight: '500' }}>{viewingUserDetails.department || 'Not Assigned'}</span>
               </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid #F1F5F9' }}>
-                <span style={{ fontWeight: '600', color: '#64748B' }}>Designation</span>
+              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid var(--border-color)' }}>
+                <span style={{ fontWeight: '600', color: 'var(--text-secondary)' }}>Designation</span>
                 <span style={{ fontWeight: '500' }}>{viewingUserDetails.designation || 'Not Assigned'}</span>
               </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid #F1F5F9' }}>
-                <span style={{ fontWeight: '600', color: '#64748B' }}>Employee ID</span>
+              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid var(--border-color)' }}>
+                <span style={{ fontWeight: '600', color: 'var(--text-secondary)' }}>Employee ID</span>
                 <span style={{ fontWeight: '500' }}>{viewingUserDetails.employee_id || 'Not Assigned'}</span>
               </div>
             </div>
 
             <button 
               onClick={() => setViewingUserDetails(null)}
-              style={{ width: '100%', height: '42px', marginTop: '20px', border: 'none', borderRadius: '8px', background: '#6C4DFF', color: 'white', fontWeight: '700', cursor: 'pointer' }}
+              style={{ width: '100%', height: '42px', marginTop: '20px', border: 'none', borderRadius: '8px', background: 'var(--accent)', color: 'white', fontWeight: '700', cursor: 'pointer' }}
             >Close Details</button>
           </div>
         </div>

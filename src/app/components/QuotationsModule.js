@@ -842,10 +842,10 @@ function QuotationsModuleInner({ user, triggerToast }) {
       {/* List Page View */}
       {!showEditor && (
         <>
-          <div style={{ background: 'white', border: '1px solid var(--border-color)', borderRadius: '16px', padding: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px', boxShadow: '0 4px 12px rgba(0,0,0,0.02)' }}>
+          <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '16px', padding: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px', boxShadow: '0 4px 12px rgba(0,0,0,0.02)' }}>
             <div>
               <h1 style={{ fontSize: '1.6rem', fontWeight: '800', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '10px', margin: 0 }}>
-                <FileSpreadsheet style={{ color: '#6C4DFF' }} /> Quotation Engineering System
+                <FileSpreadsheet style={{ color: 'var(--accent)' }} /> Quotation Engineering System
               </h1>
               <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginTop: '4px' }}>
                 Build scopes manually, configure cost breakdowns, and export print-ready PDF engineering proposals.
@@ -854,7 +854,7 @@ function QuotationsModuleInner({ user, triggerToast }) {
             {(isAdmin || isEmployee) && (
               <button 
                 className="btn btn-primary" 
-                style={{ background: 'linear-gradient(135deg, #6C4DFF 0%, #8B5CF6 100%)', border: 'none', color: 'white', padding: '10px 20px', borderRadius: '10px', fontWeight: '700', cursor: 'pointer', boxShadow: '0 4px 12px rgba(108, 77, 255, 0.25)' }}
+                style={{ background: '#D32F45', border: 'none', color: 'white', padding: '10px 20px', borderRadius: '10px', fontWeight: '700', cursor: 'pointer', boxShadow: '0 4px 12px rgba(108, 77, 255, 0.25)' }}
                 onClick={handleOpenNew}
               >
                 <Plus size={18} /> Create New Offer
@@ -863,7 +863,7 @@ function QuotationsModuleInner({ user, triggerToast }) {
           </div>
 
           {/* List Tab Filters */}
-          <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', background: 'white', padding: '10px', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
+          <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', background: 'var(--bg-card)', padding: '10px', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
             {['All', 'Draft', 'Under Review', 'Approved', 'Sent', 'Archived'].map((tab) => (
               <button
                 key={tab}
@@ -875,7 +875,7 @@ function QuotationsModuleInner({ user, triggerToast }) {
                   borderRadius: '8px', 
                   fontWeight: activeTab === tab ? '700' : '500', 
                   cursor: 'pointer',
-                  background: activeTab === tab ? '#6C4DFF' : 'transparent',
+                  background: activeTab === tab ? 'var(--accent)' : 'transparent',
                   color: activeTab === tab ? 'white' : 'var(--text-primary)'
                 }}
                 onClick={() => setActiveTab(tab)}
@@ -889,7 +889,7 @@ function QuotationsModuleInner({ user, triggerToast }) {
             <div style={{ overflowX: 'auto' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
                 <thead>
-                  <tr style={{ background: '#F8FAFC', borderBottom: '1px solid var(--border-color)' }}>
+                  <tr style={{ background: 'rgba(255,255,255,0.04)', borderBottom: '1px solid var(--border-color)' }}>
                     <th style={{ padding: '14px 20px', fontSize: '0.75rem', fontWeight: '700', textTransform: 'uppercase', color: 'var(--text-muted)' }}>Quotation #</th>
                     <th style={{ padding: '14px 20px', fontSize: '0.75rem', fontWeight: '700', textTransform: 'uppercase', color: 'var(--text-muted)' }}>Project Name</th>
                     <th style={{ padding: '14px 20px', fontSize: '0.75rem', fontWeight: '700', textTransform: 'uppercase', color: 'var(--text-muted)' }}>Client Name</th>
@@ -910,7 +910,7 @@ function QuotationsModuleInner({ user, triggerToast }) {
                     </tr>
                   ) : (
                     quotations.filter(q => activeTab === 'All' || q.status === activeTab).map((q) => (
-                      <tr key={q.id} style={{ borderBottom: '1px solid var(--border-color)', background: 'white' }}>
+                      <tr key={q.id} style={{ borderBottom: '1px solid var(--border-color)', background: 'var(--bg-card)' }}>
                         <td style={{ padding: '16px 20px', fontWeight: '700', color: 'var(--text-primary)' }}>{q.quotation_number}</td>
                         <td style={{ padding: '16px 20px', color: 'var(--text-primary)' }}>{q.project_name}</td>
                         <td style={{ padding: '16px 20px', color: 'var(--text-primary)' }}>{q.client_name}</td>
@@ -921,13 +921,13 @@ function QuotationsModuleInner({ user, triggerToast }) {
                             fontSize: '0.7rem', 
                             fontWeight: '700', 
                             borderRadius: '4px',
-                            background: q.status === 'Approved' ? '#D1FAE5' : q.status === 'Under Review' ? '#FEF3C7' : q.status === 'Sent' ? '#DBEAFE' : '#E2E8F0',
-                            color: q.status === 'Approved' ? '#065F46' : q.status === 'Under Review' ? '#92400E' : q.status === 'Sent' ? '#1E40AF' : '#374151'
+                            background: q.status === 'Approved' ? 'rgba(46,204,113,0.15)' : q.status === 'Under Review' ? '#FEF3C7' : q.status === 'Sent' ? '#DBEAFE' : '#E2E8F0',
+                            color: q.status === 'Approved' ? '#2ECC71' : q.status === 'Under Review' ? '#F39C12' : q.status === 'Sent' ? '#3498DB' : 'var(--text-secondary)'
                           }}>
                             {q.status}
                           </span>
                         </td>
-                        <td style={{ padding: '16px 20px', fontWeight: '700', color: '#6C4DFF' }}>
+                        <td style={{ padding: '16px 20px', fontWeight: '700', color: 'var(--accent)' }}>
                           {q.currency || 'INR'} {q.costing?.grand_total ? Math.round(q.costing.grand_total).toLocaleString() : 'N/A'}
                         </td>
                         <td style={{ padding: '16px 20px', textAlign: 'right' }}>
@@ -965,12 +965,12 @@ function QuotationsModuleInner({ user, triggerToast }) {
         <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', position: 'relative', paddingBottom: '90px' }}>
           
           {/* Header & Autosave status */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px', background: 'white', padding: '16px 24px', borderRadius: '16px', border: '1px solid var(--border-color)', boxShadow: '0 4px 12px rgba(0,0,0,0.02)' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px', background: 'var(--bg-card)', padding: '16px 24px', borderRadius: '16px', border: '1px solid var(--border-color)', boxShadow: '0 4px 12px rgba(0,0,0,0.02)' }}>
             <div>
               <h2 style={{ fontSize: '1.4rem', fontWeight: '850', color: 'var(--text-primary)', margin: 0 }}>
                 {editingQuote ? `Offer Ref: ${editingQuote.quotation_number}` : 'New Engineering Consultancy Offer'}
               </h2>
-              <span style={{ fontSize: '0.75rem', color: '#64748B', fontWeight: '600' }}>
+              <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: '600' }}>
                 {autosaveTime ? `✓ Saved just now at ${autosaveTime}` : 'Form edits will auto-save silently.'}
               </span>
             </div>
@@ -984,29 +984,29 @@ function QuotationsModuleInner({ user, triggerToast }) {
           </div>
 
           {/* CARD 1: Client & Project Details */}
-          <div className="card" style={{ background: 'white', borderRadius: '16px', border: '1px solid var(--border-color)', boxShadow: '0 4px 12px rgba(0,0,0,0.02)' }}>
-            <h3 style={{ fontSize: '0.95rem', fontWeight: '800', marginBottom: '16px', color: '#6C4DFF', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Card 1: Client & Project Details</h3>
+          <div className="card" style={{ background: 'var(--bg-card)', borderRadius: '16px', border: '1px solid var(--border-color)', boxShadow: '0 4px 12px rgba(0,0,0,0.02)' }}>
+            <h3 style={{ fontSize: '0.95rem', fontWeight: '800', marginBottom: '16px', color: 'var(--accent)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Card 1: Client & Project Details</h3>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px' }}>
               <div>
-                <label style={{ fontSize: '0.75rem', fontWeight: '700', color: '#64748B', display: 'block', marginBottom: '6px' }}>Client Company *</label>
+                <label style={{ fontSize: '0.75rem', fontWeight: '700', color: 'var(--text-secondary)', display: 'block', marginBottom: '6px' }}>Client Company *</label>
                 <input type="text" value={clientName} onChange={(e) => setClientName(e.target.value)} required placeholder="Client Company Name" style={{ width: '100%', height: '40px', padding: '8px 12px', border: '1px solid #CBD5E1', borderRadius: '8px' }} />
               </div>
               <div>
-                <label style={{ fontSize: '0.75rem', fontWeight: '700', color: '#64748B', display: 'block', marginBottom: '6px' }}>Contact Person Name</label>
+                <label style={{ fontSize: '0.75rem', fontWeight: '700', color: 'var(--text-secondary)', display: 'block', marginBottom: '6px' }}>Contact Person Name</label>
                 <input type="text" value={contactPerson} onChange={(e) => setContactPerson(e.target.value)} placeholder="Lead Contact Representative" style={{ width: '100%', height: '40px', padding: '8px 12px', border: '1px solid #CBD5E1', borderRadius: '8px' }} />
               </div>
               <div>
-                <label style={{ fontSize: '0.75rem', fontWeight: '700', color: '#64748B', display: 'block', marginBottom: '6px' }}>Project Name Description *</label>
+                <label style={{ fontSize: '0.75rem', fontWeight: '700', color: 'var(--text-secondary)', display: 'block', marginBottom: '6px' }}>Project Name Description *</label>
                 <input type="text" value={projectName} onChange={(e) => setProjectName(e.target.value)} required placeholder="Official Project Name" style={{ width: '100%', height: '40px', padding: '8px 12px', border: '1px solid #CBD5E1', borderRadius: '8px' }} />
               </div>
               <div>
-                <label style={{ fontSize: '0.75rem', fontWeight: '700', color: '#64748B', display: 'block', marginBottom: '6px' }}>Project Installation Location</label>
+                <label style={{ fontSize: '0.75rem', fontWeight: '700', color: 'var(--text-secondary)', display: 'block', marginBottom: '6px' }}>Project Installation Location</label>
                 <input type="text" value={projectLocation} onChange={(e) => setProjectLocation(e.target.value)} placeholder="Project Site Location" style={{ width: '100%', height: '40px', padding: '8px 12px', border: '1px solid #CBD5E1', borderRadius: '8px' }} />
               </div>
 
               <div>
-                <label style={{ fontSize: '0.75rem', fontWeight: '700', color: '#64748B', display: 'block', marginBottom: '6px' }}>Currency ISO</label>
-                <select value={currency} onChange={(e) => setCurrency(e.target.value)} style={{ width: '100%', height: '40px', padding: '8px 12px', border: '1px solid #CBD5E1', borderRadius: '8px', background: 'white' }}>
+                <label style={{ fontSize: '0.75rem', fontWeight: '700', color: 'var(--text-secondary)', display: 'block', marginBottom: '6px' }}>Currency ISO</label>
+                <select value={currency} onChange={(e) => setCurrency(e.target.value)} style={{ width: '100%', height: '40px', padding: '8px 12px', border: '1px solid #CBD5E1', borderRadius: '8px', background: 'var(--bg-card)' }}>
                   <option value="INR">INR (₹)</option>
                   <option value="USD">USD ($)</option>
                   <option value="EUR">EUR (€)</option>
@@ -1016,14 +1016,14 @@ function QuotationsModuleInner({ user, triggerToast }) {
           </div>
 
           {/* CARD 2: Scope Manual Builder */}
-          <div className="card" style={{ background: 'white', borderRadius: '16px', border: '1px solid var(--border-color)', boxShadow: '0 4px 12px rgba(0,0,0,0.02)', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <div className="card" style={{ background: 'var(--bg-card)', borderRadius: '16px', border: '1px solid var(--border-color)', boxShadow: '0 4px 12px rgba(0,0,0,0.02)', display: 'flex', flexDirection: 'column', gap: '16px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
-              <h3 style={{ fontSize: '0.95rem', fontWeight: '800', color: '#6C4DFF', textTransform: 'uppercase', letterSpacing: '0.5px', margin: 0 }}>Card 2: Scope of Deliverable Documents</h3>
+              <h3 style={{ fontSize: '0.95rem', fontWeight: '800', color: 'var(--accent)', textTransform: 'uppercase', letterSpacing: '0.5px', margin: 0 }}>Card 2: Scope of Deliverable Documents</h3>
               <button 
                 type="button" 
                 className="btn btn-primary"
                 onClick={addDeliverableRow}
-                style={{ background: '#6C4DFF', color: 'white', border: 'none', display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 14px', borderRadius: '8px', fontWeight: '700', cursor: 'pointer' }}
+                style={{ background: 'var(--accent)', color: 'white', border: 'none', display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 14px', borderRadius: '8px', fontWeight: '700', cursor: 'pointer' }}
               >
                 <Plus size={14} /> Add Deliverable Row
               </button>
@@ -1044,9 +1044,9 @@ function QuotationsModuleInner({ user, triggerToast }) {
             </div>
 
             {/* Scrollable Deliverables List */}
-            <div style={{ maxHeight: '350px', overflowY: 'auto', border: '1px solid #E2E8F0', borderRadius: '12px' }}>
+            <div style={{ maxHeight: '350px', overflowY: 'auto', border: '1px solid var(--border-color)', borderRadius: '12px' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem', textAlign: 'left' }}>
-                <thead style={{ background: '#F8FAFC', position: 'sticky', top: 0, zIndex: 1, borderBottom: '1px solid #E2E8F0' }}>
+                <thead style={{ background: 'rgba(255,255,255,0.04)', position: 'sticky', top: 0, zIndex: 1, borderBottom: '1px solid var(--border-color)' }}>
                   <tr>
                     <th style={{ padding: '12px', width: '60px', textAlign: 'center' }}>Inc</th>
                     <th style={{ padding: '12px' }}>Document / Deliverable Name</th>
@@ -1057,7 +1057,7 @@ function QuotationsModuleInner({ user, triggerToast }) {
                 </thead>
                 <tbody>
                   {filteredDeliverables.map((item, idx) => (
-                    <tr key={idx} style={{ borderBottom: '1px solid #F1F5F9', background: item.included ? 'white' : '#F8FAFC' }}>
+                    <tr key={idx} style={{ borderBottom: '1px solid var(--border-color)', background: item.included ? 'var(--bg-card)' : 'rgba(255,255,255,0.02)' }}>
                       <td style={{ padding: '10px', textAlign: 'center' }}>
                         <input 
                           type="checkbox" 
@@ -1087,7 +1087,7 @@ function QuotationsModuleInner({ user, triggerToast }) {
                         {editingRowIdx === idx ? (
                           <input type="text" value={editRemarks} onChange={(e) => setEditRemarks(e.target.value)} style={{ width: '100%', padding: '6px', border: '1px solid #CBD5E1', borderRadius: '4px' }} />
                         ) : (
-                          <span style={{ color: '#64748B' }}>{item.remarks || '-'}</span>
+                          <span style={{ color: 'var(--text-secondary)' }}>{item.remarks || '-'}</span>
                         )}
                       </td>
                       <td style={{ padding: '10px', textAlign: 'right' }}>
@@ -1095,7 +1095,7 @@ function QuotationsModuleInner({ user, triggerToast }) {
                           {editingRowIdx === idx ? (
                             <button type="button" onClick={() => saveEditRow(idx)} style={{ background: '#10B981', color: 'white', border: 'none', padding: '4px 8px', borderRadius: '4px', cursor: 'pointer' }}><Check size={14} /></button>
                           ) : (
-                            <button type="button" onClick={() => startEditRow(idx)} style={{ background: '#CBD5E1', color: '#1E293B', border: 'none', padding: '4px 8px', borderRadius: '4px', cursor: 'pointer' }}><Edit3 size={14} /></button>
+                            <button type="button" onClick={() => startEditRow(idx)} style={{ background: 'var(--border-color)', color: 'var(--text-primary)', border: 'none', padding: '4px 8px', borderRadius: '4px', cursor: 'pointer' }}><Edit3 size={14} /></button>
                           )}
                           <button type="button" onClick={() => moveRow(idx, 'up')} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><ArrowUp size={14} /></button>
                           <button type="button" onClick={() => moveRow(idx, 'down')} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><ArrowDown size={14} /></button>
@@ -1111,13 +1111,13 @@ function QuotationsModuleInner({ user, triggerToast }) {
           </div>
 
           {/* CARD 3: Commercial Terms Editor */}
-          <div className="card" style={{ background: 'white', borderRadius: '16px', border: '1px solid var(--border-color)', boxShadow: '0 4px 12px rgba(0,0,0,0.02)', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            <h3 style={{ fontSize: '0.95rem', fontWeight: '800', color: '#6C4DFF', textTransform: 'uppercase', letterSpacing: '0.5px', margin: 0 }}>Card 3: Commercial Conditions & Terms</h3>
-            <div style={{ display: 'flex', gap: '6px', background: '#F8FAFC', padding: '6px', borderRadius: '8px', border: '1px solid #CBD5E1' }}>
-              <button type="button" onClick={() => appendConditionText('bold')} style={{ padding: '6px', background: 'white', border: '1px solid #E2E8F0', borderRadius: '4px', cursor: 'pointer' }}><Bold size={14} /></button>
-              <button type="button" onClick={() => appendConditionText('italic')} style={{ padding: '6px', background: 'white', border: '1px solid #E2E8F0', borderRadius: '4px', cursor: 'pointer' }}><Italic size={14} /></button>
-              <button type="button" onClick={() => appendConditionText('bullet')} style={{ padding: '6px', background: 'white', border: '1px solid #E2E8F0', borderRadius: '4px', cursor: 'pointer' }}><List size={14} /></button>
-              <button type="button" onClick={() => appendConditionText('numbered')} style={{ padding: '6px', background: 'white', border: '1px solid #E2E8F0', borderRadius: '4px', cursor: 'pointer' }}><ListOrdered size={14} /></button>
+          <div className="card" style={{ background: 'var(--bg-card)', borderRadius: '16px', border: '1px solid var(--border-color)', boxShadow: '0 4px 12px rgba(0,0,0,0.02)', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <h3 style={{ fontSize: '0.95rem', fontWeight: '800', color: 'var(--accent)', textTransform: 'uppercase', letterSpacing: '0.5px', margin: 0 }}>Card 3: Commercial Conditions & Terms</h3>
+            <div style={{ display: 'flex', gap: '6px', background: 'rgba(255,255,255,0.04)', padding: '6px', borderRadius: '8px', border: '1px solid #CBD5E1' }}>
+              <button type="button" onClick={() => appendConditionText('bold')} style={{ padding: '6px', background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '4px', cursor: 'pointer' }}><Bold size={14} /></button>
+              <button type="button" onClick={() => appendConditionText('italic')} style={{ padding: '6px', background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '4px', cursor: 'pointer' }}><Italic size={14} /></button>
+              <button type="button" onClick={() => appendConditionText('bullet')} style={{ padding: '6px', background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '4px', cursor: 'pointer' }}><List size={14} /></button>
+              <button type="button" onClick={() => appendConditionText('numbered')} style={{ padding: '6px', background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '4px', cursor: 'pointer' }}><ListOrdered size={14} /></button>
             </div>
             <textarea
               value={commercialConditions}
@@ -1130,52 +1130,52 @@ function QuotationsModuleInner({ user, triggerToast }) {
           </div>
 
           {/* CARD 4: Pricing Summary Summary */}
-          <div className="card" style={{ background: 'white', borderRadius: '16px', border: '1px solid var(--border-color)', boxShadow: '0 4px 12px rgba(0,0,0,0.02)' }}>
-            <h3 style={{ fontSize: '0.95rem', fontWeight: '800', marginBottom: '16px', color: '#6C4DFF', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Card 4: Cost Pricing Summary</h3>
+          <div className="card" style={{ background: 'var(--bg-card)', borderRadius: '16px', border: '1px solid var(--border-color)', boxShadow: '0 4px 12px rgba(0,0,0,0.02)' }}>
+            <h3 style={{ fontSize: '0.95rem', fontWeight: '800', marginBottom: '16px', color: 'var(--accent)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Card 4: Cost Pricing Summary</h3>
             
             {isAdmin && (
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', marginBottom: '20px' }}>
                 <div>
-                  <label style={{ fontSize: '0.75rem', fontWeight: '700', color: '#64748B', display: 'block', marginBottom: '6px' }}>Engineering Fee Rate Factor ({currency})</label>
+                  <label style={{ fontSize: '0.75rem', fontWeight: '700', color: 'var(--text-secondary)', display: 'block', marginBottom: '6px' }}>Engineering Fee Rate Factor ({currency})</label>
                   <input type="number" value={hourlyRate} onChange={(e) => setHourlyRate(Number(e.target.value))} style={{ width: '100%', height: '40px', padding: '8px 12px', border: '1px solid #CBD5E1', borderRadius: '8px' }} />
                 </div>
                 <div>
-                  <label style={{ fontSize: '0.75rem', fontWeight: '700', color: '#64748B', display: 'block', marginBottom: '6px' }}>Software Licensing Cost</label>
+                  <label style={{ fontSize: '0.75rem', fontWeight: '700', color: 'var(--text-secondary)', display: 'block', marginBottom: '6px' }}>Software Licensing Cost</label>
                   <input type="number" value={softwareCost} onChange={(e) => setSoftwareCost(Number(e.target.value))} style={{ width: '100%', height: '40px', padding: '8px 12px', border: '1px solid #CBD5E1', borderRadius: '8px' }} />
                 </div>
                 <div>
-                  <label style={{ fontSize: '0.75rem', fontWeight: '700', color: '#64748B', display: 'block', marginBottom: '6px' }}>Contingency %</label>
+                  <label style={{ fontSize: '0.75rem', fontWeight: '700', color: 'var(--text-secondary)', display: 'block', marginBottom: '6px' }}>Contingency %</label>
                   <input type="number" value={contingencyPercent} onChange={(e) => setContingencyPercent(Number(e.target.value))} style={{ width: '100%', height: '40px', padding: '8px 12px', border: '1px solid #CBD5E1', borderRadius: '8px' }} />
                 </div>
                 <div>
-                  <label style={{ fontSize: '0.75rem', fontWeight: '700', color: '#64748B', display: 'block', marginBottom: '6px' }}>GST %</label>
+                  <label style={{ fontSize: '0.75rem', fontWeight: '700', color: 'var(--text-secondary)', display: 'block', marginBottom: '6px' }}>GST %</label>
                   <input type="number" value={gstPercent} onChange={(e) => setGstPercent(Number(e.target.value))} style={{ width: '100%', height: '40px', padding: '8px 12px', border: '1px solid #CBD5E1', borderRadius: '8px' }} />
                 </div>
-                <div style={{ gridColumn: 'span 4', borderTop: '1px solid #E2E8F0', paddingTop: '16px', marginTop: '8px' }}>
-                  <label style={{ fontSize: '0.8rem', fontWeight: '800', color: '#6C4DFF', display: 'block', marginBottom: '12px', textTransform: 'uppercase' }}>Edit Payment Schedule Milestones</label>
+                <div style={{ gridColumn: 'span 4', borderTop: '1px solid var(--border-color)', paddingTop: '16px', marginTop: '8px' }}>
+                  <label style={{ fontSize: '0.8rem', fontWeight: '800', color: 'var(--accent)', display: 'block', marginBottom: '12px', textTransform: 'uppercase' }}>Edit Payment Schedule Milestones</label>
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px' }}>
                     <div>
-                      <label style={{ fontSize: '0.7rem', fontWeight: '700', color: '#64748B', display: 'block', marginBottom: '4px' }}>Milestone 1 Description</label>
+                      <label style={{ fontSize: '0.7rem', fontWeight: '700', color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Milestone 1 Description</label>
                       <input type="text" value={milestone1Name} onChange={(e) => setMilestone1Name(e.target.value)} style={{ width: '100%', height: '36px', padding: '6px 10px', border: '1px solid #CBD5E1', borderRadius: '6px' }} />
-                      <label style={{ fontSize: '0.7rem', fontWeight: '700', color: '#64748B', display: 'block', marginTop: '4px', marginBottom: '2px' }}>Milestone 1 %</label>
+                      <label style={{ fontSize: '0.7rem', fontWeight: '700', color: 'var(--text-secondary)', display: 'block', marginTop: '4px', marginBottom: '2px' }}>Milestone 1 %</label>
                       <input type="number" value={milestone1Percent} onChange={(e) => setMilestone1Percent(Number(e.target.value) || 0)} style={{ width: '100%', height: '36px', padding: '6px 10px', border: '1px solid #CBD5E1', borderRadius: '6px' }} />
                     </div>
                     <div>
-                      <label style={{ fontSize: '0.7rem', fontWeight: '700', color: '#64748B', display: 'block', marginBottom: '4px' }}>Milestone 2 Description</label>
+                      <label style={{ fontSize: '0.7rem', fontWeight: '700', color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Milestone 2 Description</label>
                       <input type="text" value={milestone2Name} onChange={(e) => setMilestone2Name(e.target.value)} style={{ width: '100%', height: '36px', padding: '6px 10px', border: '1px solid #CBD5E1', borderRadius: '6px' }} />
-                      <label style={{ fontSize: '0.7rem', fontWeight: '700', color: '#64748B', display: 'block', marginTop: '4px', marginBottom: '2px' }}>Milestone 2 %</label>
+                      <label style={{ fontSize: '0.7rem', fontWeight: '700', color: 'var(--text-secondary)', display: 'block', marginTop: '4px', marginBottom: '2px' }}>Milestone 2 %</label>
                       <input type="number" value={milestone2Percent} onChange={(e) => setMilestone2Percent(Number(e.target.value) || 0)} style={{ width: '100%', height: '36px', padding: '6px 10px', border: '1px solid #CBD5E1', borderRadius: '6px' }} />
                     </div>
                     <div>
-                      <label style={{ fontSize: '0.7rem', fontWeight: '700', color: '#64748B', display: 'block', marginBottom: '4px' }}>Milestone 3 Description</label>
+                      <label style={{ fontSize: '0.7rem', fontWeight: '700', color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Milestone 3 Description</label>
                       <input type="text" value={milestone3Name} onChange={(e) => setMilestone3Name(e.target.value)} style={{ width: '100%', height: '36px', padding: '6px 10px', border: '1px solid #CBD5E1', borderRadius: '6px' }} />
-                      <label style={{ fontSize: '0.7rem', fontWeight: '700', color: '#64748B', display: 'block', marginTop: '4px', marginBottom: '2px' }}>Milestone 3 %</label>
+                      <label style={{ fontSize: '0.7rem', fontWeight: '700', color: 'var(--text-secondary)', display: 'block', marginTop: '4px', marginBottom: '2px' }}>Milestone 3 %</label>
                       <input type="number" value={milestone3Percent} onChange={(e) => setMilestone3Percent(Number(e.target.value) || 0)} style={{ width: '100%', height: '36px', padding: '6px 10px', border: '1px solid #CBD5E1', borderRadius: '6px' }} />
                     </div>
                     <div>
-                      <label style={{ fontSize: '0.7rem', fontWeight: '700', color: '#64748B', display: 'block', marginBottom: '4px' }}>Milestone 4 Description</label>
+                      <label style={{ fontSize: '0.7rem', fontWeight: '700', color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Milestone 4 Description</label>
                       <input type="text" value={milestone4Name} onChange={(e) => setMilestone4Name(e.target.value)} style={{ width: '100%', height: '36px', padding: '6px 10px', border: '1px solid #CBD5E1', borderRadius: '6px' }} />
-                      <label style={{ fontSize: '0.7rem', fontWeight: '700', color: '#64748B', display: 'block', marginTop: '4px', marginBottom: '2px' }}>Milestone 4 %</label>
+                      <label style={{ fontSize: '0.7rem', fontWeight: '700', color: 'var(--text-secondary)', display: 'block', marginTop: '4px', marginBottom: '2px' }}>Milestone 4 %</label>
                       <input type="number" value={milestone4Percent} onChange={(e) => setMilestone4Percent(Number(e.target.value) || 0)} style={{ width: '100%', height: '36px', padding: '6px 10px', border: '1px solid #CBD5E1', borderRadius: '6px' }} />
                     </div>
                   </div>
@@ -1184,31 +1184,31 @@ function QuotationsModuleInner({ user, triggerToast }) {
             )}
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '16px' }}>
-              <div style={{ padding: '16px', background: '#F8FAFC', borderRadius: '12px', border: '1px solid #E2E8F0' }}>
-                <span style={{ fontSize: '0.75rem', color: '#64748B', display: 'block' }}>Engineering Hours</span>
-                <strong style={{ fontSize: '1.25rem', color: '#1E293B' }}>{totalHours} hrs</strong>
+              <div style={{ padding: '16px', background: 'rgba(255,255,255,0.04)', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
+                <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', display: 'block' }}>Engineering Hours</span>
+                <strong style={{ fontSize: '1.25rem', color: 'var(--text-primary)' }}>{totalHours} hrs</strong>
               </div>
               {isAdmin && (
                 <>
-                  <div style={{ padding: '16px', background: '#F8FAFC', borderRadius: '12px', border: '1px solid #E2E8F0' }}>
-                    <span style={{ fontSize: '0.75rem', color: '#64748B', display: 'block' }}>Engineering Fee</span>
-                    <strong style={{ fontSize: '1.25rem', color: '#1E293B' }}>{currency} {Math.round(calculatedFee).toLocaleString()}</strong>
+                  <div style={{ padding: '16px', background: 'rgba(255,255,255,0.04)', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
+                    <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', display: 'block' }}>Engineering Fee</span>
+                    <strong style={{ fontSize: '1.25rem', color: 'var(--text-primary)' }}>{currency} {Math.round(calculatedFee).toLocaleString()}</strong>
                   </div>
-                  <div style={{ padding: '16px', background: '#F8FAFC', borderRadius: '12px', border: '1px solid #E2E8F0' }}>
-                    <span style={{ fontSize: '0.75rem', color: '#64748B', display: 'block' }}>Software Cost</span>
-                    <strong style={{ fontSize: '1.25rem', color: '#1E293B' }}>{currency} {Math.round(softwareCost).toLocaleString()}</strong>
+                  <div style={{ padding: '16px', background: 'rgba(255,255,255,0.04)', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
+                    <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', display: 'block' }}>Software Cost</span>
+                    <strong style={{ fontSize: '1.25rem', color: 'var(--text-primary)' }}>{currency} {Math.round(softwareCost).toLocaleString()}</strong>
                   </div>
-                  <div style={{ padding: '16px', background: '#F8FAFC', borderRadius: '12px', border: '1px solid #E2E8F0' }}>
-                    <span style={{ fontSize: '0.75rem', color: '#64748B', display: 'block' }}>GST ({gstPercent}%)</span>
-                    <strong style={{ fontSize: '1.25rem', color: '#1E293B' }}>{currency} {Math.round(calculatedGst).toLocaleString()}</strong>
+                  <div style={{ padding: '16px', background: 'rgba(255,255,255,0.04)', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
+                    <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', display: 'block' }}>GST ({gstPercent}%)</span>
+                    <strong style={{ fontSize: '1.25rem', color: 'var(--text-primary)' }}>{currency} {Math.round(calculatedGst).toLocaleString()}</strong>
                   </div>
                 </>
               )}
             </div>
 
-            <div style={{ padding: '24px', background: 'rgba(108, 77, 255, 0.08)', borderRadius: '16px', border: '1.5px solid #6C4DFF', textAlign: 'center', marginTop: '20px' }}>
-              <span style={{ fontSize: '0.8rem', fontWeight: '700', color: '#6C4DFF', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Grand Total Estimate Summary</span>
-              <h2 style={{ fontSize: '2rem', fontWeight: '850', color: '#6C4DFF', margin: '8px 0 0 0' }}>
+            <div style={{ padding: '24px', background: 'rgba(211, 47, 69, 0.08)', borderRadius: '16px', border: '1.5px solid var(--accent)', textAlign: 'center', marginTop: '20px' }}>
+              <span style={{ fontSize: '0.8rem', fontWeight: '700', color: 'var(--accent)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Grand Total Estimate Summary</span>
+              <h2 style={{ fontSize: '2rem', fontWeight: '850', color: 'var(--accent)', margin: '8px 0 0 0' }}>
                 {currency} {Math.round(calculatedGrandTotal).toLocaleString()}
               </h2>
             </div>
@@ -1245,7 +1245,7 @@ function QuotationsModuleInner({ user, triggerToast }) {
               <button 
                 type="button" 
                 onClick={handleManualSave}
-                style={{ background: '#6C4DFF', color: 'white', border: 'none', padding: '10px 20px', borderRadius: '8px', fontWeight: '750', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
+                style={{ background: 'var(--accent)', color: 'white', border: 'none', padding: '10px 20px', borderRadius: '8px', fontWeight: '750', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
               >
                 <Save size={16} /> Save Draft
               </button>
@@ -1308,23 +1308,23 @@ function QuotationsModuleInner({ user, triggerToast }) {
       {/* DETAIL VIEW MODAL */}
       {selectedQuote && selectedQuote.quotation && selectedQuote.costing && selectedQuote.items && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(15, 23, 42, 0.6)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999, padding: '16px' }}>
-          <div style={{ width: '100%', maxWidth: '850px', maxHeight: '90vh', background: 'white', borderRadius: '16px', padding: '24px', overflowY: 'auto', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)', color: '#1E293B' }}>
+          <div style={{ width: '100%', maxWidth: '850px', maxHeight: '90vh', background: 'var(--bg-card)', borderRadius: '16px', padding: '24px', overflowY: 'auto', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)', color: 'var(--text-primary)' }}>
             
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #E2E8F0', paddingBottom: '12px', marginBottom: '20px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-color)', paddingBottom: '12px', marginBottom: '20px' }}>
               <div>
-                <h3 style={{ fontSize: '1.25rem', fontWeight: '700', color: '#1E293B', margin: 0 }}>
+                <h3 style={{ fontSize: '1.25rem', fontWeight: '700', color: 'var(--text-primary)', margin: 0 }}>
                   Quotation: {selectedQuote.quotation?.quotation_number || 'N/A'}
                 </h3>
-                <span style={{ fontSize: '0.75rem', color: '#64748B' }}>Created by @{selectedQuote.quotation?.created_by || 'unknown'}</span>
+                <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Created by @{selectedQuote.quotation?.created_by || 'unknown'}</span>
               </div>
-              <button onClick={() => setSelectedQuote(null)} style={{ background: 'transparent', border: 'none', fontSize: '1.5rem', color: '#64748B', cursor: 'pointer' }}>&times;</button>
+              <button onClick={() => setSelectedQuote(null)} style={{ background: 'transparent', border: 'none', fontSize: '1.5rem', color: 'var(--text-secondary)', cursor: 'pointer' }}>&times;</button>
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', borderBottom: '1px solid #F1F5F9', paddingBottom: '16px' }}>
-                <div><strong>Client Name:</strong> <p style={{ margin: '4px 0 0 0', color: '#64748B' }}>{selectedQuote.quotation?.client_name || 'N/A'}</p></div>
-                <div><strong>Project Name:</strong> <p style={{ margin: '4px 0 0 0', color: '#64748B' }}>{selectedQuote.quotation?.project_name || 'N/A'}</p></div>
-                <div><strong>Location:</strong> <p style={{ margin: '4px 0 0 0', color: '#64748B' }}>{selectedQuote.quotation?.project_location || 'N/A'}</p></div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', borderBottom: '1px solid var(--border-color)', paddingBottom: '16px' }}>
+                <div><strong>Client Name:</strong> <p style={{ margin: '4px 0 0 0', color: 'var(--text-secondary)' }}>{selectedQuote.quotation?.client_name || 'N/A'}</p></div>
+                <div><strong>Project Name:</strong> <p style={{ margin: '4px 0 0 0', color: 'var(--text-secondary)' }}>{selectedQuote.quotation?.project_name || 'N/A'}</p></div>
+                <div><strong>Location:</strong> <p style={{ margin: '4px 0 0 0', color: 'var(--text-secondary)' }}>{selectedQuote.quotation?.project_location || 'N/A'}</p></div>
                 <div><strong>Status:</strong> 
                   <p style={{ margin: '4px 0 0 0' }}>
                     <span style={{ 
@@ -1332,18 +1332,18 @@ function QuotationsModuleInner({ user, triggerToast }) {
                       fontSize: '0.7rem', 
                       fontWeight: '700', 
                       borderRadius: '4px',
-                      background: selectedQuote.quotation?.status === 'Approved' ? '#D1FAE5' : selectedQuote.quotation?.status === 'Under Review' ? '#FEF3C7' : '#E2E8F0',
-                      color: selectedQuote.quotation?.status === 'Approved' ? '#065F46' : selectedQuote.quotation?.status === 'Under Review' ? '#92400E' : '#374151'
+                      background: selectedQuote.quotation?.status === 'Approved' ? 'rgba(46,204,113,0.15)' : selectedQuote.quotation?.status === 'Under Review' ? '#FEF3C7' : '#E2E8F0',
+                      color: selectedQuote.quotation?.status === 'Approved' ? '#2ECC71' : selectedQuote.quotation?.status === 'Under Review' ? '#F39C12' : 'var(--text-secondary)'
                     }}>{selectedQuote.quotation?.status || 'Draft'}</span>
                   </p>
                 </div>
               </div>
 
               <div>
-                <h4 style={{ fontSize: '0.9rem', fontWeight: '700', marginBottom: '8px', color: '#6C4DFF' }}>Scope of Deliverables</h4>
-                <div style={{ maxHeight: '160px', overflowY: 'auto', border: '1px solid #E2E8F0', borderRadius: '8px' }}>
+                <h4 style={{ fontSize: '0.9rem', fontWeight: '700', marginBottom: '8px', color: 'var(--accent)' }}>Scope of Deliverables</h4>
+                <div style={{ maxHeight: '160px', overflowY: 'auto', border: '1px solid var(--border-color)', borderRadius: '8px' }}>
                   <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.75rem', textAlign: 'left' }}>
-                    <thead style={{ background: '#F8FAFC', position: 'sticky', top: 0 }}>
+                    <thead style={{ background: 'rgba(255,255,255,0.04)', position: 'sticky', top: 0 }}>
                       <tr style={{ borderBottom: '1px solid #CBD5E1' }}>
                         <th style={{ padding: '8px' }}>Document Name</th>
                         <th style={{ padding: '8px' }}>Estimated Hours</th>
@@ -1352,10 +1352,10 @@ function QuotationsModuleInner({ user, triggerToast }) {
                     </thead>
                     <tbody>
                       {Array.isArray(selectedQuote.items) && selectedQuote.items.filter(item => item && item.included).map((item, idx) => (
-                        <tr key={idx} style={{ borderBottom: '1px solid #F1F5F9' }}>
+                        <tr key={idx} style={{ borderBottom: '1px solid var(--border-color)' }}>
                           <td style={{ padding: '6px 8px', fontWeight: '650' }}>{item.deliverable || ''}</td>
                           <td style={{ padding: '6px 8px' }}>{item.estimated_hours || 0} hrs</td>
-                          <td style={{ padding: '6px 8px', color: '#64748B' }}>{item.remarks || '-'}</td>
+                          <td style={{ padding: '6px 8px', color: 'var(--text-secondary)' }}>{item.remarks || '-'}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -1364,28 +1364,28 @@ function QuotationsModuleInner({ user, triggerToast }) {
               </div>
 
               <div>
-                <h4 style={{ fontSize: '0.9rem', fontWeight: '700', marginBottom: '8px', color: '#6C4DFF' }}>Offer Pricing Summary</h4>
-                <div style={{ background: '#F8FAFC', padding: '16px', borderRadius: '8px', border: '1px solid #E2E8F0', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '12px', fontSize: '0.85rem' }}>
+                <h4 style={{ fontSize: '0.9rem', fontWeight: '700', marginBottom: '8px', color: 'var(--accent)' }}>Offer Pricing Summary</h4>
+                <div style={{ background: 'rgba(255,255,255,0.04)', padding: '16px', borderRadius: '8px', border: '1px solid var(--border-color)', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '12px', fontSize: '0.85rem' }}>
                   {isAdmin && (
                     <>
                       <div>
-                        <span style={{ color: '#64748B', display: 'block' }}>Software Cost</span>
+                        <span style={{ color: 'var(--text-secondary)', display: 'block' }}>Software Cost</span>
                         <strong>{selectedQuote.quotation?.currency || 'INR'} {(selectedQuote.costing?.software_cost || 0).toLocaleString()}</strong>
                       </div>
                     </>
                   )}
                   <div>
-                    <span style={{ color: '#64748B', display: 'block' }}>Engineering Hours</span>
+                    <span style={{ color: 'var(--text-secondary)', display: 'block' }}>Engineering Hours</span>
                     <strong>{selectedQuote.costing?.engineering_hours || 0} hrs</strong>
                   </div>
                   <div>
-                    <span style={{ color: '#6C4DFF', display: 'block', fontWeight: 'bold' }}>Grand Total</span>
-                    <strong style={{ fontSize: '1.05rem', color: '#6C4DFF' }}>{selectedQuote.quotation?.currency || 'INR'} {Math.round(selectedQuote.costing?.grand_total || 0).toLocaleString()}</strong>
+                    <span style={{ color: 'var(--accent)', display: 'block', fontWeight: 'bold' }}>Grand Total</span>
+                    <strong style={{ fontSize: '1.05rem', color: 'var(--accent)' }}>{selectedQuote.quotation?.currency || 'INR'} {Math.round(selectedQuote.costing?.grand_total || 0).toLocaleString()}</strong>
                   </div>
                 </div>
               </div>
 
-              <div style={{ borderTop: '1px solid #E2E8F0', paddingTop: '16px', display: 'flex', gap: '8px', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '16px', display: 'flex', gap: '8px', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div style={{ display: 'flex', gap: '8px' }}>
                   <button className="btn btn-primary" onClick={() => exportToPdf(selectedQuote, false)} style={{ background: '#10B981', border: 'none', color: 'white', fontSize: '0.8rem', padding: '8px 14px', borderRadius: '6px' }} disabled={pdfGenerating}>
                     {pdfGenerating ? "Generating..." : "Download PDF Offer"}
@@ -1400,7 +1400,7 @@ function QuotationsModuleInner({ user, triggerToast }) {
 
                 <div style={{ display: 'flex', gap: '8px' }}>
                   {isEmployee && selectedQuote.quotation?.status === 'Draft' && (
-                    <button className="btn btn-primary" onClick={() => handleUpdateStatus(selectedQuote.quotation.id, 'Under Review')} style={{ background: '#6C4DFF', color: 'white', border: 'none' }}>
+                    <button className="btn btn-primary" onClick={() => handleUpdateStatus(selectedQuote.quotation.id, 'Under Review')} style={{ background: 'var(--accent)', color: 'white', border: 'none' }}>
                       Submit for Approval
                     </button>
                   )}
@@ -1461,7 +1461,7 @@ class QuotationErrorBoundary extends React.Component {
           <h3 style={{ margin: '0 0 8px 0', fontSize: '1.1rem', fontWeight: 'bold' }}>Something went wrong</h3>
           <p style={{ fontSize: '0.85rem', margin: 0 }}>The Quotation Management Module encountered a runtime exception. Please reload or contact support.</p>
           {this.props.isAdmin && (
-            <pre style={{ fontSize: '0.75rem', marginTop: '12px', background: '#FEE2E2', padding: '10px', borderRadius: '6px', overflowX: 'auto' }}>
+            <pre style={{ fontSize: '0.75rem', marginTop: '12px', background: 'rgba(231,76,60,0.15)', padding: '10px', borderRadius: '6px', overflowX: 'auto' }}>
               {this.state.error?.toString()}
             </pre>
           )}
