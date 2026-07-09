@@ -244,6 +244,789 @@
       "actor": "admin",
       "details": "Successful login. Role: SuperAdmin.",
       "created_at": "2026-07-09T11:06:07.011Z"
+    },
+    {
+      "id": "log-1783595602138",
+      "event_type": "quotation_updated",
+      "username": "admin",
+      "email": "admin@auraworkspace.local",
+      "actor": "admin",
+      "details": "Updated quotation PMC-2026-0001. Status: Draft.",
+      "created_at": "2026-07-09T11:13:22.138Z"
+    },
+    {
+      "id": "log-1783595631200",
+      "event_type": "quotation_updated",
+      "username": "admin",
+      "email": "admin@auraworkspace.local",
+      "actor": "admin",
+      "details": "Updated quotation PMC-2026-0001. Status: Draft.",
+      "created_at": "2026-07-09T11:13:51.200Z"
+    },
+    {
+      "id": "log-1783595660580",
+      "event_type": "quotation_updated",
+      "username": "admin",
+      "email": "admin@auraworkspace.local",
+      "actor": "admin",
+      "details": "Updated quotation PMC-2026-0001. Status: Draft.",
+      "created_at": "2026-07-09T11:14:20.580Z"
+    },
+    {
+      "id": "log-1783595691182",
+      "event_type": "quotation_updated",
+      "username": "admin",
+      "email": "admin@auraworkspace.local",
+      "actor": "admin",
+      "details": "Updated quotation PMC-2026-0001. Status: Draft.",
+      "created_at": "2026-07-09T11:14:51.182Z"
+    },
+    {
+      "id": "log-1783595720551",
+      "event_type": "quotation_updated",
+      "username": "admin",
+      "email": "admin@auraworkspace.local",
+      "actor": "admin",
+      "details": "Updated quotation PMC-2026-0001. Status: Draft.",
+      "created_at": "2026-07-09T11:15:20.551Z"
+    },
+    {
+      "id": "log-1783595750657",
+      "event_type": "quotation_updated",
+      "username": "admin",
+      "email": "admin@auraworkspace.local",
+      "actor": "admin",
+      "details": "Updated quotation PMC-2026-0001. Status: Draft.",
+      "created_at": "2026-07-09T11:15:50.657Z"
+    },
+    {
+      "id": "log-1783595781356",
+      "event_type": "quotation_updated",
+      "username": "admin",
+      "email": "admin@auraworkspace.local",
+      "actor": "admin",
+      "details": "Updated quotation PMC-2026-0001. Status: Draft.",
+      "created_at": "2026-07-09T11:16:21.356Z"
+    },
+    {
+      "id": "log-1783595811252",
+      "event_type": "quotation_updated",
+      "username": "admin",
+      "email": "admin@auraworkspace.local",
+      "actor": "admin",
+      "details": "Updated quotation PMC-2026-0001. Status: Draft.",
+      "created_at": "2026-07-09T11:16:51.253Z"
+    },
+    {
+      "id": "log-1783596030397",
+      "event_type": "quotation_updated",
+      "username": "admin",
+      "email": "admin@auraworkspace.local",
+      "actor": "admin",
+      "details": "Updated quotation PMC-2026-0001. Status: Draft.",
+      "created_at": "2026-07-09T11:20:30.397Z"
+    },
+    {
+      "id": "log-1783596058268",
+      "event_type": "quotation_updated",
+      "username": "admin",
+      "email": "admin@auraworkspace.local",
+      "actor": "admin",
+      "details": "Updated quotation PMC-2026-0001. Status: Draft.",
+      "created_at": "2026-07-09T11:20:58.268Z"
+    },
+    {
+      "id": "log-1783596088269",
+      "event_type": "quotation_updated",
+      "username": "admin",
+      "email": "admin@auraworkspace.local",
+      "actor": "admin",
+      "details": "Updated quotation PMC-2026-0001. Status: Draft.",
+      "created_at": "2026-07-09T11:21:28.269Z"
+    },
+    {
+      "id": "log-1783596118188",
+      "event_type": "quotation_updated",
+      "username": "admin",
+      "email": "admin@auraworkspace.local",
+      "actor": "admin",
+      "details": "Updated quotation PMC-2026-0001. Status: Draft.",
+      "created_at": "2026-07-09T11:21:58.188Z"
+    },
+    {
+      "id": "log-1783596148209",
+      "event_type": "quotation_updated",
+      "username": "admin",
+      "email": "admin@auraworkspace.local",
+      "actor": "admin",
+      "details": "Updated quotation PMC-2026-0001. Status: Draft.",
+      "created_at": "2026-07-09T11:22:28.209Z"
+    },
+    {
+      "id": "log-1783596178305",
+      "event_type": "quotation_updated",
+      "username": "admin",
+      "email": "admin@auraworkspace.local",
+      "actor": "admin",
+      "details": "Updated quotation PMC-2026-0001. Status: Draft.",
+      "created_at": "2026-07-09T11:22:58.305Z"
+    },
+    {
+      "id": "log-1783596209970",
+      "event_type": "quotation_updated",
+      "username": "admin",
+      "email": "admin@auraworkspace.local",
+      "actor": "admin",
+      "details": "Updated quotation PMC-2026-0001. Status: Draft.",
+      "created_at": "2026-07-09T11:23:29.970Z"
+    },
+    {
+      "id": "log-1783597402996",
+      "event_type": "quotation_updated",
+      "username": "admin",
+      "email": "admin@auraworkspace.local",
+      "actor": "admin",
+      "details": "Updated quotation PMC-2026-0001. Status: Draft.",
+      "created_at": "2026-07-09T11:43:22.996Z"
+    },
+    {
+      "id": "log-1783597431421",
+      "event_type": "quotation_updated",
+      "username": "admin",
+      "email": "admin@auraworkspace.local",
+      "actor": "admin",
+      "details": "Updated quotation PMC-2026-0001. Status: Draft.",
+      "created_at": "2026-07-09T11:43:51.421Z"
+    },
+    {
+      "id": "log-1783597462235",
+      "event_type": "quotation_updated",
+      "username": "admin",
+      "email": "admin@auraworkspace.local",
+      "actor": "admin",
+      "details": "Updated quotation PMC-2026-0001. Status: Draft.",
+      "created_at": "2026-07-09T11:44:22.235Z"
+    },
+    {
+      "id": "log-1783597491252",
+      "event_type": "quotation_updated",
+      "username": "admin",
+      "email": "admin@auraworkspace.local",
+      "actor": "admin",
+      "details": "Updated quotation PMC-2026-0001. Status: Draft.",
+      "created_at": "2026-07-09T11:44:51.252Z"
+    },
+    {
+      "id": "log-1783597521202",
+      "event_type": "quotation_updated",
+      "username": "admin",
+      "email": "admin@auraworkspace.local",
+      "actor": "admin",
+      "details": "Updated quotation PMC-2026-0001. Status: Draft.",
+      "created_at": "2026-07-09T11:45:21.202Z"
+    },
+    {
+      "id": "log-1783597551257",
+      "event_type": "quotation_updated",
+      "username": "admin",
+      "email": "admin@auraworkspace.local",
+      "actor": "admin",
+      "details": "Updated quotation PMC-2026-0001. Status: Draft.",
+      "created_at": "2026-07-09T11:45:51.257Z"
+    },
+    {
+      "id": "log-1783597608098",
+      "event_type": "quotation_updated",
+      "username": "admin",
+      "email": "admin@auraworkspace.local",
+      "actor": "admin",
+      "details": "Updated quotation PMC-2026-0001. Status: Draft.",
+      "created_at": "2026-07-09T11:46:48.098Z"
+    },
+    {
+      "id": "log-1783597610898",
+      "event_type": "quotation_updated",
+      "username": "admin",
+      "email": "admin@auraworkspace.local",
+      "actor": "admin",
+      "details": "Updated quotation PMC-2026-0001. Status: Draft.",
+      "created_at": "2026-07-09T11:46:50.898Z"
+    },
+    {
+      "id": "log-1783597729824",
+      "event_type": "quotation_updated",
+      "username": "admin",
+      "email": "admin@auraworkspace.local",
+      "actor": "admin",
+      "details": "Updated quotation PMC-2026-0001. Status: Draft.",
+      "created_at": "2026-07-09T11:48:49.824Z"
+    },
+    {
+      "id": "log-1783597759236",
+      "event_type": "quotation_updated",
+      "username": "admin",
+      "email": "admin@auraworkspace.local",
+      "actor": "admin",
+      "details": "Updated quotation PMC-2026-0001. Status: Draft.",
+      "created_at": "2026-07-09T11:49:19.236Z"
+    },
+    {
+      "id": "log-1783597789250",
+      "event_type": "quotation_updated",
+      "username": "admin",
+      "email": "admin@auraworkspace.local",
+      "actor": "admin",
+      "details": "Updated quotation PMC-2026-0001. Status: Draft.",
+      "created_at": "2026-07-09T11:49:49.250Z"
+    },
+    {
+      "id": "log-1783597819343",
+      "event_type": "quotation_updated",
+      "username": "admin",
+      "email": "admin@auraworkspace.local",
+      "actor": "admin",
+      "details": "Updated quotation PMC-2026-0001. Status: Draft.",
+      "created_at": "2026-07-09T11:50:19.343Z"
+    },
+    {
+      "id": "log-1783597849342",
+      "event_type": "quotation_updated",
+      "username": "admin",
+      "email": "admin@auraworkspace.local",
+      "actor": "admin",
+      "details": "Updated quotation PMC-2026-0001. Status: Draft.",
+      "created_at": "2026-07-09T11:50:49.342Z"
+    },
+    {
+      "id": "log-1783597879203",
+      "event_type": "quotation_updated",
+      "username": "admin",
+      "email": "admin@auraworkspace.local",
+      "actor": "admin",
+      "details": "Updated quotation PMC-2026-0001. Status: Draft.",
+      "created_at": "2026-07-09T11:51:19.203Z"
+    },
+    {
+      "id": "log-1783597936394",
+      "event_type": "quotation_updated",
+      "username": "admin",
+      "email": "admin@auraworkspace.local",
+      "actor": "admin",
+      "details": "Updated quotation PMC-2026-0001. Status: Draft.",
+      "created_at": "2026-07-09T11:52:16.394Z"
+    },
+    {
+      "id": "log-1783597996594",
+      "event_type": "quotation_updated",
+      "username": "admin",
+      "email": "admin@auraworkspace.local",
+      "actor": "admin",
+      "details": "Updated quotation PMC-2026-0001. Status: Draft.",
+      "created_at": "2026-07-09T11:53:16.594Z"
+    },
+    {
+      "id": "log-1783598151962",
+      "event_type": "quotation_updated",
+      "username": "admin",
+      "email": "admin@auraworkspace.local",
+      "actor": "admin",
+      "details": "Updated quotation PMC-2026-0001. Status: Draft.",
+      "created_at": "2026-07-09T11:55:51.962Z"
+    },
+    {
+      "id": "log-1783598367187",
+      "event_type": "quotation_updated",
+      "username": "admin",
+      "email": "admin@auraworkspace.local",
+      "actor": "admin",
+      "details": "Updated quotation PMC-2026-0001. Status: Draft.",
+      "created_at": "2026-07-09T11:59:27.187Z"
+    },
+    {
+      "id": "log-1783598397165",
+      "event_type": "quotation_updated",
+      "username": "admin",
+      "email": "admin@auraworkspace.local",
+      "actor": "admin",
+      "details": "Updated quotation PMC-2026-0001. Status: Draft.",
+      "created_at": "2026-07-09T11:59:57.165Z"
+    },
+    {
+      "id": "log-1783598427202",
+      "event_type": "quotation_updated",
+      "username": "admin",
+      "email": "admin@auraworkspace.local",
+      "actor": "admin",
+      "details": "Updated quotation PMC-2026-0001. Status: Draft.",
+      "created_at": "2026-07-09T12:00:27.202Z"
+    },
+    {
+      "id": "log-1783598457155",
+      "event_type": "quotation_updated",
+      "username": "admin",
+      "email": "admin@auraworkspace.local",
+      "actor": "admin",
+      "details": "Updated quotation PMC-2026-0001. Status: Draft.",
+      "created_at": "2026-07-09T12:00:57.155Z"
+    },
+    {
+      "id": "log-1783598487142",
+      "event_type": "quotation_updated",
+      "username": "admin",
+      "email": "admin@auraworkspace.local",
+      "actor": "admin",
+      "details": "Updated quotation PMC-2026-0001. Status: Draft.",
+      "created_at": "2026-07-09T12:01:27.142Z"
+    },
+    {
+      "id": "log-1783598517160",
+      "event_type": "quotation_updated",
+      "username": "admin",
+      "email": "admin@auraworkspace.local",
+      "actor": "admin",
+      "details": "Updated quotation PMC-2026-0001. Status: Draft.",
+      "created_at": "2026-07-09T12:01:57.160Z"
+    },
+    {
+      "id": "log-1783598596236",
+      "event_type": "quotation_updated",
+      "username": "admin",
+      "email": "admin@auraworkspace.local",
+      "actor": "admin",
+      "details": "Updated quotation PMC-2026-0001. Status: Draft.",
+      "created_at": "2026-07-09T12:03:16.236Z"
+    },
+    {
+      "id": "log-1783598638836",
+      "event_type": "quotation_updated",
+      "username": "admin",
+      "email": "admin@auraworkspace.local",
+      "actor": "admin",
+      "details": "Updated quotation PMC-2026-0001. Status: Draft.",
+      "created_at": "2026-07-09T12:03:58.836Z"
+    },
+    {
+      "id": "log-1783598666625",
+      "event_type": "quotation_updated",
+      "username": "admin",
+      "email": "admin@auraworkspace.local",
+      "actor": "admin",
+      "details": "Updated quotation PMC-2026-0001. Status: Draft.",
+      "created_at": "2026-07-09T12:04:26.625Z"
+    },
+    {
+      "id": "log-1783598750060",
+      "event_type": "quotation_updated",
+      "username": "admin",
+      "email": "admin@auraworkspace.local",
+      "actor": "admin",
+      "details": "Updated quotation PMC-2026-0001. Status: Draft.",
+      "created_at": "2026-07-09T12:05:50.060Z"
+    },
+    {
+      "id": "log-1783599079500",
+      "event_type": "quotation_updated",
+      "username": "admin",
+      "email": "admin@auraworkspace.local",
+      "actor": "admin",
+      "details": "Updated quotation PMC-2026-0001. Status: Draft.",
+      "created_at": "2026-07-09T12:11:19.500Z"
+    },
+    {
+      "id": "log-1783599109152",
+      "event_type": "quotation_updated",
+      "username": "admin",
+      "email": "admin@auraworkspace.local",
+      "actor": "admin",
+      "details": "Updated quotation PMC-2026-0001. Status: Draft.",
+      "created_at": "2026-07-09T12:11:49.152Z"
+    },
+    {
+      "id": "log-1783599157602",
+      "event_type": "quotation_updated",
+      "username": "admin",
+      "email": "admin@auraworkspace.local",
+      "actor": "admin",
+      "details": "Updated quotation PMC-2026-0001. Status: Draft.",
+      "created_at": "2026-07-09T12:12:37.602Z"
+    },
+    {
+      "id": "log-1783599244334",
+      "event_type": "quotation_updated",
+      "username": "admin",
+      "email": "admin@auraworkspace.local",
+      "actor": "admin",
+      "details": "Updated quotation PMC-2026-0001. Status: Draft.",
+      "created_at": "2026-07-09T12:14:04.334Z"
+    },
+    {
+      "id": "log-1783599274222",
+      "event_type": "quotation_updated",
+      "username": "admin",
+      "email": "admin@auraworkspace.local",
+      "actor": "admin",
+      "details": "Updated quotation PMC-2026-0001. Status: Draft.",
+      "created_at": "2026-07-09T12:14:34.222Z"
+    },
+    {
+      "id": "log-1783599343143",
+      "event_type": "quotation_updated",
+      "username": "admin",
+      "email": "admin@auraworkspace.local",
+      "actor": "admin",
+      "details": "Updated quotation PMC-2026-0001. Status: Draft.",
+      "created_at": "2026-07-09T12:15:43.143Z"
+    },
+    {
+      "id": "log-1783599373335",
+      "event_type": "quotation_updated",
+      "username": "admin",
+      "email": "admin@auraworkspace.local",
+      "actor": "admin",
+      "details": "Updated quotation PMC-2026-0001. Status: Draft.",
+      "created_at": "2026-07-09T12:16:13.335Z"
+    },
+    {
+      "id": "log-1783599403183",
+      "event_type": "quotation_updated",
+      "username": "admin",
+      "email": "admin@auraworkspace.local",
+      "actor": "admin",
+      "details": "Updated quotation PMC-2026-0001. Status: Draft.",
+      "created_at": "2026-07-09T12:16:43.183Z"
+    },
+    {
+      "id": "log-1783599433153",
+      "event_type": "quotation_updated",
+      "username": "admin",
+      "email": "admin@auraworkspace.local",
+      "actor": "admin",
+      "details": "Updated quotation PMC-2026-0001. Status: Draft.",
+      "created_at": "2026-07-09T12:17:13.153Z"
+    },
+    {
+      "id": "log-1783599463126",
+      "event_type": "quotation_updated",
+      "username": "admin",
+      "email": "admin@auraworkspace.local",
+      "actor": "admin",
+      "details": "Updated quotation PMC-2026-0001. Status: Draft.",
+      "created_at": "2026-07-09T12:17:43.126Z"
+    },
+    {
+      "id": "log-1783599492652",
+      "event_type": "quotation_updated",
+      "username": "admin",
+      "email": "admin@auraworkspace.local",
+      "actor": "admin",
+      "details": "Updated quotation PMC-2026-0001. Status: Draft.",
+      "created_at": "2026-07-09T12:18:12.652Z"
+    },
+    {
+      "id": "log-1783599522659",
+      "event_type": "quotation_updated",
+      "username": "admin",
+      "email": "admin@auraworkspace.local",
+      "actor": "admin",
+      "details": "Updated quotation PMC-2026-0001. Status: Draft.",
+      "created_at": "2026-07-09T12:18:42.659Z"
+    },
+    {
+      "id": "log-1783599552812",
+      "event_type": "quotation_updated",
+      "username": "admin",
+      "email": "admin@auraworkspace.local",
+      "actor": "admin",
+      "details": "Updated quotation PMC-2026-0001. Status: Draft.",
+      "created_at": "2026-07-09T12:19:12.812Z"
+    },
+    {
+      "id": "log-1783599582673",
+      "event_type": "quotation_updated",
+      "username": "admin",
+      "email": "admin@auraworkspace.local",
+      "actor": "admin",
+      "details": "Updated quotation PMC-2026-0001. Status: Draft.",
+      "created_at": "2026-07-09T12:19:42.673Z"
+    },
+    {
+      "id": "log-1783599660038",
+      "event_type": "quotation_updated",
+      "username": "admin",
+      "email": "admin@auraworkspace.local",
+      "actor": "admin",
+      "details": "Updated quotation PMC-2026-0001. Status: Draft.",
+      "created_at": "2026-07-09T12:21:00.038Z"
+    },
+    {
+      "id": "log-1783599689833",
+      "event_type": "quotation_updated",
+      "username": "admin",
+      "email": "admin@auraworkspace.local",
+      "actor": "admin",
+      "details": "Updated quotation PMC-2026-0001. Status: Draft.",
+      "created_at": "2026-07-09T12:21:29.833Z"
+    },
+    {
+      "id": "log-1783599719939",
+      "event_type": "quotation_updated",
+      "username": "admin",
+      "email": "admin@auraworkspace.local",
+      "actor": "admin",
+      "details": "Updated quotation PMC-2026-0001. Status: Draft.",
+      "created_at": "2026-07-09T12:21:59.939Z"
+    },
+    {
+      "id": "log-1783599750155",
+      "event_type": "quotation_updated",
+      "username": "admin",
+      "email": "admin@auraworkspace.local",
+      "actor": "admin",
+      "details": "Updated quotation PMC-2026-0001. Status: Draft.",
+      "created_at": "2026-07-09T12:22:30.155Z"
+    },
+    {
+      "id": "log-1783599779860",
+      "event_type": "quotation_updated",
+      "username": "admin",
+      "email": "admin@auraworkspace.local",
+      "actor": "admin",
+      "details": "Updated quotation PMC-2026-0001. Status: Draft.",
+      "created_at": "2026-07-09T12:22:59.860Z"
+    },
+    {
+      "id": "log-1783599809843",
+      "event_type": "quotation_updated",
+      "username": "admin",
+      "email": "admin@auraworkspace.local",
+      "actor": "admin",
+      "details": "Updated quotation PMC-2026-0001. Status: Draft.",
+      "created_at": "2026-07-09T12:23:29.843Z"
+    },
+    {
+      "id": "log-1783599839851",
+      "event_type": "quotation_updated",
+      "username": "admin",
+      "email": "admin@auraworkspace.local",
+      "actor": "admin",
+      "details": "Updated quotation PMC-2026-0001. Status: Draft.",
+      "created_at": "2026-07-09T12:23:59.851Z"
+    },
+    {
+      "id": "log-1783599869831",
+      "event_type": "quotation_updated",
+      "username": "admin",
+      "email": "admin@auraworkspace.local",
+      "actor": "admin",
+      "details": "Updated quotation PMC-2026-0001. Status: Draft.",
+      "created_at": "2026-07-09T12:24:29.831Z"
+    },
+    {
+      "id": "log-1783599904669",
+      "event_type": "quotation_updated",
+      "username": "admin",
+      "email": "admin@auraworkspace.local",
+      "actor": "admin",
+      "details": "Updated quotation PMC-2026-0001. Status: Draft.",
+      "created_at": "2026-07-09T12:25:04.669Z"
+    },
+    {
+      "id": "log-1783599934525",
+      "event_type": "quotation_updated",
+      "username": "admin",
+      "email": "admin@auraworkspace.local",
+      "actor": "admin",
+      "details": "Updated quotation PMC-2026-0001. Status: Draft.",
+      "created_at": "2026-07-09T12:25:34.525Z"
+    },
+    {
+      "id": "log-1783599964449",
+      "event_type": "quotation_updated",
+      "username": "admin",
+      "email": "admin@auraworkspace.local",
+      "actor": "admin",
+      "details": "Updated quotation PMC-2026-0001. Status: Draft.",
+      "created_at": "2026-07-09T12:26:04.449Z"
+    },
+    {
+      "id": "log-1783599994444",
+      "event_type": "quotation_updated",
+      "username": "admin",
+      "email": "admin@auraworkspace.local",
+      "actor": "admin",
+      "details": "Updated quotation PMC-2026-0001. Status: Draft.",
+      "created_at": "2026-07-09T12:26:34.444Z"
+    },
+    {
+      "id": "log-1783600024466",
+      "event_type": "quotation_updated",
+      "username": "admin",
+      "email": "admin@auraworkspace.local",
+      "actor": "admin",
+      "details": "Updated quotation PMC-2026-0001. Status: Draft.",
+      "created_at": "2026-07-09T12:27:04.466Z"
+    },
+    {
+      "id": "log-1783600055164",
+      "event_type": "quotation_updated",
+      "username": "admin",
+      "email": "admin@auraworkspace.local",
+      "actor": "admin",
+      "details": "Updated quotation PMC-2026-0001. Status: Draft.",
+      "created_at": "2026-07-09T12:27:35.164Z"
+    },
+    {
+      "id": "log-1783600109159",
+      "event_type": "quotation_updated",
+      "username": "admin",
+      "email": "admin@auraworkspace.local",
+      "actor": "admin",
+      "details": "Updated quotation PMC-2026-0001. Status: Draft.",
+      "created_at": "2026-07-09T12:28:29.159Z"
+    },
+    {
+      "id": "log-1783600139271",
+      "event_type": "quotation_updated",
+      "username": "admin",
+      "email": "admin@auraworkspace.local",
+      "actor": "admin",
+      "details": "Updated quotation PMC-2026-0001. Status: Draft.",
+      "created_at": "2026-07-09T12:28:59.271Z"
+    },
+    {
+      "id": "log-1783600169149",
+      "event_type": "quotation_updated",
+      "username": "admin",
+      "email": "admin@auraworkspace.local",
+      "actor": "admin",
+      "details": "Updated quotation PMC-2026-0001. Status: Draft.",
+      "created_at": "2026-07-09T12:29:29.149Z"
+    },
+    {
+      "id": "log-1783600199181",
+      "event_type": "quotation_updated",
+      "username": "admin",
+      "email": "admin@auraworkspace.local",
+      "actor": "admin",
+      "details": "Updated quotation PMC-2026-0001. Status: Draft.",
+      "created_at": "2026-07-09T12:29:59.181Z"
+    },
+    {
+      "id": "log-1783600229151",
+      "event_type": "quotation_updated",
+      "username": "admin",
+      "email": "admin@auraworkspace.local",
+      "actor": "admin",
+      "details": "Updated quotation PMC-2026-0001. Status: Draft.",
+      "created_at": "2026-07-09T12:30:29.151Z"
+    },
+    {
+      "id": "log-1783600259213",
+      "event_type": "quotation_updated",
+      "username": "admin",
+      "email": "admin@auraworkspace.local",
+      "actor": "admin",
+      "details": "Updated quotation PMC-2026-0001. Status: Draft.",
+      "created_at": "2026-07-09T12:30:59.213Z"
+    },
+    {
+      "id": "log-1783600336224",
+      "event_type": "quotation_updated",
+      "username": "admin",
+      "email": "admin@auraworkspace.local",
+      "actor": "admin",
+      "details": "Updated quotation PMC-2026-0001. Status: Draft.",
+      "created_at": "2026-07-09T12:32:16.224Z"
+    },
+    {
+      "id": "log-1783600396856",
+      "event_type": "quotation_updated",
+      "username": "admin",
+      "email": "admin@auraworkspace.local",
+      "actor": "admin",
+      "details": "Updated quotation PMC-2026-0001. Status: Draft.",
+      "created_at": "2026-07-09T12:33:16.856Z"
+    },
+    {
+      "id": "log-1783600456173",
+      "event_type": "quotation_updated",
+      "username": "admin",
+      "email": "admin@auraworkspace.local",
+      "actor": "admin",
+      "details": "Updated quotation PMC-2026-0001. Status: Draft.",
+      "created_at": "2026-07-09T12:34:16.173Z"
+    },
+    {
+      "id": "log-1783600487467",
+      "event_type": "quotation_updated",
+      "username": "admin",
+      "email": "admin@auraworkspace.local",
+      "actor": "admin",
+      "details": "Updated quotation PMC-2026-0001. Status: Draft.",
+      "created_at": "2026-07-09T12:34:47.467Z"
+    },
+    {
+      "id": "log-1783600499172",
+      "event_type": "quotation_updated",
+      "username": "admin",
+      "email": "admin@auraworkspace.local",
+      "actor": "admin",
+      "details": "Updated quotation PMC-2026-0001. Status: Draft.",
+      "created_at": "2026-07-09T12:34:59.172Z"
+    },
+    {
+      "id": "log-1783600529145",
+      "event_type": "quotation_updated",
+      "username": "admin",
+      "email": "admin@auraworkspace.local",
+      "actor": "admin",
+      "details": "Updated quotation PMC-2026-0001. Status: Draft.",
+      "created_at": "2026-07-09T12:35:29.145Z"
+    },
+    {
+      "id": "log-1783600576170",
+      "event_type": "quotation_updated",
+      "username": "admin",
+      "email": "admin@auraworkspace.local",
+      "actor": "admin",
+      "details": "Updated quotation PMC-2026-0001. Status: Draft.",
+      "created_at": "2026-07-09T12:36:16.170Z"
+    },
+    {
+      "id": "log-1783600636418",
+      "event_type": "quotation_updated",
+      "username": "admin",
+      "email": "admin@auraworkspace.local",
+      "actor": "admin",
+      "details": "Updated quotation PMC-2026-0001. Status: Draft.",
+      "created_at": "2026-07-09T12:37:16.418Z"
+    },
+    {
+      "id": "log-1783600677237",
+      "event_type": "quotation_updated",
+      "username": "admin",
+      "email": "admin@auraworkspace.local",
+      "actor": "admin",
+      "details": "Updated quotation PMC-2026-0001. Status: Draft.",
+      "created_at": "2026-07-09T12:37:57.237Z"
+    },
+    {
+      "id": "log-1783600679128",
+      "event_type": "quotation_updated",
+      "username": "admin",
+      "email": "admin@auraworkspace.local",
+      "actor": "admin",
+      "details": "Updated quotation PMC-2026-0001. Status: Draft.",
+      "created_at": "2026-07-09T12:37:59.128Z"
+    },
+    {
+      "id": "log-1783600712276",
+      "event_type": "quotation_updated",
+      "username": "admin",
+      "email": "admin@auraworkspace.local",
+      "actor": "admin",
+      "details": "Updated quotation PMC-2026-0001. Status: Draft.",
+      "created_at": "2026-07-09T12:38:32.276Z"
     }
   ],
   "notifications": [
@@ -265,259 +1048,277 @@
       "client_name": "chicago constructions",
       "contact_person": "akshay",
       "project_name": "WATER TREATMENT PLANT",
-      "project_location": "",
+      "project_location": "kerala",
       "plant_capacity": "",
       "currency": "INR",
       "status": "Draft",
       "created_by": "admin",
       "approved_by": null,
-      "commercial_conditions": "1. Validity: 30 Days from date of offer.\n2. Payment Terms: 20% Advance, 50% on engineering design submittal, 30% upon final delivery.\n3. Revisions: Maximum 2 cycles included.",
+      "commercial_conditions": "Quotation Validity: This quotation is valid for 30 calendar days from the date of issue.\nScope of Work: The quotation covers only the deliverables specifically listed in this proposal. Any additional work requested by the Client shall be treated as a variation and quoted separately.\nPayment Terms: Payments shall be made according to the agreed milestone schedule. All invoices are payable within 15 calendar days from the invoice date.\nProject Commencement: Work will commence only after receipt of the agreed advance payment (where applicable) and all required technical inputs from the Client.\nEngineering Inputs: The Client shall provide all necessary drawings, specifications, design criteria, operational data, and approvals required to execute the work.\nDesign Reviews: Up to two (2) design review/revision cycles are included. Additional revisions arising from changes in scope or Client requirements will be billed at the agreed hourly rate.\nSoftware & QA/QC: Professional engineering software costs, internal quality assurance (QA/QC), and document checking are included in this quotation.\nTravel & Site Visits: Travel, accommodation, visa expenses, inspections, surveys, statutory fees, and third-party costs are excluded unless specifically stated.\nTaxes: Applicable taxes, duties, withholding taxes, or government levies shall be borne by the Client unless otherwise agreed in writing.\nIntellectual Property: All engineering calculations, models, drawings, reports, spreadsheets, and digital files remain the intellectual property of Primelisometrics Consultancy until full payment has been received.\nConfidentiality: Both parties shall maintain confidentiality of all technical and commercial information exchanged during the project.\nSuspension of Services: The Consultant reserves the right to suspend work on overdue invoices exceeding 30 calendar days without liability for schedule impacts.\nClient Delays: Delays caused by late information, approvals, or decisions from the Client may require adjustment of the project schedule and delivery dates.\nLiability: The Consultant's total liability arising from the services provided shall be limited to the value of the fees paid under this quotation.\nCurrency & Banking Charges: All payments shall be made in the agreed currency. Any international bank transfer charges shall be borne by the Client.\nAcceptance: Confirmation of this quotation by Purchase Order, signed acceptance, or written email approval shall constitute acceptance of these commercial conditions.",
       "created_at": "2026-07-09T10:47:25.899Z",
-      "updated_at": "2026-07-09T10:56:09.204Z"
+      "updated_at": "2026-07-09T12:38:32.276Z"
     }
   ],
   "quotation_items": [
     {
-      "id": "qi-1783594569204-0",
+      "id": "qi-1783600712276-0",
       "quotation_id": "q-1783594045899",
-      "category": "Reports",
+      "category": "Engineering",
       "deliverable": "Design Basis Report",
       "included": true,
       "estimated_hours": 34,
       "remarks": ""
     },
     {
-      "id": "qi-1783594569204-1",
+      "id": "qi-1783600712276-1",
       "quotation_id": "q-1783594045899",
-      "category": "Reports",
+      "category": "Engineering",
       "deliverable": "Process Design Report",
       "included": true,
-      "estimated_hours": 45,
+      "estimated_hours": 67,
       "remarks": ""
     },
     {
-      "id": "qi-1783594569204-2",
+      "id": "qi-1783600712276-2",
       "quotation_id": "q-1783594045899",
-      "category": "Reports",
+      "category": "Engineering",
       "deliverable": "Hydraulic Calculation Report",
       "included": true,
-      "estimated_hours": 24,
+      "estimated_hours": 56,
       "remarks": ""
     },
     {
-      "id": "qi-1783594569204-3",
+      "id": "qi-1783600712276-3",
       "quotation_id": "q-1783594045899",
-      "category": "Reports",
+      "category": "Engineering",
       "deliverable": "Mechanical Design Report",
       "included": true,
       "estimated_hours": 67,
       "remarks": ""
     },
     {
-      "id": "qi-1783594569204-4",
+      "id": "qi-1783600712276-4",
       "quotation_id": "q-1783594045899",
-      "category": "Process",
+      "category": "Engineering",
       "deliverable": "Process Flow Diagram (PFD)",
       "included": true,
       "estimated_hours": 50,
       "remarks": ""
     },
     {
-      "id": "qi-1783594569204-5",
+      "id": "qi-1783600712276-5",
       "quotation_id": "q-1783594045899",
-      "category": "Process",
+      "category": "Engineering",
       "deliverable": "Piping & Instrumentation Diagram (P&ID)",
       "included": true,
-      "estimated_hours": 80,
+      "estimated_hours": 90,
       "remarks": ""
     },
     {
-      "id": "qi-1783594569204-6",
+      "id": "qi-1783600712276-6",
       "quotation_id": "q-1783594045899",
-      "category": "Process",
+      "category": "Engineering",
       "deliverable": "Hydraulic Profile",
       "included": true,
-      "estimated_hours": 30,
+      "estimated_hours": 34,
       "remarks": ""
     },
     {
-      "id": "qi-1783594569204-7",
+      "id": "qi-1783600712276-7",
       "quotation_id": "q-1783594045899",
-      "category": "Process",
+      "category": "Engineering",
       "deliverable": "Operating Philosophy",
       "included": true,
-      "estimated_hours": 20,
+      "estimated_hours": 28,
       "remarks": ""
     },
     {
-      "id": "qi-1783594569204-8",
+      "id": "qi-1783600712276-8",
       "quotation_id": "q-1783594045899",
-      "category": "Mechanical",
+      "category": "Engineering",
       "deliverable": "Mechanical Equipment Layout",
       "included": true,
-      "estimated_hours": 40,
+      "estimated_hours": 67,
       "remarks": ""
     },
     {
-      "id": "qi-1783594569204-9",
+      "id": "qi-1783600712276-9",
       "quotation_id": "q-1783594045899",
-      "category": "Mechanical",
+      "category": "Engineering",
       "deliverable": "Pump Room Layout",
       "included": true,
-      "estimated_hours": 40,
+      "estimated_hours": 42,
       "remarks": ""
     },
     {
-      "id": "qi-1783594569204-10",
+      "id": "qi-1783600712276-10",
       "quotation_id": "q-1783594045899",
-      "category": "Mechanical",
+      "category": "Engineering",
       "deliverable": "Pipe Gallery Layout",
       "included": true,
-      "estimated_hours": 35,
+      "estimated_hours": 67,
       "remarks": ""
     },
     {
-      "id": "qi-1783594569204-11",
+      "id": "qi-1783600712276-11",
       "quotation_id": "q-1783594045899",
-      "category": "Mechanical",
+      "category": "Engineering",
       "deliverable": "Filter Gallery Layout",
       "included": true,
-      "estimated_hours": 35,
+      "estimated_hours": 50,
       "remarks": ""
     },
     {
-      "id": "qi-1783594569204-12",
+      "id": "qi-1783600712276-12",
       "quotation_id": "q-1783594045899",
-      "category": "Mechanical",
+      "category": "Engineering",
       "deliverable": "Tank Mechanical Details",
       "included": true,
-      "estimated_hours": 30,
+      "estimated_hours": 67,
       "remarks": ""
     },
     {
-      "id": "qi-1783594569204-13",
+      "id": "qi-1783600712276-13",
       "quotation_id": "q-1783594045899",
-      "category": "Mechanical",
+      "category": "Engineering",
       "deliverable": "Equipment Installation Details",
       "included": true,
-      "estimated_hours": 25,
+      "estimated_hours": 50,
       "remarks": ""
     },
     {
-      "id": "qi-1783594569204-14",
+      "id": "qi-1783600712276-14",
       "quotation_id": "q-1783594045899",
-      "category": "Calculations",
+      "category": "Engineering",
       "deliverable": "Equipment Sizing",
       "included": true,
-      "estimated_hours": 15,
+      "estimated_hours": 50,
       "remarks": ""
     },
     {
-      "id": "qi-1783594569204-15",
+      "id": "qi-1783600712276-15",
       "quotation_id": "q-1783594045899",
-      "category": "Calculations",
+      "category": "Engineering",
       "deliverable": "Pipe Sizing",
       "included": true,
-      "estimated_hours": 15,
+      "estimated_hours": 56,
       "remarks": ""
     },
     {
-      "id": "qi-1783594569204-16",
+      "id": "qi-1783600712276-16",
       "quotation_id": "q-1783594045899",
-      "category": "Calculations",
+      "category": "Engineering",
       "deliverable": "Pump Selection",
       "included": true,
-      "estimated_hours": 10,
+      "estimated_hours": 34,
       "remarks": ""
     },
     {
-      "id": "qi-1783594569204-17",
+      "id": "qi-1783600712276-17",
       "quotation_id": "q-1783594045899",
-      "category": "Calculations",
+      "category": "Engineering",
       "deliverable": "Head Loss Calculations",
       "included": true,
-      "estimated_hours": 15,
+      "estimated_hours": 50,
       "remarks": ""
     },
     {
-      "id": "qi-1783594569204-18",
+      "id": "qi-1783600712276-18",
       "quotation_id": "q-1783594045899",
-      "category": "Calculations",
+      "category": "Engineering",
       "deliverable": "Backwash Calculations",
       "included": true,
-      "estimated_hours": 10,
+      "estimated_hours": 34,
       "remarks": ""
     },
     {
-      "id": "qi-1783594569204-19",
+      "id": "qi-1783600712276-19",
       "quotation_id": "q-1783594045899",
-      "category": "Schedules",
+      "category": "Engineering",
       "deliverable": "Equipment Schedule",
       "included": true,
-      "estimated_hours": 12,
+      "estimated_hours": 34,
       "remarks": ""
     },
     {
-      "id": "qi-1783594569204-20",
+      "id": "qi-1783600712276-20",
       "quotation_id": "q-1783594045899",
-      "category": "Schedules",
+      "category": "Engineering",
       "deliverable": "Valve Schedule",
       "included": true,
-      "estimated_hours": 12,
+      "estimated_hours": 28,
       "remarks": ""
     },
     {
-      "id": "qi-1783594569204-21",
+      "id": "qi-1783600712276-21",
       "quotation_id": "q-1783594045899",
-      "category": "Schedules",
+      "category": "Engineering",
       "deliverable": "Pipe Schedule",
       "included": true,
-      "estimated_hours": 10,
+      "estimated_hours": 42,
       "remarks": ""
     },
     {
-      "id": "qi-1783594569204-22",
+      "id": "qi-1783600712276-22",
       "quotation_id": "q-1783594045899",
-      "category": "Schedules",
+      "category": "Engineering",
       "deliverable": "Instrument Schedule",
       "included": true,
-      "estimated_hours": 10,
+      "estimated_hours": 34,
       "remarks": ""
     },
     {
-      "id": "qi-1783594569204-23",
+      "id": "qi-1783600712276-23",
       "quotation_id": "q-1783594045899",
-      "category": "Schedules",
+      "category": "Engineering",
       "deliverable": "Bill of Quantities (BOQ)",
       "included": true,
-      "estimated_hours": 25,
+      "estimated_hours": 56,
       "remarks": ""
     },
     {
-      "id": "qi-1783594569204-24",
+      "id": "qi-1783600712276-24",
       "quotation_id": "q-1783594045899",
-      "category": "Specifications",
+      "category": "Engineering",
       "deliverable": "Technical Specifications",
       "included": true,
-      "estimated_hours": 20,
+      "estimated_hours": 67,
       "remarks": ""
     },
     {
-      "id": "qi-1783594569204-25",
+      "id": "qi-1783600712276-25",
       "quotation_id": "q-1783594045899",
-      "category": "Support",
+      "category": "Engineering",
       "deliverable": "Vendor Drawing Review",
       "included": true,
-      "estimated_hours": 30,
+      "estimated_hours": 56,
       "remarks": ""
     },
     {
-      "id": "qi-1783594569204-26",
+      "id": "qi-1783600712276-26",
       "quotation_id": "q-1783594045899",
-      "category": "Support",
+      "category": "Engineering",
       "deliverable": "Construction Technical Support",
       "included": true,
-      "estimated_hours": 80,
+      "estimated_hours": 84,
+      "remarks": ""
+    },
+    {
+      "id": "qi-1783600712276-27",
+      "quotation_id": "q-1783594045899",
+      "category": "Engineering",
+      "deliverable": "3D Modelling",
+      "included": true,
+      "estimated_hours": 110,
+      "remarks": ""
+    },
+    {
+      "id": "qi-1783600712276-28",
+      "quotation_id": "q-1783594045899",
+      "category": "Engineering",
+      "deliverable": "Quality check/ Quality analysis",
+      "included": true,
+      "estimated_hours": 160,
       "remarks": ""
     }
   ],
@@ -525,14 +1326,14 @@
     {
       "id": "qc-1783594045900",
       "quotation_id": "q-1783594045899",
-      "hourly_rate": 1400,
-      "engineering_hours": 819,
-      "engineering_fee": 1146600,
+      "hourly_rate": 1000,
+      "engineering_hours": 1664,
+      "engineering_fee": 1664000,
       "software_cost": 50000,
-      "contingency": 119660,
-      "subtotal": 1316260,
-      "gst": 236926.8,
-      "grand_total": 1553186.8,
+      "contingency": 171400,
+      "subtotal": 1885400,
+      "gst": 339372,
+      "grand_total": 2224772,
       "created_at": "2026-07-09T10:47:25.900Z"
     }
   ],

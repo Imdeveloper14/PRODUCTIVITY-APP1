@@ -2001,10 +2001,10 @@ export default function Home() {
       doc.setTextColor(255, 255, 255);
       doc.setFontSize(22);
       doc.setFont("helvetica", "bold");
-      doc.text("AURA WORKSPACE OS", 15, 18);
+      doc.text("PRIMELISOMETRICS CONSULTANCY", 15, 18);
       doc.setFontSize(10);
       doc.setFont("helvetica", "normal");
-      doc.text("Premium CAD Design & BIM Consultancies", 15, 25);
+      doc.text("Premium Design & BIM Consultancy Services", 15, 25);
       doc.text("GSTIN: 27AAAAA1111A1Z1", 15, 30);
 
       doc.setFontSize(20);
@@ -2348,12 +2348,12 @@ export default function Home() {
       <div style={{
         minHeight: '100vh',
         display: 'flex',
-        background: 'linear-gradient(135deg, #F8FAFC 0%, #EEF2FF 100%)',
-        fontFamily: 'system-ui, -apple-system, sans-serif'
+        background: '#0B0B0C',
+        fontFamily: 'var(--font-main, Inter, sans-serif)'
       }}>
         {/* Toast Notification Banner */}
         {toastMessage && (
-          <div style={{ position: 'fixed', top: '24px', left: '50%', transform: 'translateX(-50%)', background: '#10B981', color: 'white', padding: '12px 24px', borderRadius: '8px', zIndex: 1200, boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: '500' }}>
+          <div style={{ position: 'fixed', top: '24px', left: '50%', transform: 'translateX(-50%)', background: 'var(--accent)', color: 'white', padding: '12px 24px', borderRadius: '8px', zIndex: 1200, boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: '500' }}>
             <CheckCircle2 size={18} />
             {toastMessage}
           </div>
@@ -2362,7 +2362,8 @@ export default function Home() {
         {/* Left Panel: Branding and Illustration (Desktop Only) */}
         <div className="auth-left-panel" style={{
           width: '45%',
-          background: 'linear-gradient(135deg, #6C4DFF 0%, #8B5CF6 100%)',
+          background: 'linear-gradient(135deg, #111111 0%, #0B0B0C 100%)',
+          borderRight: '1px solid #262626',
           color: 'white',
           padding: '48px',
           display: 'flex',
@@ -2373,23 +2374,23 @@ export default function Home() {
           overflow: 'hidden'
         }}>
           {/* Subtle abstract geometric background shapes */}
-          <div style={{ position: 'absolute', top: '-10%', right: '-10%', width: '400px', height: '400px', borderRadius: '50%', background: 'rgba(255,255,255,0.06)', filter: 'blur(40px)' }}></div>
-          <div style={{ position: 'absolute', bottom: '-15%', left: '-10%', width: '350px', height: '350px', borderRadius: '50%', background: 'rgba(255,255,255,0.08)', filter: 'blur(30px)' }}></div>
+          <div style={{ position: 'absolute', top: '-10%', right: '-10%', width: '400px', height: '400px', borderRadius: '50%', background: 'rgba(211,47,69,0.08)', filter: 'blur(50px)' }}></div>
+          <div style={{ position: 'absolute', bottom: '-15%', left: '-10%', width: '350px', height: '350px', borderRadius: '50%', background: 'rgba(255,255,255,0.02)', filter: 'blur(30px)' }}></div>
 
           <div style={{ maxWidth: '440px', position: 'relative', zIndex: 2 }}>
             {/* App Logo */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '28px' }}>
-              <img src="/logo.png" alt="AURA" style={{ width: '48px', height: '48px', borderRadius: '12px', objectFit: 'contain' }} />
+              <img src="/logo.png" alt="Primelisometrics Logo" style={{ width: '48px', height: '48px', borderRadius: '10px', objectFit: 'contain' }} />
               <div>
-                <span style={{ fontSize: '1.5rem', fontWeight: '850', letterSpacing: '-0.5px' }}>AURA</span>
+                <span style={{ fontSize: '1.2rem', fontWeight: '800', letterSpacing: '-0.3px', color: '#A5A5A5' }}>Primelisometrics Consultancy</span>
               </div>
             </div>
 
             <h1 style={{ fontSize: '2.5rem', fontWeight: '850', lineHeight: '1.15', marginBottom: '16px', letterSpacing: '-0.8px' }}>
               AURA Workspace
             </h1>
-            <p style={{ color: 'rgba(255, 255, 255, 0.85)', fontSize: '1.05rem', lineHeight: '1.6', marginBottom: '40px' }}>
-              Your Engineering Productivity Platform. Manage active CAD files, track progress updates, check daily planners, and access AI assistant modules.
+            <p style={{ color: '#A5A5A5', fontSize: '1.05rem', lineHeight: '1.6', marginBottom: '40px' }}>
+              Engineering Productivity Platform. Manage deliverables, project statistics, commercial conditions, payment schedules, and access automated quotation generation.
             </p>
 
             {/* Feature Cards */}
@@ -2490,24 +2491,26 @@ export default function Home() {
             ) : (
               /* Normal Sign In / Request Access Card */
               <div className="card" style={{
-                background: 'white',
-                border: '1px solid #E2E8F0',
-                borderRadius: '24px',
+                background: 'rgba(24, 24, 24, 0.75)',
+                backdropFilter: 'blur(12px)',
+                border: '1px solid #262626',
+                borderRadius: '10px',
                 padding: '40px 36px',
-                boxShadow: '0 15px 30px -10px rgba(0,0,0,0.04)',
+                boxShadow: '0 15px 30px rgba(0,0,0,0.5)',
                 margin: 0
               }}>
                 {/* Center Brand Logo Focal Point (Only on Desktop) */}
                 <div className="desktop-only-logo-header" style={{ textAlign: 'center', marginBottom: '28px' }}>
-                  <img src="/logo.png" alt="AURA Logo" style={{ width: '80px', height: '80px', borderRadius: '18px', marginBottom: '12px', objectFit: 'contain' }} />
-                  <h2 style={{ fontSize: '1.4rem', fontWeight: '850', color: '#111827', margin: 0, letterSpacing: '-0.3px' }}>AURA Workspace</h2>
-                  <p style={{ fontSize: '0.85rem', color: '#6B7280', margin: '4px 0 0 0' }}>Engineering Productivity Platform</p>
+                  <img src="/logo.png" alt="Primelisometrics Logo" style={{ width: '80px', height: '80px', borderRadius: '10px', marginBottom: '12px', objectFit: 'contain' }} />
+                  <span style={{ fontSize: '0.75rem', fontWeight: '800', color: 'var(--accent)', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block', marginBottom: '2px' }}>Primelisometrics Consultancy</span>
+                  <h2 style={{ fontSize: '1.4rem', fontWeight: '850', color: 'var(--text-primary)', margin: 0, letterSpacing: '-0.3px' }}>AURA Workspace</h2>
+                  <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', margin: '4px 0 0 0' }}>Engineering Productivity Platform</p>
                 </div>
 
                 {/* Mode Toggles */}
                 <div style={{
                   display: 'flex',
-                  borderBottom: '1px solid #E2E8F0',
+                  borderBottom: '1px solid #262626',
                   paddingBottom: '12px',
                   marginBottom: '32px',
                   gap: '12px'
@@ -2517,15 +2520,15 @@ export default function Home() {
                     style={{
                       flex: 1,
                       height: '44px',
-                      borderRadius: '22px',
+                      borderRadius: '10px',
                       border: 'none',
-                      background: authMode === 'login' ? 'linear-gradient(135deg, #6C4DFF 0%, #8B5CF6 100%)' : 'transparent',
+                      background: authMode === 'login' ? '#D32F45' : 'transparent',
                       color: authMode === 'login' ? 'white' : 'var(--text-secondary)',
                       fontWeight: '700',
                       fontSize: '0.9rem',
                       cursor: 'pointer',
                       transition: 'all 0.2s ease',
-                      boxShadow: authMode === 'login' ? '0 4px 12px rgba(108, 77, 255, 0.25)' : 'none'
+                      boxShadow: authMode === 'login' ? '0 4px 12px rgba(211, 47, 69, 0.25)' : 'none'
                     }}
                     onClick={() => setAuthMode('login')}
                   >
@@ -2536,15 +2539,15 @@ export default function Home() {
                     style={{
                       flex: 1,
                       height: '44px',
-                      borderRadius: '22px',
+                      borderRadius: '10px',
                       border: 'none',
-                      background: authMode === 'signup' ? 'linear-gradient(135deg, #6C4DFF 0%, #8B5CF6 100%)' : 'transparent',
+                      background: authMode === 'signup' ? '#D32F45' : 'transparent',
                       color: authMode === 'signup' ? 'white' : 'var(--text-secondary)',
                       fontWeight: '700',
                       fontSize: '0.9rem',
                       cursor: 'pointer',
                       transition: 'all 0.2s ease',
-                      boxShadow: authMode === 'signup' ? '0 4px 12px rgba(108, 77, 255, 0.25)' : 'none'
+                      boxShadow: authMode === 'signup' ? '0 4px 12px rgba(211, 47, 69, 0.25)' : 'none'
                     }}
                     onClick={() => setAuthMode('signup')}
                   >
@@ -2694,8 +2697,7 @@ export default function Home() {
                           type="checkbox" 
                           id="reg-agreed-checkbox"
                           checked={regAgreed} 
-                          onChange={(e) => setRegAgreed(e.target.checked)} 
-                          style={{ width: '16px', height: '16px', accentColor: '#6C4DFF', cursor: 'pointer' }}
+                             style={{ width: '16px', height: '16px', accentColor: '#D32F45', cursor: 'pointer' }}
                         />
                         <label htmlFor="reg-agreed-checkbox" style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', cursor: 'pointer', userSelect: 'none' }}>
                           I agree to the company's Terms of Use and Privacy Policy.
@@ -2710,9 +2712,9 @@ export default function Home() {
                     style={{
                       width: '100%',
                       height: '52px',
-                      background: 'linear-gradient(135deg, #6C4DFF 0%, #8B5CF6 100%)',
+                      background: '#D32F45',
                       border: 'none',
-                      borderRadius: '12px',
+                      borderRadius: '10px',
                       color: 'white',
                       fontWeight: '700',
                       fontSize: '1rem',
@@ -2721,7 +2723,7 @@ export default function Home() {
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      boxShadow: '0 4px 14px rgba(108, 77, 255, 0.3)',
+                      boxShadow: '0 4px 14px rgba(211, 47, 69, 0.3)',
                       transition: 'all 0.2s ease'
                     }}
                     className="auth-primary-btn"
@@ -2760,7 +2762,7 @@ export default function Home() {
           <span style={{ fontSize: '1.6rem', color: 'var(--text-primary)' }}>☰</span>
         </button>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <img src="/logo.png" alt="A" style={{ width: '32px', height: '32px', borderRadius: '8px', objectFit: 'contain' }} />
+          <img src="/logo.png" alt="Primelisometrics" style={{ width: '32px', height: '32px', borderRadius: '8px', objectFit: 'contain' }} />
           <span style={{ fontWeight: '750', fontSize: '1.05rem', color: 'var(--text-primary)', letterSpacing: '-0.3px' }}>AURA</span>
         </div>
         <div
@@ -2784,10 +2786,10 @@ export default function Home() {
             <div>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <img src="/logo.png" alt="A" style={{ width: '36px', height: '36px', borderRadius: '8px', objectFit: 'contain' }} />
+                  <img src="/logo.png" alt="Primelisometrics" style={{ width: '36px', height: '36px', borderRadius: '8px', objectFit: 'contain' }} />
                   <div>
                     <h2 style={{ fontSize: '0.95rem', fontWeight: '700', letterSpacing: '-0.3px', margin: 0, color: 'var(--text-primary)' }}>AURA Workspace</h2>
-                    <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>OS Dashboard</span>
+                    <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Primelisometrics Consultancy</span>
                   </div>
                 </div>
                 <button
@@ -2852,10 +2854,11 @@ export default function Home() {
       <aside className="sidebar">
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '24px' }}>
-            <img src="/logo.png" alt="A" style={{ width: '40px', height: '40px', borderRadius: '10px', objectFit: 'contain' }} />
+            <img src="/logo.png" alt="Primelisometrics" style={{ width: '40px', height: '40px', borderRadius: '10px', objectFit: 'contain' }} />
             <div>
+              <span style={{ fontSize: '0.65rem', fontWeight: '800', color: 'var(--accent)', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block', lineHeight: '1.2' }}>Primelisometrics</span>
               <h2 style={{ fontSize: '0.95rem', fontWeight: '700', letterSpacing: '-0.3px', margin: 0 }}>AURA Workspace</h2>
-              <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block', lineHeight: '1.2' }}>Engineering Productivity Platform</span>
+              <span style={{ fontSize: '0.6rem', color: 'var(--text-muted)', display: 'block', lineHeight: '1.2' }}>Engineering Productivity Platform</span>
             </div>
           </div>
 

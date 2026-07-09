@@ -33,7 +33,18 @@ function QuotationsModuleInner({ user, triggerToast }) {
 
   // Card 3: Commercial Terms State
   const [commercialConditions, setCommercialConditions] = useState(
-    "1. Validity: 30 Days from date of offer.\n2. Payment Terms: 20% Advance, 50% on design submittal, 30% upon approval.\n3. Revisions: Maximum 2 cycles included."
+    "1. Offer Validity\nThis quotation shall remain valid for 30 calendar days from the date of issue.\n\n" +
+    "2. Scope of Work\nOnly the deliverables specifically listed in this quotation are included. Any additional work shall be treated as a variation order and quoted separately.\n\n" +
+    "3. Revision Policy\nThe quotation includes a maximum of two review/revision cycles. Further revisions requested by the Client will be charged separately.\n\n" +
+    "4. Client Responsibilities\nThe Client shall provide all required input data, drawings, specifications, approvals, and comments in a timely manner.\n\n" +
+    "5. Delivery Schedule\nProject schedule shall commence only after receipt of advance payment and all required project inputs.\n\n" +
+    "6. Taxes\nGST and all applicable statutory taxes shall be charged as per prevailing Government regulations unless otherwise stated.\n\n" +
+    "7. Intellectual Property\nAll engineering documents remain the intellectual property of Primelisometrics Consultancy until full payment has been received.\n\n" +
+    "8. Confidentiality\nAll information exchanged during the project shall remain confidential and shall not be disclosed to any third party without written consent.\n\n" +
+    "9. Suspension of Work\nWork may be suspended if scheduled milestone payments are delayed beyond the agreed payment period.\n\n" +
+    "10. Liability\nPrimelisometrics Consultancy's liability shall be limited to the total value of this quotation.\n\n" +
+    "11. Force Majeure\nNeither party shall be liable for delays caused by circumstances beyond reasonable control.\n\n" +
+    "12. Acceptance\nAcceptance of this quotation constitutes acceptance of all commercial terms and conditions stated herein."
   );
 
   // Card 4: Pricing Settings (confidential coefficients)
@@ -41,6 +52,23 @@ function QuotationsModuleInner({ user, triggerToast }) {
   const [softwareCost, setSoftwareCost] = useState(50000);
   const [contingencyPercent, setContingencyPercent] = useState(10);
   const [gstPercent, setGstPercent] = useState(18);
+
+  // Editable Payment Schedule Milestones (4 milestones)
+  const [milestone1Name, setMilestone1Name] = useState('Advance Payment');
+  const [milestone1Percent, setMilestone1Percent] = useState(25);
+  const [milestone1Desc, setMilestone1Desc] = useState('Payable upon acceptance of quotation and Purchase Order / Work Order. Engineering activities commence only after receipt of advance payment.');
+  
+  const [milestone2Name, setMilestone2Name] = useState('Concept & Preliminary Engineering Submission');
+  const [milestone2Percent, setMilestone2Percent] = useState(25);
+  const [milestone2Desc, setMilestone2Desc] = useState('Payable upon submission of initial engineering package, concept drawings, calculations, or preliminary deliverables.');
+
+  const [milestone3Name, setMilestone3Name] = useState('Detailed Engineering Submission');
+  const [milestone3Percent, setMilestone3Percent] = useState(30);
+  const [milestone3Desc, setMilestone3Desc] = useState('Payable upon submission of detailed engineering package and client review.');
+
+  const [milestone4Name, setMilestone4Name] = useState('Final Deliverables & Project Close-Out');
+  const [milestone4Percent, setMilestone4Percent] = useState(20);
+  const [milestone4Desc, setMilestone4Desc] = useState('Payable before release of final editable files, native CAD models, calculations, and engineering documents.');
 
   // Inline editing state for deliverables
   const [editingRowIdx, setEditingRowIdx] = useState(null);
@@ -83,6 +111,19 @@ function QuotationsModuleInner({ user, triggerToast }) {
       triggerToast("Failed to load quotations.");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const viewDetails = async (quote) => {
+    try {
+      const res = await fetch(`/api/quotations/${quote.id}`);
+      const data = await res.json();
+      if (data.success) {
+        setSelectedQuote(data);
+      }
+    } catch (e) {
+      console.error(e);
+      triggerToast("Failed to load details.");
     }
   };
 
@@ -284,13 +325,43 @@ function QuotationsModuleInner({ user, triggerToast }) {
     if (tag === 'numbered') setCommercialConditions(prev => prev + "\n1. Numbered list item");
   };
 
+  // Preload logo helper
+  const preloadImage = (url) => {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.src = url;
+      img.onload = () => resolve(img);
+      img.onerror = () => resolve(null);
+    });
+  };
+
   // Generate and export document PDF
-  const exportToPdf = (qData, previewOnly = false) => {
+  const exportToPdf = async (qData, previewOnly = false) => {
     setPdfGenerating(true);
+    const isDebug = process.env.NEXT_PUBLIC_PDF_DEBUG === 'true';
+    if (isDebug) {
+      console.log("[PDF Debug] Building premium corporate engineering quotation PDF...");
+    }
+    
     try {
-      const q = qData.quotation;
-      const items = qData.items || [];
-      const costing = qData.costing || {};
+      const q = qData?.quotation || {};
+      const items = qData?.items || [];
+      const costing = qData?.costing || {};
+
+      // Inputs Validation
+      const validationErrors = [];
+      if (!q.client_name) validationErrors.push("Client Name");
+      if (!q.project_name) validationErrors.push("Project Name");
+      if (!items.some(item => item && item.included)) validationErrors.push("At least one included deliverable document");
+      if (typeof costing.grand_total !== 'number' || isNaN(costing.grand_total) || costing.grand_total <= 0) {
+        validationErrors.push("Valid Grand Total Professional Fee");
+      }
+
+      if (validationErrors.length > 0) {
+        alert("Cannot generate PDF.\n\nMissing / Invalid details:\n" + validationErrors.map(e => `• ${e}`).join("\n"));
+        setPdfGenerating(false);
+        return;
+      }
 
       const doc = new jsPDF({
         orientation: 'p',
@@ -298,115 +369,427 @@ function QuotationsModuleInner({ user, triggerToast }) {
         format: 'a4'
       });
 
-      const primaryColor = [108, 77, 255]; // Purple branding
-      const textDark = [30, 41, 59];
+      // Load original logo asset
+      const logoImg = await preloadImage('/logo.png');
 
-      // Banner/Header
-      doc.setFillColor(primaryColor[0], primaryColor[1], primaryColor[2]);
-      doc.rect(0, 0, 210, 38, 'F');
+      // Branding Colors
+      const primaryColor = [86, 61, 255];     // #563DFF Gradient Start
+      const secondaryColor = [122, 92, 255];  // #7A5CFF Gradient End
+      const textDarkNavy = [15, 23, 42];      // #0F172A Dark Navy
+      const textMutedGrey = [100, 116, 139];   // #64748B Muted Grey
 
+      // Helper to draw horizontal gradient banner (140 px = 37 mm)
+      const drawGradientBanner = (x, y, w, h) => {
+        for (let i = 0; i < w; i++) {
+          const ratio = i / w;
+          const r = Math.round(primaryColor[0] * (1 - ratio) + secondaryColor[0] * ratio);
+          const g = Math.round(primaryColor[1] * (1 - ratio) + secondaryColor[1] * ratio);
+          const b = Math.round(primaryColor[2] * (1 - ratio) + secondaryColor[2] * ratio);
+          doc.setFillColor(r, g, b);
+          doc.rect(x + i, y, 1, h, 'F');
+        }
+      };
+
+      // Helper to draw section title layout with accent left border
+      const drawSectionHeader = (title, y) => {
+        doc.setFillColor(primaryColor[0], primaryColor[1], primaryColor[2]);
+        doc.rect(15, y, 2.5, 6, 'F');
+        doc.setFont("Helvetica", "bold");
+        doc.setFontSize(11);
+        doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
+        doc.text(title.toUpperCase(), 20, y + 4.5);
+      };
+
+      // ==========================================
+      // PAGE 1: COVER SHEET & CLIENT INFORMATION
+      // ==========================================
+      if (isDebug) console.log("[PDF Debug] Page 1: Drawing premium cover sheet...");
+      
+      // Top Header Gradient Banner Band (Height: 37 mm / ~140 px)
+      drawGradientBanner(0, 0, 210, 37);
+
+      // Embedded original logo or fallback vector symbol (centered vertically in 37mm banner)
+      if (logoImg) {
+        doc.addImage(logoImg, 'PNG', 12, 9.5, 18, 18);
+      } else {
+        doc.setFillColor(255, 255, 255);
+        doc.circle(21, 18.5, 9, 'F');
+        doc.setFont("Helvetica", "bold");
+        doc.setFontSize(14);
+        doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
+        doc.text("P", 18.5, 23);
+      }
+
+      // Center Title: ENGINEERING CONSULTANCY OFFER
       doc.setFont("Helvetica", "bold");
-      doc.setFontSize(22);
+      doc.setFontSize(15);
       doc.setTextColor(255, 255, 255);
-      doc.text("ENGINEERING CONSULTANCY OFFER", 15, 24);
+      doc.text("ENGINEERING CONSULTANCY OFFER", 105, 20.5, { align: 'center', maxWidth: 115 });
+
+      // Right Address Header
+      doc.setFontSize(8.5);
+      doc.setFont("Helvetica", "normal");
+      doc.text("Primelisometrics Consultancy", 198, 16, { align: 'right' });
+      doc.text("www.primelisometrics.com", 198, 21, { align: 'right' });
+
+      // 40 px Space (approx 11 mm)
+      // Four Information Cards Grid starting at Y = 48
+      const issueDateStr = new Date(q.created_at || Date.now()).toLocaleDateString();
+      const infoStripCards = [
+        { label: "QUOTATION REFERENCE", val: q.quotation_number || 'PMC-TEMP', x: 15, w: 42 },
+        { label: "ISSUE DATE", val: issueDateStr, x: 60, w: 42 },
+        { label: "VALIDITY", val: "30 Days", x: 105, w: 42 },
+        { label: "CURRENCY", val: q.currency || 'INR', x: 150, w: 45 }
+      ];
+
+      infoStripCards.forEach(c => {
+        doc.setFillColor(255, 255, 255);
+        doc.setDrawColor(226, 232, 240);
+        doc.setLineWidth(0.35);
+        doc.roundedRect(c.x, 48, c.w, 15, 2, 2, 'FD');
+
+        doc.setFont("Helvetica", "bold");
+        doc.setFontSize(6.5);
+        doc.setTextColor(textMutedGrey[0], textMutedGrey[1], textMutedGrey[2]);
+        doc.text(c.label, c.x + 4, 53);
+
+        doc.setFont("Helvetica", "bold");
+        doc.setFontSize(8.5);
+        doc.setTextColor(textDarkNavy[0], textDarkNavy[1], textDarkNavy[2]);
+        doc.text(c.val, c.x + 4, 59);
+      });
+
+      // Client & Project specifications card
+      drawSectionHeader("PROJECT INFORMATION", 75);
+
+      // Card wrapper outline
+      doc.setFillColor(255, 255, 255);
+      doc.setDrawColor(226, 232, 240);
+      doc.setLineWidth(0.35);
+      doc.roundedRect(15, 83, 180, 52, 2, 2, 'FD');
 
       doc.setFontSize(9.5);
-      doc.setFont("Helvetica", "normal");
-      doc.text("PRIMELISOMETRICS CONSULTANCY", 145, 16);
-      doc.text("www.primelisometrics.com", 145, 22);
+      doc.setTextColor(textDarkNavy[0], textDarkNavy[1], textDarkNavy[2]);
 
-      // Client & Project Information
-      doc.setTextColor(textDark[0], textDark[1], textDark[2]);
+      let gridY = 91;
+      const writeGridRow = (l1, v1, l2, v2) => {
+        doc.setFont("Helvetica", "bold");
+        doc.text(l1, 20, gridY);
+        doc.setFont("Helvetica", "normal");
+        doc.text(v1 || 'N/A', 55, gridY);
+
+        if (l2) {
+          doc.setFont("Helvetica", "bold");
+          doc.text(l2, 110, gridY);
+          doc.setFont("Helvetica", "normal");
+          doc.text(v2 || 'N/A', 145, gridY);
+        }
+        gridY += 9;
+      };
+
+      writeGridRow("Client Company:", q.client_name, "Project Name:", q.project_name);
+      writeGridRow("Contact Person:", q.contact_person, "Project Location:", q.project_location);
+      writeGridRow("Capacity details:", q.plant_capacity, "Pricing Currency:", q.currency);
+
+      // Brief intro box
+      doc.setFillColor(248, 250, 252);
+      doc.rect(15, 142, 180, 42, 'F');
       doc.setFont("Helvetica", "bold");
-      doc.setFontSize(11);
-      doc.text("PROJECT & CLIENT INFORMATION", 15, 52);
-
+      doc.setFontSize(10);
+      doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
+      doc.text("EXECUTIVE SUMMARY", 22, 152);
       doc.setFont("Helvetica", "normal");
       doc.setFontSize(9);
-      doc.text(`Quotation Number: ${q.quotation_number}`, 15, 61);
-      doc.text(`Date of Issue: ${new Date(q.created_at || Date.now()).toLocaleDateString()}`, 15, 67);
-      doc.text(`Client Name: ${q.client_name}`, 15, 73);
-      doc.text(`Contact Person: ${q.contact_person || 'N/A'}`, 15, 79);
-      doc.text(`Project Name: ${q.project_name}`, 15, 85);
-      doc.text(`Location: ${q.project_location || 'N/A'}`, 15, 91);
+      doc.setTextColor(textDarkNavy[0], textDarkNavy[1], textDarkNavy[2]);
+      doc.text(`This document details a structured engineering offer for the development of design deliverables. Primelisometrics Consultancy will perform the engineering scope comprising ${items.filter(i=>i.included).length} manual deliverables, estimated at ${costing.engineering_hours || 0} engineering workflow hours.`, 22, 160, { maxWidth: 165 });
 
-      // Deliverables scope table
+      // ==========================================
+      // PAGE 2: COMMERCIAL SUMMARY & PAYMENTS
+      // ==========================================
+      if (isDebug) console.log("[PDF Debug] Page 2: Generating pricing summary page...");
+      doc.addPage();
+      
+      drawSectionHeader("COMMERCIAL SUMMARY", 30);
+
+      // Highlighted Purple Card for Grand Total
+      doc.setFillColor(primaryColor[0], primaryColor[1], primaryColor[2]);
+      doc.roundedRect(15, 40, 180, 24, 3, 3, 'F');
+      doc.setTextColor(255, 255, 255);
       doc.setFont("Helvetica", "bold");
-      doc.text("SCOPE OF DELIVERABLES", 15, 103);
+      doc.setFontSize(11);
+      doc.text("TOTAL CONTRACT VALUE (LUMP SUM)", 25, 49);
+      doc.setFontSize(15);
+      doc.text(`${q.currency || 'INR'} ${Math.round(costing.grand_total || 0).toLocaleString()}`, 25, 57);
 
-      const tableRows = items.filter(item => item.included).map((item, idx) => [
+      // Detailed Commercial Pricing parameters
+      doc.setTextColor(textDarkNavy[0], textDarkNavy[1], textDarkNavy[2]);
+      doc.setFontSize(9.5);
+      gridY = 80;
+
+      const writeSummaryRow = (label, val) => {
+        doc.setFont("Helvetica", "bold");
+        doc.text(label, 15, gridY);
+        doc.setFont("Helvetica", "normal");
+        doc.text(val, 195, gridY, { align: 'right' });
+        gridY += 9;
+      };
+
+      writeSummaryRow("Total Scope Engineering Hours:", `${costing.engineering_hours || 0} hrs`);
+      writeSummaryRow("Software Tools & Licenses:", `${q.currency || 'INR'} ${(costing.software_cost || 0).toLocaleString()}`);
+      writeSummaryRow("GST Component charges:", `${q.currency || 'INR'} ${(costing.gst || 0).toLocaleString()}`);
+      writeSummaryRow("Contingency Allocation:", `${q.currency || 'INR'} ${(costing.contingency || 0).toLocaleString()}`);
+
+      // Payment schedule section
+      gridY += 8;
+      doc.setFont("Helvetica", "bold");
+      doc.setFontSize(11);
+      doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
+      doc.text("PAYMENT MILESTONES SCHEDULE", 15, gridY);
+      gridY += 4;
+      doc.setDrawColor(226, 232, 240);
+      doc.setLineWidth(0.4);
+      doc.line(15, gridY, 195, gridY);
+      gridY += 8;
+
+      const scheduleData = [
+        [milestone1Name, `${milestone1Percent}%`, `${q.currency || 'INR'} ${Math.round((costing.grand_total * milestone1Percent) / 100).toLocaleString()}`],
+        [milestone2Name, `${milestone2Percent}%`, `${q.currency || 'INR'} ${Math.round((costing.grand_total * milestone2Percent) / 100).toLocaleString()}`],
+        [milestone3Name, `${milestone3Percent}%`, `${q.currency || 'INR'} ${Math.round((costing.grand_total * milestone3Percent) / 100).toLocaleString()}`],
+        [milestone4Name, `${milestone4Percent}%`, `${q.currency || 'INR'} ${Math.round((costing.grand_total * milestone4Percent) / 100).toLocaleString()}`],
+      ];
+
+      autoTable(doc, {
+        startY: gridY,
+        head: [['Milestone Stage Description', 'Percentage', 'Calculated Milestone Fee']],
+        body: scheduleData,
+        headStyles: { fillColor: primaryColor },
+        theme: 'grid',
+        styles: { fontSize: 8.5 }
+      });
+
+      // ==========================================
+      // PAGE 3: DELIVERABLES TABLE
+      // ==========================================
+      if (isDebug) console.log("[PDF Debug] Page 3: Adding deliverables table...");
+      doc.addPage();
+      
+      drawSectionHeader("SCOPE OF DELIVERABLES", 30);
+
+      const tableRows = items.filter(item => item && item.included).map((item, idx) => [
         idx + 1,
-        item.deliverable,
-        `${item.estimated_hours} hrs`,
+        item.deliverable || 'Unnamed Document',
+        `${item.estimated_hours || 0} hrs`,
         item.remarks || ""
       ]);
 
       autoTable(doc, {
-        startY: 107,
-        head: [['#', 'Document Name', 'Est. Hours', 'Remarks']],
+        startY: 40,
+        head: [['S.No', 'Document Name / Scope Description', 'Estimated Hours', 'Remarks']],
         body: tableRows,
         headStyles: { fillColor: primaryColor },
-        theme: 'grid',
+        theme: 'striped',
         styles: { fontSize: 8 }
       });
 
-      // Commercial Summary
-      const finalY = doc.previousAutoTable.finalY + 12;
-      doc.setFont("Helvetica", "bold");
-      doc.text("COMMERCIAL CONDITIONS & CHARGES", 15, finalY);
-
-      doc.setFont("Helvetica", "normal");
-      doc.setFontSize(9);
+      // ==========================================
+      // PAGE 4: COMMERCIAL CONDITIONS
+      // ==========================================
+      if (isDebug) console.log("[PDF Debug] Page 4: Generating terms page...");
+      doc.addPage();
       
-      let currentY = finalY + 8;
-      doc.text(`Total Engineering Hours: ${costing.engineering_hours || 0} Hours`, 15, currentY);
-      currentY += 6;
+      drawSectionHeader("COMMERCIAL CONDITIONS & TERMS", 30);
 
-      const userIsAdmin = user?.role === 'Admin' || user?.role === 'SuperAdmin';
-      if (userIsAdmin) {
-        doc.text(`Engineering Rate: ${q.currency} ${costing.hourly_rate || 1400} / Hour`, 15, currentY);
-        currentY += 6;
-        doc.text(`Software Costs: ${q.currency} ${(costing.software_cost || 0).toLocaleString()}`, 15, currentY);
-        currentY += 6;
-        doc.text(`GST Component: ${q.currency} ${(costing.gst || 0).toLocaleString()}`, 15, currentY);
-        currentY += 8;
-      }
-
+      // 4-Milestone Payment Schedule Table on Page 4
       doc.setFont("Helvetica", "bold");
       doc.setFontSize(10.5);
       doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
-      doc.text(`Grand Total Fee: ${q.currency} ${Math.round(costing.grand_total || 0).toLocaleString()}`, 15, currentY);
+      doc.text("MILESTONE PAYMENT SCHEDULE", 15, 41);
 
-      // Signature section
-      currentY += 15;
+      const termsScheduleData = [
+        [milestone1Name, milestone1Desc, `${milestone1Percent}%`, `${q.currency || 'INR'} ${Math.round((costing.grand_total * milestone1Percent) / 100).toLocaleString()}`],
+        [milestone2Name, milestone2Desc, `${milestone2Percent}%`, `${q.currency || 'INR'} ${Math.round((costing.grand_total * milestone2Percent) / 100).toLocaleString()}`],
+        [milestone3Name, milestone3Desc, `${milestone3Percent}%`, `${q.currency || 'INR'} ${Math.round((costing.grand_total * milestone3Percent) / 100).toLocaleString()}`],
+        [milestone4Name, milestone4Desc, `${milestone4Percent}%`, `${q.currency || 'INR'} ${Math.round((costing.grand_total * milestone4Percent) / 100).toLocaleString()}`],
+      ];
+
+      autoTable(doc, {
+        startY: 45,
+        head: [['Milestone Stage', 'Description / Trigger Event', 'Payment %', 'Milestone Fee']],
+        body: termsScheduleData,
+        headStyles: { fillColor: primaryColor },
+        theme: 'grid',
+        styles: { fontSize: 7.5 },
+        columnStyles: {
+          0: { cellWidth: 35 },
+          1: { cellWidth: 90 },
+          2: { cellWidth: 18 },
+          3: { cellWidth: 37 }
+        }
+      });
+
+      let nextY = doc.lastAutoTable.finalY + 8;
+      
+      // Payment Notes
+      doc.setFont("Helvetica", "bold");
+      doc.setFontSize(9);
+      doc.setTextColor(textDarkNavy[0], textDarkNavy[1], textDarkNavy[2]);
+      doc.text("Payment Schedule Notes:", 15, nextY);
+      nextY += 5;
       doc.setFont("Helvetica", "normal");
       doc.setFontSize(8.5);
-      doc.setTextColor(textDark[0], textDark[1], textDark[2]);
-      doc.text("___________________________", 15, currentY);
-      doc.text("___________________________", 130, currentY);
-      currentY += 5;
-      doc.text("Prepared by Engineering Team", 15, currentY);
-      doc.text("Approved for Client Submittal", 130, currentY);
+      doc.text("• Payments shall be made within 7 days of invoice date.", 18, nextY);
+      nextY += 4.5;
+      doc.text("• Final editable engineering files shall be released only after receipt of full payment.", 18, nextY);
+      nextY += 4.5;
+      doc.text("• Delays in payment may result in corresponding delays in project delivery.", 18, nextY);
+      nextY += 4.5;
+      doc.text("• Bank transfer charges shall be borne by the Client.", 18, nextY);
 
-      // Page numbers & terms on pages
+      nextY += 8;
+      doc.setDrawColor(226, 232, 240);
+      doc.setLineWidth(0.4);
+      doc.line(15, nextY, 195, nextY);
+      
+      // Standard conditions
+      nextY += 8;
+      doc.setFont("Helvetica", "bold");
+      doc.setFontSize(10.5);
+      doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
+      doc.text("STANDARD CONTRACTUAL CONDITIONS", 15, nextY);
+      
+      nextY += 5;
+      doc.setFont("Helvetica", "normal");
+      doc.setFontSize(8.5);
+      doc.setTextColor(textDarkNavy[0], textDarkNavy[1], textDarkNavy[2]);
+      const conditionsLines = doc.splitTextToSize(commercialConditions || 'None.', 180);
+
+      let termsY = nextY;
+      conditionsLines.forEach(line => {
+        if (termsY > 265) {
+          doc.addPage();
+          termsY = 35;
+          drawSectionHeader("COMMERCIAL CONDITIONS & TERMS (CONT.)", 20);
+          doc.setFont("Helvetica", "normal");
+          doc.setFontSize(8.5);
+          doc.setTextColor(textDarkNavy[0], textDarkNavy[1], textDarkNavy[2]);
+        }
+        doc.text(line, 15, termsY);
+        termsY += 4.5;
+      });
+
+      // ==========================================
+      // FINAL PAGE: SIGNATURE BLOCKS
+      // ==========================================
+      if (isDebug) console.log("[PDF Debug] Final Page: Generating signatures page...");
+      doc.addPage();
+
+      drawSectionHeader("OFFER ACCEPTANCE & SIGNATURES", 30);
+
+      doc.setFont("Helvetica", "normal");
+      doc.setFontSize(9.5);
+      doc.setTextColor(textDarkNavy[0], textDarkNavy[1], textDarkNavy[2]);
+      doc.text("By signing below, the parties agree to the terms, conditions, scope of deliverables, and payment schedule milestones outlined within this offer proposal document.", 15, 42, { maxWidth: 180 });
+
+      gridY = 100;
+      doc.setDrawColor(180, 180, 180);
+      doc.setLineWidth(0.4);
+      
+      // Signature lines
+      doc.line(15, gridY, 85, gridY);
+      doc.line(125, gridY, 195, gridY);
+      
+      gridY += 5;
+      doc.setFont("Helvetica", "bold");
+      doc.text("Prepared By:", 15, gridY);
+      doc.text("Approved & Accepted By:", 125, gridY);
+
+      gridY += 5;
+      doc.setFont("Helvetica", "normal");
+      doc.text("Engineering Manager", 15, gridY);
+      doc.text("Authorized Signatory (Client)", 125, gridY);
+
+      gridY += 5;
+      doc.text("Primelisometrics Consultancy", 15, gridY);
+      doc.text("Company Stamp / Seal Area:", 125, gridY);
+
+      // Seal box outline
+      doc.rect(125, gridY + 4, 60, 30);
+
+      // ==========================================
+      // RUNNING HEADERS & FOOTERS ON EVERY PAGE
+      // ==========================================
+      if (isDebug) console.log("[PDF Debug] Compiling page headers and footer tags...");
       const totalPages = doc.internal.getNumberOfPages();
       for (let i = 1; i <= totalPages; i++) {
         doc.setPage(i);
+
+        // --- RUNNING HEADERS (Every page after page 1) ---
+        if (i > 1) {
+          // Horizontal running header divider line
+          doc.setDrawColor(226, 232, 240);
+          doc.setLineWidth(0.4);
+          doc.line(15, 18, 195, 18);
+
+          // Small Logo / Brand
+          if (logoImg) {
+            doc.addImage(logoImg, 'PNG', 15, 7, 9, 9);
+          }
+          doc.setFont("Helvetica", "bold");
+          doc.setFontSize(8);
+          doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
+          doc.text("PRIMELISOMETRICS", 26, 13);
+
+          // Center Page Title
+          let pageTitle = "COMMERCIAL SUMMARY";
+          if (i === 3) pageTitle = "SCOPE OF DELIVERABLES";
+          if (i === 4) pageTitle = "COMMERCIAL CONDITIONS & TERMS";
+          if (i === 5) pageTitle = "OFFER ACCEPTANCE & SIGNATURES";
+          
+          doc.setFont("Helvetica", "normal");
+          doc.setTextColor(textDarkNavy[0], textDarkNavy[1], textDarkNavy[2]);
+          doc.text(pageTitle, 105, 13, { align: 'center' });
+
+          // Right Quotation number
+          doc.setTextColor(textMutedGrey[0], textMutedGrey[1], textMutedGrey[2]);
+          doc.text(q.quotation_number || 'PMC-TEMP', 195, 13, { align: 'right' });
+        }
+
+        // --- FOOTERS (Every page, including cover) ---
+        // Footer Height: 35 px = ~9 mm. Bottom margin is 297 - 9 = 288.
+        doc.setDrawColor(226, 232, 240);
+        doc.setLineWidth(0.45);
+        doc.line(15, 280, 195, 280);
+
         doc.setFontSize(7.5);
-        doc.setTextColor(160, 160, 160);
-        doc.text(`Page ${i} of ${totalPages}`, 180, 287);
-        doc.text("Confidential Engineering Quotation Offer", 15, 287);
+        doc.setTextColor(textMutedGrey[0], textMutedGrey[1], textMutedGrey[2]);
+
+        // Left Column (Company & email)
+        doc.setFont("Helvetica", "bold");
+        doc.text("Primelisometrics Consultancy", 15, 284);
+        doc.setFont("Helvetica", "normal");
+        doc.text("admin@primelisometrics.com", 15, 287.5);
+
+        // Center Column (Confidential note)
+        doc.text("Confidential Engineering Proposal", 105, 285.5, { align: 'center' });
+
+        // Right Column (Page number)
+        doc.text(`Page ${i} of ${totalPages}`, 195, 285.5, { align: 'right' });
       }
 
+      if (isDebug) console.log("[PDF Debug] Outputting proposal PDF document...");
       if (previewOnly) {
         window.open(doc.output('bloburl'), '_blank');
       } else {
-        doc.save(`Quotation_${q.quotation_number}.pdf`);
+        doc.save(`${q.quotation_number || 'PMC-TEMP'}_Engineering_Quotation.pdf`);
       }
-      triggerToast(previewOnly ? "Preview offer generated." : "Downloaded client PDF.");
+      triggerToast(previewOnly ? "Preview proposal generated." : "Downloaded corporate PDF proposal.");
+      
+      if (isDebug) console.log("[PDF Debug] PDF generation finished.");
     } catch (e) {
-      console.error(e);
-      alert("Failed to compile document PDF. Check formatting guidelines.");
+      console.error("PDF Generation Exception caught:", e);
+      console.error(e.stack);
+      console.error("Failing Component Context: exportToPdf");
+      alert(`Failed to compile proposal PDF: ${e.message}`);
     } finally {
       setPdfGenerating(false);
     }
@@ -753,7 +1136,7 @@ function QuotationsModuleInner({ user, triggerToast }) {
             {isAdmin && (
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', marginBottom: '20px' }}>
                 <div>
-                  <label style={{ fontSize: '0.75rem', fontWeight: '700', color: '#64748B', display: 'block', marginBottom: '6px' }}>Hourly Rate ({currency})</label>
+                  <label style={{ fontSize: '0.75rem', fontWeight: '700', color: '#64748B', display: 'block', marginBottom: '6px' }}>Engineering Fee Rate Factor ({currency})</label>
                   <input type="number" value={hourlyRate} onChange={(e) => setHourlyRate(Number(e.target.value))} style={{ width: '100%', height: '40px', padding: '8px 12px', border: '1px solid #CBD5E1', borderRadius: '8px' }} />
                 </div>
                 <div>
@@ -767,6 +1150,35 @@ function QuotationsModuleInner({ user, triggerToast }) {
                 <div>
                   <label style={{ fontSize: '0.75rem', fontWeight: '700', color: '#64748B', display: 'block', marginBottom: '6px' }}>GST %</label>
                   <input type="number" value={gstPercent} onChange={(e) => setGstPercent(Number(e.target.value))} style={{ width: '100%', height: '40px', padding: '8px 12px', border: '1px solid #CBD5E1', borderRadius: '8px' }} />
+                </div>
+                <div style={{ gridColumn: 'span 4', borderTop: '1px solid #E2E8F0', paddingTop: '16px', marginTop: '8px' }}>
+                  <label style={{ fontSize: '0.8rem', fontWeight: '800', color: '#6C4DFF', display: 'block', marginBottom: '12px', textTransform: 'uppercase' }}>Edit Payment Schedule Milestones</label>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px' }}>
+                    <div>
+                      <label style={{ fontSize: '0.7rem', fontWeight: '700', color: '#64748B', display: 'block', marginBottom: '4px' }}>Milestone 1 Description</label>
+                      <input type="text" value={milestone1Name} onChange={(e) => setMilestone1Name(e.target.value)} style={{ width: '100%', height: '36px', padding: '6px 10px', border: '1px solid #CBD5E1', borderRadius: '6px' }} />
+                      <label style={{ fontSize: '0.7rem', fontWeight: '700', color: '#64748B', display: 'block', marginTop: '4px', marginBottom: '2px' }}>Milestone 1 %</label>
+                      <input type="number" value={milestone1Percent} onChange={(e) => setMilestone1Percent(Number(e.target.value) || 0)} style={{ width: '100%', height: '36px', padding: '6px 10px', border: '1px solid #CBD5E1', borderRadius: '6px' }} />
+                    </div>
+                    <div>
+                      <label style={{ fontSize: '0.7rem', fontWeight: '700', color: '#64748B', display: 'block', marginBottom: '4px' }}>Milestone 2 Description</label>
+                      <input type="text" value={milestone2Name} onChange={(e) => setMilestone2Name(e.target.value)} style={{ width: '100%', height: '36px', padding: '6px 10px', border: '1px solid #CBD5E1', borderRadius: '6px' }} />
+                      <label style={{ fontSize: '0.7rem', fontWeight: '700', color: '#64748B', display: 'block', marginTop: '4px', marginBottom: '2px' }}>Milestone 2 %</label>
+                      <input type="number" value={milestone2Percent} onChange={(e) => setMilestone2Percent(Number(e.target.value) || 0)} style={{ width: '100%', height: '36px', padding: '6px 10px', border: '1px solid #CBD5E1', borderRadius: '6px' }} />
+                    </div>
+                    <div>
+                      <label style={{ fontSize: '0.7rem', fontWeight: '700', color: '#64748B', display: 'block', marginBottom: '4px' }}>Milestone 3 Description</label>
+                      <input type="text" value={milestone3Name} onChange={(e) => setMilestone3Name(e.target.value)} style={{ width: '100%', height: '36px', padding: '6px 10px', border: '1px solid #CBD5E1', borderRadius: '6px' }} />
+                      <label style={{ fontSize: '0.7rem', fontWeight: '700', color: '#64748B', display: 'block', marginTop: '4px', marginBottom: '2px' }}>Milestone 3 %</label>
+                      <input type="number" value={milestone3Percent} onChange={(e) => setMilestone3Percent(Number(e.target.value) || 0)} style={{ width: '100%', height: '36px', padding: '6px 10px', border: '1px solid #CBD5E1', borderRadius: '6px' }} />
+                    </div>
+                    <div>
+                      <label style={{ fontSize: '0.7rem', fontWeight: '700', color: '#64748B', display: 'block', marginBottom: '4px' }}>Milestone 4 Description</label>
+                      <input type="text" value={milestone4Name} onChange={(e) => setMilestone4Name(e.target.value)} style={{ width: '100%', height: '36px', padding: '6px 10px', border: '1px solid #CBD5E1', borderRadius: '6px' }} />
+                      <label style={{ fontSize: '0.7rem', fontWeight: '700', color: '#64748B', display: 'block', marginTop: '4px', marginBottom: '2px' }}>Milestone 4 %</label>
+                      <input type="number" value={milestone4Percent} onChange={(e) => setMilestone4Percent(Number(e.target.value) || 0)} style={{ width: '100%', height: '36px', padding: '6px 10px', border: '1px solid #CBD5E1', borderRadius: '6px' }} />
+                    </div>
+                  </div>
                 </div>
               </div>
             )}
@@ -850,7 +1262,28 @@ function QuotationsModuleInner({ user, triggerToast }) {
               {isAdmin && editingQuote && editingQuote.status === 'Approved' && (
                 <button 
                   type="button" 
-                  onClick={() => exportToPdf({ quotation: editingQuote, items: deliverables, costing: { engineering_hours: totalHours, engineering_fee: calculatedFee, software_cost: softwareCost, contingency: calculatedContingency, subtotal: calculatedSubtotal, gst: calculatedGst, grand_total: calculatedGrandTotal, hourly_rate: hourlyRate } }, false)}
+                  onClick={() => exportToPdf({ 
+                    quotation: { 
+                      ...editingQuote,
+                      client_name: clientName, 
+                      project_name: projectName, 
+                      contact_person: contactPerson, 
+                      project_location: projectLocation, 
+                      currency, 
+                      commercial_conditions: commercialConditions 
+                    }, 
+                    items: deliverables, 
+                    costing: { 
+                      engineering_hours: totalHours, 
+                      engineering_fee: calculatedFee, 
+                      software_cost: softwareCost, 
+                      contingency: calculatedContingency, 
+                      subtotal: calculatedSubtotal, 
+                      gst: calculatedGst, 
+                      grand_total: calculatedGrandTotal, 
+                      hourly_rate: hourlyRate 
+                    } 
+                  }, false)}
                   style={{ background: '#10B981', color: 'white', border: 'none', padding: '10px 20px', borderRadius: '8px', fontWeight: '750', cursor: 'pointer' }}
                 >
                   Generate Final Quotation
@@ -935,10 +1368,6 @@ function QuotationsModuleInner({ user, triggerToast }) {
                 <div style={{ background: '#F8FAFC', padding: '16px', borderRadius: '8px', border: '1px solid #E2E8F0', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '12px', fontSize: '0.85rem' }}>
                   {isAdmin && (
                     <>
-                      <div>
-                        <span style={{ color: '#64748B', display: 'block' }}>Hourly Rate</span>
-                        <strong>{selectedQuote.quotation?.currency || 'INR'} {(selectedQuote.costing?.hourly_rate || 0).toLocaleString()}</strong>
-                      </div>
                       <div>
                         <span style={{ color: '#64748B', display: 'block' }}>Software Cost</span>
                         <strong>{selectedQuote.quotation?.currency || 'INR'} {(selectedQuote.costing?.software_cost || 0).toLocaleString()}</strong>

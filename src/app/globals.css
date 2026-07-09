@@ -1,44 +1,44 @@
 :root {
-  /* Light Mode Palette */
-  --bg-main: #F8FAFC;
-  --bg-sidebar: #FFFFFF;
-  --bg-card: #FFFFFF;
-  --border-color: #E2E8F0;
-  --text-primary: #0F172A;
-  --text-secondary: #475569;
-  --text-muted: #64748B;
+  /* Premium Dark Engineering Mode Palette */
+  --bg-main: #0B0B0C;
+  --bg-sidebar: #151515;
+  --bg-card: #1A1A1A;
+  --border-color: #2B2B2B;
+  --text-primary: #FFFFFF;
+  --text-secondary: #A5A5A5;
+  --text-muted: #808080;
   
-  --accent: #6C4DFF;
-  --accent-light: #F3E8FF;
-  --accent-indigo: #6C4DFF;
-  --accent-purple: #8B5CF6;
+  --accent: #D32F45;          /* Brand Red accent */
+  --accent-light: #261214;    /* Subtle dark red highlight */
+  --accent-indigo: #D32F45;
+  --accent-purple: #F44336;
   
-  --color-success: #10B981;
-  --color-warning: #F59E0B;
-  --color-danger: #EF4444;
-  --color-info: #3B82F6;
+  --color-success: #2ECC71;
+  --color-warning: #F39C12;
+  --color-danger: #E74C3C;
+  --color-info: #3498DB;
   
-  --border-radius-lg: 18px;
-  --border-radius-md: 14px;
+  --border-radius-lg: 10px;
+  --border-radius-md: 10px;
   --border-radius-sm: 8px;
-  --shadow-card: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
-  --shadow-hover: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  --shadow-card: 0 4px 12px rgba(0, 0, 0, 0.5);
+  --shadow-hover: 0 8px 24px rgba(0, 0, 0, 0.7);
 }
 
-/* Dark Mode Palette overrides */
+/* Dark Mode overrides (forced identical dark variables) */
 html.dark {
-  --bg-main: #111827;
-  --bg-sidebar: #1F2937;
-  --bg-card: #1F2937;
-  --border-color: #374151;
-  --text-primary: #F9FAFB;
-  --text-secondary: #D1D5DB;
-  --text-muted: #9CA3AF;
+  --bg-main: #0B0B0C;
+  --bg-sidebar: #151515;
+  --bg-card: #1A1A1A;
+  --border-color: #2B2B2B;
+  --text-primary: #FFFFFF;
+  --text-secondary: #A5A5A5;
+  --text-muted: #808080;
   
-  --accent: #A78BFA;
-  --accent-light: #2D1A66;
-  --shadow-card: 0 4px 6px -1px rgba(0, 0, 0, 0.2), 0 2px 4px -1px rgba(0, 0, 0, 0.15);
-  --shadow-hover: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.25);
+  --accent: #D32F45;
+  --accent-light: #261214;
+  --shadow-card: 0 4px 12px rgba(0, 0, 0, 0.5);
+  --shadow-hover: 0 8px 24px rgba(0, 0, 0, 0.7);
 }
 
 body {
