@@ -201,7 +201,15 @@ export async function POST(request) {
       status: user.status
     };
 
-    const token = signSession(tokenPayload, '7d');
+    let token;
+    try {
+      token = signSession(tokenPayload, '7d');
+    } catch (sessionError) {
+      console.error('Login session configuration error:', sessionError);
+      return NextResponse.json({
+        error: 'Authentication is temporarily unavailable. The server session secret is not configured.'
+      }, { status: 503 });
+    }
 
     // Save success audit log
     const details = `Successful login. Role: ${user.role}.`;
