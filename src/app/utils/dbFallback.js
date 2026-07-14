@@ -7,8 +7,12 @@ const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 export const supabase = (supabaseUrl && supabaseAnonKey) ? createClient(supabaseUrl, supabaseAnonKey) : null;
 
 const DB_FILE = path.join(process.cwd(), 'db.json');
+const IS_VERCEL_RUNTIME = process.env.VERCEL === '1';
 
 function ensureDbFile() {
+  // Vercel's deployment filesystem is read-only. Local JSON persistence is
+  // only a development fallback; production data must live in Supabase.
+  if (IS_VERCEL_RUNTIME) return;
   if (!fs.existsSync(DB_FILE)) {
     fs.writeFileSync(DB_FILE, JSON.stringify({
       users: [],
@@ -49,6 +53,17 @@ function ensureDbFile() {
 }
 
 export function getLocalDb() {
+  if (IS_VERCEL_RUNTIME) {
+    return {
+      users: [],
+      audit_logs: [],
+      notifications: [],
+      quotations: [],
+      quotation_items: [],
+      quotation_costings: [],
+      quotation_revisions: []
+    };
+  }
   ensureDbFile();
   try {
     return JSON.parse(fs.readFileSync(DB_FILE, 'utf8'));
@@ -66,6 +81,7 @@ export function getLocalDb() {
 }
 
 export function saveLocalDb(data) {
+  if (IS_VERCEL_RUNTIME) return;
   ensureDbFile();
   fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2));
 }
