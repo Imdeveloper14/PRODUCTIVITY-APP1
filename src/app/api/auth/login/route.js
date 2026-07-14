@@ -39,10 +39,12 @@ export async function POST(request) {
         .maybeSingle();
 
       if (findError) {
-        console.error("Full database login search error:", findError);
-        return NextResponse.json({ error: "Unable to process your sign in request at this time. Please try again later." }, { status: 500 });
+        console.warn("Supabase login search failed, falling back to local DB:", findError);
+        const localDb = getLocalDb();
+        user = localDb.users.find(u => u.email.toLowerCase() === normalizedIdentifier || u.username === identifier.trim());
+      } else {
+        user = dbUser;
       }
-      user = dbUser;
     } else {
       // Local db fallback
       const localDb = getLocalDb();

@@ -75,11 +75,13 @@ export async function isSupabaseTableAvailable(tableName) {
   if (!supabase) return false;
   try {
     const { error } = await supabase.from(tableName).select('id').limit(1);
-    if (error && error.code === 'PGRST205') {
-      return false; // Table not found
+    if (error) {
+      console.warn(`Supabase table check failed for ${tableName}:`, error);
+      return false;
     }
     return true;
   } catch (e) {
+    console.warn(`Supabase table check threw for ${tableName}:`, e);
     return false;
   }
 }
