@@ -12,6 +12,9 @@ import * as XLSX from 'xlsx';
 import { createClient } from '@supabase/supabase-js';
 import { hasPermission } from './utils/permissions';
 import QuotationsModule from './components/QuotationsModule';
+import InvoicesView from './components/InvoicesView';
+import DatabaseHealthCheck from './components/DatabaseHealthCheck';
+
 
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
@@ -117,10 +120,15 @@ const DEFAULT_BIRTHDAYS = [
 export default function Home() {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [clients, setClients] = useState([]);
+  const [selectedClient, setSelectedClient] = useState(null);
+  const [selectedProject, setSelectedProject] = useState(null);
+  const [clientSubTab, setClientSubTab] = useState('Overview');
+  const [projectSubTab, setProjectSubTab] = useState('Summary');
   const [projects, setProjects] = useState([]);
   const [tasks, setTasks] = useState([]);
   const [invoices, setInvoices] = useState([]);
   const [activities, setActivities] = useState([]);
+  const [quotations, setQuotations] = useState([]);
   const [user, setUser] = useState(null);
 
   // Authentication States
@@ -291,14 +299,12 @@ export default function Home() {
   const fetchAllUserData = async (userId, userRole = 'Employee') => {
     if (!supabase) return;
     try {
-      // 1. Fetch Clients (restricted to role capability)
-      if (hasPermission(userRole, 'canManageUsers')) {
-        const { data: dbClients, error: errClients } = await supabase
-          .from('clients')
-          .select('*')
-          .order('name', { ascending: true });
-        if (!errClients && dbClients) setClients(dbClients);
-      }
+      // 1. Fetch Clients
+      const { data: dbClients, error: errClients } = await supabase
+        .from('clients')
+        .select('*')
+        .order('name', { ascending: true });
+      if (!errClients && dbClients) setClients(dbClients);
 
       // 2. Fetch Projects
       const { data: dbProjects, error: errProjects } = await supabase
@@ -365,6 +371,17 @@ export default function Home() {
           }));
           setInvoices(mapped);
         }
+      }
+
+      // Fetch Quotations
+      try {
+        const resQ = await fetch('/api/quotations');
+        const dataQ = await resQ.json();
+        if (dataQ && dataQ.success) {
+          setQuotations(dataQ.quotations || []);
+        }
+      } catch (errQ) {
+        console.error("Error loading quotations in fetchAllUserData:", errQ);
       }
 
       // 6. Fetch Meetings
@@ -451,6 +468,13 @@ export default function Home() {
 
   const saveState = (key, data) => {
     localStorage.setItem(key, JSON.stringify(data));
+  };
+
+  const triggerInvoiceCreationFromProject = (clientId, projectId) => {
+    localStorage.setItem("aura_preselected_client_id", clientId);
+    localStorage.setItem("aura_preselected_project_id", projectId);
+    localStorage.setItem("aura_trigger_new_invoice_modal", "true");
+    setActiveTab('invoices');
   };
 
   // Focus Timer Tick
@@ -717,12 +741,20 @@ export default function Home() {
     setUploadedAgreementFiles(validFiles);
   };
 
-  // Wizard triggers
   const triggerNewProjectFlow = () => {
     if (clients.length === 0) {
       alert("Please create a client before starting a new project.");
       setShowClientModal(true);
     } else {
+      setNewProject({
+        title: '',
+        clientId: selectedClient ? selectedClient.id : '',
+        cadType: 'AutoCAD 2D',
+        deadline: '',
+        quoteAmount: '',
+        paidAmount: '0',
+        fileNotes: ''
+      });
       setShowProjectModal(true);
     }
   };
@@ -733,26 +765,7 @@ export default function Home() {
       setShowClientModal(true);
       return;
     }
-    const nextNum = invoices.length + 1;
-    const invNum = `INV-2026-${String(nextNum).padStart(4, '0')}`;
-    setInvoiceForm({
-      invoice_number: invNum,
-      client_id: '',
-      project_id: '',
-      invoice_date: new Date().toISOString().split('T')[0],
-      due_date: new Date(Date.now() + 14*24*60*60*1000).toISOString().split('T')[0],
-      project_amount: 0,
-      advance_paid: 0,
-      balance_due: 0,
-      gst_percentage: 18,
-      gst_amount: 0,
-      discount: 0,
-      grand_total: 0,
-      payment_status: 'Pending',
-      payment_method: 'Bank Transfer',
-      notes: 'Please transfer payments within 15 days of receiving this document.'
-    });
-    setInvoiceError('');
+    setActiveTab('invoices');
     setShowInvoiceModal(true);
   };
 
@@ -806,10 +819,16 @@ export default function Home() {
 
   const handleAddClient = async (e) => {
     e.preventDefault();
-    if (!newClient.name) return;
+    if (!newClient.name) {
+      triggerToast('Client name is required', 'error');
+      return;
+    }
 
-    // Only send columns that actually exist in the Supabase `clients` table.
-    // agreement_documents is stored locally only (file uploads are not persisted to DB).
+    if (!supabase) {
+      triggerToast('Database connection is not available', 'error');
+      return;
+    }
+
     const record = {
       name: newClient.name,
       phone: newClient.phone || '',
@@ -817,49 +836,45 @@ export default function Home() {
       company: newClient.company || '',
       notes: newClient.notes || '',
       project_history: 'None yet',
-      user_id: user?.id
+      user_id: user?.id || null // Pass user_id directly, let Supabase handle validation/RLS
     };
 
-    let savedToSupabase = false;
-    if (supabase && user?.id) {
-      try {
-        const { data, error } = await supabase
-          .from('clients')
-          .insert([record])
-          .select();
-        
-        if (!error && data) {
-          savedToSupabase = true;
-          const inserted = data[0];
-          // Merge agreement_documents back in for frontend use (not in DB)
-          setClients(prev => [...prev, { ...inserted, agreement_documents: uploadedAgreementFiles }]);
-        } else {
-          // Log the full error so we can see the real cause
-          console.error('Supabase insert client error:', JSON.stringify({
-            message: error?.message,
-            code: error?.code,
-            details: error?.details,
-            hint: error?.hint
-          }, null, 2));
-          console.error('Full error object:', error);
-        }
-      } catch (err) {
-        console.error('Supabase client insertion exception:', err?.message || err);
+    try {
+      const { data, error } = await supabase
+        .from('clients')
+        .insert([record])
+        .select();
+      
+      if (error) {
+        console.error('Supabase insert client error:', error);
+        triggerToast(`Failed to save client: ${error.message || 'Unknown error'}`, 'error');
+        return;
       }
-    }
 
-    if (!savedToSupabase) {
-      // Fall back to local state + localStorage
-      const added = { ...newClient, id: 'c_' + Date.now(), projectHistory: 'None yet', agreement_documents: uploadedAgreementFiles };
-      const updated = [...clients, added];
-      setClients(updated);
-      saveState('aura_clients_v7', updated);
-    }
+      if (data && data.length > 0) {
+        const inserted = data[0];
+        // Immediately update state
+        setClients(prev => [...prev, { ...inserted, agreement_documents: uploadedAgreementFiles }]);
+        
+        // Refresh from database
+        const { data: dbClients, error: fetchError } = await supabase
+          .from('clients')
+          .select('*')
+          .order('name', { ascending: true });
+          
+        if (dbClients && !fetchError) {
+          setClients(dbClients);
+        }
 
-    setNewClient({ name: '', phone: '', email: '', company: '', notes: '' });
-    setUploadedAgreementFiles([]);
-    setShowClientModal(false);
-    triggerToast('Client added successfully.');
+        setNewClient({ name: '', phone: '', email: '', company: '', notes: '' });
+        setUploadedAgreementFiles([]);
+        setShowClientModal(false);
+        triggerToast('Client added successfully.', 'success');
+      }
+    } catch (err) {
+      console.error('Supabase client insertion exception:', err);
+      triggerToast('An exception occurred while saving client.', 'error');
+    }
   };
 
 
@@ -868,6 +883,10 @@ export default function Home() {
     if (!newProject.title || !newProject.clientId) return;
     const quote = parseFloat(newProject.quoteAmount) || 0;
     const paid = parseFloat(newProject.paidAmount) || 0;
+
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    const isValidUuid = user?.id && uuidRegex.test(user.id);
+    const isValidClientIdUuid = newProject.clientId && uuidRegex.test(newProject.clientId);
 
     const record = {
       title: newProject.title,
@@ -880,11 +899,11 @@ export default function Home() {
       balance_amount: quote - paid,
       file_notes: newProject.fileNotes || '',
       progress: 0,
-      user_id: user?.id
+      user_id: isValidUuid ? user.id : null
     };
 
     let savedToSupabase = false;
-    if (supabase && user?.id) {
+    if (supabase && isValidUuid && isValidClientIdUuid) {
       try {
         const { data, error } = await supabase
           .from('projects')
@@ -903,6 +922,24 @@ export default function Home() {
             cadType: inserted.cad_type,
             fileNotes: inserted.file_notes
           }]);
+
+          // Re-fetch all projects to guarantee sync with Supabase
+          const { data: dbProjects } = await supabase
+            .from('projects')
+            .select('*')
+            .order('deadline', { ascending: true });
+          if (dbProjects) {
+            const mapped = dbProjects.map(p => ({
+              ...p,
+              quoteAmount: parseFloat(p.quote_amount) || 0,
+              paidAmount: parseFloat(p.paid_amount) || 0,
+              balanceAmount: parseFloat(p.balance_amount) || 0,
+              clientId: p.client_id,
+              cadType: p.cad_type,
+              fileNotes: p.file_notes
+            }));
+            setProjects(mapped);
+          }
         } else {
           console.error("Supabase project insert error:", error);
         }
@@ -940,28 +977,29 @@ export default function Home() {
     e.preventDefault();
     if (!newTask.title) return;
 
-    const record = {
+    // UUID validation: only send user_id if it is a real Supabase UUID (not "u-1000" or similar)
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    const validTaskUserId = user?.id && uuidRegex.test(user.id) ? user.id : null;
+
+    // Send only the minimal columns that are safe & universally present in the tasks table
+    // Extra columns (task_time, qc_status, sent_to_qc, notes, completion_percentage, updated_at)
+    // are omitted from the DB insert to avoid schema mismatch errors.
+    const dbRecord = {
       title: newTask.title,
       priority: newTask.priority || 'Medium',
       due_date: newTask.dueDate || null,
-      task_time: newTask.dueDate ? "09:00" : "10:00",
       completed: false,
       status: 'Pending',
-      completion_percentage: 0,
-      qc_status: 'Not Checked',
-      sent_to_qc: false,
-      notes: '',
-      project_id: null,
-      user_id: user?.id,
-      updated_at: new Date().toISOString()
+      ...(validTaskUserId ? { user_id: validTaskUserId } : {})
     };
 
     let savedToSupabase = false;
-    if (supabase && user?.id) {
+    // Only attempt Supabase insert when user has a real UUID (authenticated via Supabase Auth)
+    if (supabase && validTaskUserId) {
       try {
         const { data, error } = await supabase
           .from('tasks')
-          .insert([record])
+          .insert([dbRecord])
           .select();
 
         if (!error && data) {
@@ -969,29 +1007,38 @@ export default function Home() {
           const inserted = data[0];
           setTasks(prev => [...prev, {
             ...inserted,
+            // Map DB column names back to frontend field names used by components
             dueDate: inserted.due_date,
-            projectId: inserted.project_id
+            projectId: inserted.project_id,
+            task_time: '09:00',
+            completion_percentage: 0,
+            qc_status: 'Not Checked',
+            sent_to_qc: false,
+            notes: ''
           }]);
         } else {
-          console.error("Supabase insert task error:", error);
+          console.error("Supabase insert task error:", error?.message, error?.code);
         }
       } catch (err) {
-        console.error("Supabase insert task execution error:", err);
+        console.error("Supabase insert task execution error:", err?.message);
       }
     }
 
     if (!savedToSupabase) {
-      const added = { 
-        ...newTask, 
-        id: 't_' + Date.now(), 
-        completed: false, 
+      // Local fallback — works for both local-auth users and offline scenarios
+      const added = {
+        ...newTask,
+        id: 't_' + Date.now(),
+        completed: false,
         time: newTask.dueDate ? "09:00" : "10:00",
         task_time: newTask.dueDate ? "09:00" : "10:00",
         status: 'Pending',
+        completion_percentage: 0,
+        qc_status: 'Not Checked',
+        sent_to_qc: false,
         notes: '',
-        project_id: '',
-        due_date: newTask.dueDate,
-        user_id: user?.name || 'Ashok',
+        project_id: null,
+        due_date: newTask.dueDate || null,
         updated_at: new Date().toISOString()
       };
       const updated = [...tasks, added];
@@ -2818,14 +2865,10 @@ export default function Home() {
                 <button className={`btn ${activeTab === 'dashboard' ? 'btn-primary' : 'btn-secondary'}`} style={{ border: 'none', justifyContent: 'flex-start' }} onClick={() => { setActiveTab('dashboard'); setDrawerOpen(false); }}>
                   <LayoutDashboard size={18} /> Dashboard
                 </button>
-                {hasPermission(user?.role, 'canManageUsers') && (
-                  <button className={`btn ${activeTab === 'clients' ? 'btn-primary' : 'btn-secondary'}`} style={{ border: 'none', justifyContent: 'flex-start' }} onClick={() => { setActiveTab('clients'); setDrawerOpen(false); }}>
-                    <Users size={18} /> Clients
-                  </button>
-                )}
-                <button className={`btn ${activeTab === 'projects' ? 'btn-primary' : 'btn-secondary'}`} style={{ border: 'none', justifyContent: 'flex-start' }} onClick={() => { setActiveTab('projects'); setDrawerOpen(false); }}>
-                  <FolderKanban size={18} /> {user?.role === 'Employee' ? 'My Projects' : 'Projects'}
+                <button className={`btn ${activeTab === 'clients' ? 'btn-primary' : 'btn-secondary'}`} style={{ border: 'none', justifyContent: 'flex-start' }} onClick={() => { setActiveTab('clients'); setDrawerOpen(false); }}>
+                  <Users size={18} /> Clients
                 </button>
+
                 <button className={`btn ${activeTab === 'planner' ? 'btn-primary' : 'btn-secondary'}`} style={{ border: 'none', justifyContent: 'flex-start' }} onClick={() => { setActiveTab('planner'); setDrawerOpen(false); }}>
                   <Calendar size={18} /> {user?.role === 'Employee' ? 'My Tasks' : 'Daily Planner'}
                 </button>
@@ -2878,14 +2921,10 @@ export default function Home() {
             <button className={`btn ${activeTab === 'dashboard' ? 'btn-primary' : 'btn-secondary'}`} style={{ border: 'none', justifyContent: 'flex-start' }} onClick={() => setActiveTab('dashboard')}>
               <LayoutDashboard size={18} /> Dashboard
             </button>
-            {hasPermission(user?.role, 'canManageUsers') && (
-              <button className={`btn ${activeTab === 'clients' ? 'btn-primary' : 'btn-secondary'}`} style={{ border: 'none', justifyContent: 'flex-start' }} onClick={() => setActiveTab('clients')}>
-                <Users size={18} /> Clients
-              </button>
-            )}
-            <button className={`btn ${activeTab === 'projects' ? 'btn-primary' : 'btn-secondary'}`} style={{ border: 'none', justifyContent: 'flex-start' }} onClick={() => setActiveTab('projects')}>
-              <FolderKanban size={18} /> {user?.role === 'Employee' ? 'My Projects' : 'Projects'}
+            <button className={`btn ${activeTab === 'clients' ? 'btn-primary' : 'btn-secondary'}`} style={{ border: 'none', justifyContent: 'flex-start' }} onClick={() => setActiveTab('clients')}>
+              <Users size={18} /> Clients
             </button>
+
             <button className={`btn ${activeTab === 'planner' ? 'btn-primary' : 'btn-secondary'}`} style={{ border: 'none', justifyContent: 'flex-start' }} onClick={() => setActiveTab('planner')}>
               <Calendar size={18} /> {user?.role === 'Employee' ? 'My Tasks' : 'Daily Planner'}
             </button>
@@ -2926,1035 +2965,981 @@ export default function Home() {
       {/* Main Content Workspace Frame */}
       <main className="main-content" style={{ paddingBottom: '80px' }}>
         
-        {activeTab === 'dashboard' && (
-          <div>
-            {/* Header */}
-            <div className="card" style={{ background: 'var(--bg-sidebar)', marginBottom: '24px', padding: '24px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '16px' }}>
-                <div style={{ minWidth: '200px' }}>
-                  <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: '600', textTransform: 'uppercase' }}>OS Workspace</span>
-                  <h1 style={{ fontSize: '1.8rem', fontWeight: '800', letterSpacing: '-0.5px', margin: '4px 0 0 0', color: 'var(--text-primary)' }}>👋 Welcome back,</h1>
-                  <h2 style={{ fontSize: '1.5rem', fontWeight: '700', margin: 0, color: 'var(--accent)' }}>{user?.name || 'User'}</h2>
-                  <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginTop: '6px' }}>Dashboard Home</p>
-                </div>
-                
-                {/* Quick Actions Toolbar */}
-                <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', width: '100%', maxWidth: '450px' }}>
-                  <button className="btn btn-primary" style={{ flex: '1 1 120px', justifyContent: 'center', height: '44px', cursor: 'pointer' }} onClick={() => setShowTaskModal(true)}>
-                    ✅ Add Task
-                  </button>
-                  {hasPermission(user?.role, 'canViewInvoices') && (
-                    <button className="btn btn-secondary" style={{ flex: '1 1 120px', justifyContent: 'center', height: '44px', cursor: 'pointer' }} onClick={triggerNewInvoiceFlow}>
-                      💰 Create Invoice
-                    </button>
-                  )}
-                  {hasPermission(user?.role, 'canManageUsers') && (
-                    <button className="btn btn-secondary" style={{ flex: '1 1 120px', justifyContent: 'center', height: '44px', cursor: 'pointer' }} onClick={() => setShowClientModal(true)}>
-                      👤 Add Client
-                    </button>
-                  )}
-                  <button className="btn btn-secondary" style={{ flex: '1 1 120px', justifyContent: 'center', height: '44px', cursor: 'pointer' }} onClick={() => { setActiveTab(user?.role === 'Employee' ? 'personal-tracker' : 'projects') }}>
-                    {user?.role === 'Employee' ? '🎯 My Tracker' : '📄 Manage Projects'}
-                  </button>
+        {activeTab === 'dashboard' && (() => {
+          // Collapsible section toggle — pure DOM manipulation, no state needed
+          const toggleSection = (id) => {
+            const el = document.getElementById('dash-section-' + id);
+            const ch = document.getElementById('dash-chevron-' + id);
+            if (el) {
+              const isOpen = el.style.display !== 'none';
+              el.style.display = isOpen ? 'none' : 'block';
+              if (ch) ch.style.transform = isOpen ? 'rotate(-90deg)' : 'rotate(0deg)';
+            }
+          };
+
+          // Live Finance KPIs from real state
+          const paidInvoices = invoices.filter(inv => inv.payment_status === 'Paid');
+          const pendingInvoices = invoices.filter(inv => inv.payment_status === 'Pending');
+          const overdueInvoices = invoices.filter(inv => inv.payment_status === 'Overdue');
+          const totalRevenue = invoices.reduce((s, inv) => s + (inv.grand_total || 0), 0);
+          const totalPaid = paidInvoices.reduce((s, inv) => s + (inv.grand_total || 0), 0);
+          const totalPending = pendingInvoices.reduce((s, inv) => s + (inv.grand_total || 0), 0);
+          const collectionPct = totalRevenue > 0 ? Math.round((totalPaid / totalRevenue) * 100) : 0;
+          const totalGst = invoices.reduce((s, inv) => s + (inv.gst_amount || 0), 0);
+          const thisMonth = new Date().toISOString().slice(0, 7);
+          const invoicesThisMonth = invoices.filter(inv => inv.invoice_date && inv.invoice_date.startsWith(thisMonth)).length;
+          const activeProjects = projects.filter(p => p.status === 'In Progress');
+          const todayStr = new Date().toISOString().split('T')[0];
+          const pendingTasks = tasks.filter(t => !t.completed);
+
+          const SectionHeader = ({ id, title, icon, defaultOpen }) => (
+            <button
+              type="button"
+              onClick={() => toggleSection(id)}
+              style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'none', border: 'none', cursor: 'pointer', padding: '12px 0', borderBottom: '1px solid var(--border-color)', color: 'var(--text-primary)' }}
+            >
+              <span style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: '700', fontSize: '0.95rem' }}>
+                <span>{icon}</span>{title}
+              </span>
+              <span id={'dash-chevron-' + id} style={{ fontSize: '0.75rem', color: 'var(--text-muted)', transition: 'transform 0.2s', transform: defaultOpen ? 'rotate(0deg)' : 'rotate(-90deg)' }}>▼</span>
+            </button>
+          );
+
+          return (
+            <div>
+              {/* Welcome Header */}
+              <div className="card" style={{ background: 'var(--bg-sidebar)', marginBottom: '20px', padding: '20px 24px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
+                  <div>
+                    <span style={{ fontSize: '0.75rem', color: 'var(--accent)', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '1px' }}>AURA Workspace</span>
+                    <h1 style={{ fontSize: '1.5rem', fontWeight: '800', margin: '2px 0 0', color: 'var(--text-primary)' }}>
+                      {'\u{1F44B}'} Welcome back, <span style={{ color: 'var(--accent)' }}>{user?.name || 'User'}</span>
+                    </h1>
+                    <p style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', margin: '4px 0 0' }}>
+                      {new Date().toLocaleDateString('en-IN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+                    </p>
+                  </div>
+                  <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                    <button className="btn btn-primary" style={{ height: '38px' }} onClick={() => setShowTaskModal(true)}>+ Add Task</button>
+                    {hasPermission(user?.role, 'canManageUsers') && (
+                      <button className="btn btn-secondary" style={{ height: '38px' }} onClick={() => setShowClientModal(true)}>+ Add Client</button>
+                    )}
+                    {hasPermission(user?.role, 'canViewInvoices') && (
+                      <button className="btn btn-secondary" style={{ height: '38px' }} onClick={triggerNewInvoiceFlow}>+ Create Invoice</button>
+                    )}
+                    <button className="btn btn-secondary" style={{ height: '38px' }} onClick={() => setActiveTab('quotations')}>Quotations</button>
+                  </div>
                 </div>
               </div>
 
-              <div style={{ display: 'flex', gap: '24px', flexWrap: 'wrap', marginTop: '20px', borderTop: '1px solid var(--border-color)', paddingTop: '16px' }}>
-                <div style={{ fontSize: '0.85rem' }}>
-                  <strong>Today's Focus:</strong>
-                  <div style={{ display: 'flex', gap: '12px', marginTop: '4px', color: 'var(--text-secondary)' }}>
-                    <span>✔ {tasks.filter(t => t.completed).length} Tasks Completed</span>
-                    <span>⏳ {tasks.filter(t => !t.completed).length} Pending</span>
-                    <span>🔥 {tasks.filter(t => t.priority === 'High' && !t.completed).length} High Priority</span>
-                  </div>
-                </div>
-                <div style={{ background: '#FFFBEB', padding: '8px 12px', borderRadius: '8px', border: '1px solid #FEF3C7', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '8px', marginLeft: 'auto' }}>
-                  <BrainCircuit size={16} style={{ color: '#D97706' }} />
-                  <span style={{ color: '#F39C12', fontWeight: '500' }}>AI says: Finish Apex drawings before 4 PM.</span>
-                </div>
-              </div>
-            </div>
-
-            {/* KPI Cards Row */}
-            <div className="grid-3" style={{ marginBottom: '24px' }}>
-              {/* Financial KPIs - Only visible to Admins/SuperAdmins */}
-              {hasPermission(user?.role, 'canViewRevenue') && (
-                <>
-                  <div className="card" style={{ margin: 0 }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                      <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontWeight: '600' }}>TOTAL REVENUE</span>
-                      <IndianRupee size={16} style={{ color: 'var(--accent)' }} />
-                    </div>
-                    <span style={{ fontSize: '1.8rem', fontWeight: '700' }}>₹{invoices.reduce((sum, i) => sum + i.grand_total, 0).toLocaleString('en-IN')}</span>
-                  </div>
-
-                  <div className="card" style={{ margin: 0 }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                      <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontWeight: '600' }}>PENDING PAYMENTS</span>
-                      <AlertCircle size={16} style={{ color: 'var(--color-danger)' }} />
-                    </div>
-                    <span style={{ fontSize: '1.8rem', fontWeight: '700' }}>₹{invoices.filter(i => i.payment_status === 'Pending').reduce((sum, i) => sum + i.grand_total, 0).toLocaleString('en-IN')}</span>
-                  </div>
-
-                  <div className="card" style={{ margin: 0 }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                      <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontWeight: '600' }}>PAID TODAY</span>
-                      <CheckCircle2 size={16} style={{ color: 'var(--color-success)' }} />
-                    </div>
-                    <span style={{ fontSize: '1.8rem', fontWeight: '700' }}>₹{invoices.filter(i => i.payment_status === 'Paid').reduce((sum, i) => sum + i.grand_total, 0).toLocaleString('en-IN')}</span>
-                  </div>
-
-                  <div className="card" style={{ margin: 0 }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                      <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontWeight: '600' }}>OVERDUE INVOICES</span>
-                      <Clock size={16} style={{ color: 'var(--color-warning)' }} />
-                    </div>
-                    <span style={{ fontSize: '1.8rem', fontWeight: '700' }}>{invoices.filter(i => i.payment_status === 'Overdue').length}</span>
-                  </div>
-                </>
-              )}
-
-              {/* Employee Productivity Widgets */}
-              {user?.role === 'Employee' && (
-                <>
-                  <div className="card" style={{ margin: 0 }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                      <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontWeight: '600' }}>MY OPEN TASKS</span>
-                      <Clock size={16} style={{ color: 'var(--accent)' }} />
-                    </div>
-                    <span style={{ fontSize: '1.8rem', fontWeight: '700' }}>{tasks.filter(t => !t.completed).length}</span>
-                  </div>
-                  <div className="card" style={{ margin: 0 }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                      <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontWeight: '600' }}>COMPLETED TASKS</span>
-                      <CheckCircle2 size={16} style={{ color: 'var(--color-success)' }} />
-                    </div>
-                    <span style={{ fontSize: '1.8rem', fontWeight: '700' }}>{tasks.filter(t => t.completed).length}</span>
-                  </div>
-                  <div className="card" style={{ margin: 0 }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                      <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontWeight: '600' }}>MY ACTIVE PROJECTS</span>
-                      <FolderKanban size={16} style={{ color: 'var(--color-info)' }} />
-                    </div>
-                    <span style={{ fontSize: '1.8rem', fontWeight: '700' }}>{projects.filter(p => p.status === 'In Progress').length}</span>
-                  </div>
-                </>
-              )}
-
-              {/* Manager Operations Widgets */}
-              {user?.role === 'Manager' && (
-                <>
-                  <div className="card" style={{ margin: 0 }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                      <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontWeight: '600' }}>TEAM TASKS</span>
-                      <Clock size={16} style={{ color: 'var(--accent)' }} />
-                    </div>
-                    <span style={{ fontSize: '1.8rem', fontWeight: '700' }}>{tasks.length}</span>
-                  </div>
-                  <div className="card" style={{ margin: 0 }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                      <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontWeight: '600' }}>ACTIVE TEAM PROJECTS</span>
-                      <FolderKanban size={16} style={{ color: 'var(--color-info)' }} />
-                    </div>
-                    <span style={{ fontSize: '1.8rem', fontWeight: '700' }}>{projects.filter(p => p.status === 'In Progress').length}</span>
-                  </div>
-                </>
-              )}
-
-              {/* Shared General Stats */}
-              <div className="card" style={{ margin: 0 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                  <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontWeight: '600' }}>{user?.role === 'Employee' ? 'MY PRODUCTIVITY' : 'TEAM PRODUCTIVITY'}</span>
-                  <CheckCircle2 size={16} style={{ color: 'var(--accent-purple)' }} />
-                </div>
-                <span style={{ fontSize: '1.8rem', fontWeight: '700' }}>92%</span>
-              </div>
-
-              <div className="card" style={{ margin: 0 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                  <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontWeight: '600' }}>WORK STREAK</span>
-                  <Sparkles size={16} style={{ color: 'var(--color-warning)' }} />
-                </div>
-                <span style={{ fontSize: '1.8rem', fontWeight: '700' }}>14 Days</span>
-              </div>
-            </div>
-
-            {/* Personal Tracker KPI metrics */}
-            {(() => {
-              const todayStr = new Date().toISOString().split('T')[0];
-              const todayPersonalTasks = personalTasks.filter(pt => pt.due_date === todayStr);
-              const pendingPersonalTasks = personalTasks.filter(pt => pt.status !== 'Done');
-              const completedThisWeek = personalTasks.filter(pt => {
-                if (pt.status !== 'Done') return false;
-                const updatedTime = pt.updated_at ? new Date(pt.updated_at).getTime() : 0;
-                const sevenDaysAgo = Date.now() - (7 * 24 * 60 * 60 * 1000);
-                return updatedTime >= sevenDaysAgo;
-              });
-              const highestStreak = habits.reduce((max, h) => Math.max(max, h.streak_count || 0), 0);
-              const upcomingBills = personalTasks.filter(pt => pt.category === 'Bills & Payments' && pt.status !== 'Done');
-              const personalRemindersCount = personalTasks.filter(pt => pt.reminder_date && pt.status !== 'Done').length;
-
-              return (
-                <div style={{ marginBottom: '24px' }}>
-                  <h3 style={{ fontSize: '1.1rem', fontWeight: '700', marginBottom: '14px', color: 'var(--text-primary)' }}>💖 Personal Tracker Summary</h3>
-                  <div className="grid-3">
-                    <div className="card" style={{ margin: 0, borderLeft: '4px solid #EC4899' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                        <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontWeight: '600' }}>TODAY'S PERSONAL TASKS</span>
-                        <span style={{ fontSize: '1.2rem' }}>📝</span>
-                      </div>
-                      <span style={{ fontSize: '1.8rem', fontWeight: '700' }}>{todayPersonalTasks.length}</span>
-                    </div>
-
-                    <div className="card" style={{ margin: 0, borderLeft: '4px solid #3B82F6' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                        <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontWeight: '600' }}>PENDING PERSONAL WORK</span>
-                        <span style={{ fontSize: '1.2rem' }}>⏳</span>
-                      </div>
-                      <span style={{ fontSize: '1.8rem', fontWeight: '700' }}>{pendingPersonalTasks.length}</span>
-                    </div>
-
-                    <div className="card" style={{ margin: 0, borderLeft: '4px solid #10B981' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                        <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontWeight: '600' }}>COMPLETED THIS WEEK</span>
-                        <span style={{ fontSize: '1.2rem' }}>✅</span>
-                      </div>
-                      <span style={{ fontSize: '1.8rem', fontWeight: '700' }}>{completedThisWeek.length}</span>
-                    </div>
-
-                    <div className="card" style={{ margin: 0, borderLeft: '4px solid #F59E0B' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                        <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontWeight: '600' }}>MAX HABIT STREAK</span>
-                        <span style={{ fontSize: '1.2rem' }}>🔥</span>
-                      </div>
-                      <span style={{ fontSize: '1.8rem', fontWeight: '700' }}>{highestStreak} Days</span>
-                    </div>
-
-                    <div className="card" style={{ margin: 0, borderLeft: '4px solid #EF4444' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                        <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontWeight: '600' }}>UPCOMING BILLS</span>
-                        <span style={{ fontSize: '1.2rem' }}>💳</span>
-                      </div>
-                      <span style={{ fontSize: '1.8rem', fontWeight: '700' }}>{upcomingBills.length}</span>
-                    </div>
-
-                    <div className="card" style={{ margin: 0, borderLeft: '4px solid var(--accent)' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                        <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontWeight: '600' }}>PERSONAL REMINDERS</span>
-                        <span style={{ fontSize: '1.2rem' }}>🔔</span>
-                      </div>
-                      <span style={{ fontSize: '1.8rem', fontWeight: '700' }}>{personalRemindersCount}</span>
-                    </div>
-                  </div>
-                </div>
-              );
-            })()}
-
-            {/* Main Split Grid */}
-            <div style={{ display: 'grid', gridTemplateColumns: '65% 35%', gap: '24px' }}>
-              
-              {/* Left Column (65%) */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-                {/* Timeline */}
-                <div className="card" style={{ margin: 0 }}>
-                  <h3 style={{ fontSize: '1rem', fontWeight: '600', marginBottom: '16px' }}>Today's Schedule (Timeline)</h3>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                    {tasks.filter(t => t.time).map(t => (
-                      <div key={t.id} style={{ display: 'flex', gap: '16px', alignItems: 'center', borderLeft: '3px solid var(--accent)', paddingLeft: '12px', justifyContent: 'space-between', flexWrap: 'wrap' }}>
-                        <div style={{ display: 'flex', gap: '16px', alignItems: 'center', flex: 1, minWidth: '150px' }}>
-                          <span style={{ fontFamily: 'monospace', fontWeight: '600', fontSize: '0.9rem', color: 'var(--text-secondary)', width: '50px' }}>{t.time}</span>
-                          <span style={{ fontSize: '0.9rem' }}>{t.title}</span>
-                        </div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                          <span className="badge badge-info" style={{ fontSize: '0.7rem' }}>{t.completion_percentage || 0}%</span>
-                          <span className={`badge ${t.status === 'Done' || t.completed ? 'badge-success' : t.status === 'QC Pending' ? 'badge-info' : 'badge-warning'}`} style={{ fontSize: '0.7rem' }}>
-                            {t.status || 'Pending'}
-                          </span>
-                          {t.qc_status && t.qc_status !== 'Not Checked' && (
-                            <span className={`badge ${t.qc_status === 'QC Passed' ? 'badge-success' : t.qc_status === 'QC Failed' || t.qc_status === 'Revision Required' ? 'badge-danger' : 'badge-warning'}`} style={{ fontSize: '0.7rem' }}>
-                              QC: {t.qc_status}
-                            </span>
-                          )}
-                          {renderTaskActions(t)}
-                        </div>
+              {/* SECTION 1 — Overview KPIs */}
+              <div className="card" style={{ marginBottom: '16px', padding: '16px 20px' }}>
+                <SectionHeader id="overview" title="Overview" icon="&#128202;" defaultOpen={true} />
+                <div id="dash-section-overview" style={{ display: 'block', paddingTop: '16px' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '12px' }}>
+                    {[
+                      { label: 'Active Projects', value: activeProjects.length, color: 'var(--accent)' },
+                      { label: 'Pending Tasks', value: pendingTasks.length, color: '#10B981' },
+                      { label: 'Total Clients', value: clients.length, color: '#3B82F6' },
+                      { label: 'Total Invoices', value: invoices.length, color: '#8B5CF6' },
+                      { label: 'Overdue Invoices', value: overdueInvoices.length, color: overdueInvoices.length > 0 ? '#EF4444' : 'var(--text-primary)' },
+                    ].map(kpi => (
+                      <div key={kpi.label} style={{ background: 'var(--bg-card)', borderRadius: '10px', padding: '14px', border: '1px solid var(--border-color)', borderLeft: '3px solid ' + kpi.color }}>
+                        <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: '600', textTransform: 'uppercase', marginBottom: '6px' }}>{kpi.label}</div>
+                        <div style={{ fontSize: '1.8rem', fontWeight: '800', color: kpi.color }}>{kpi.value}</div>
                       </div>
                     ))}
                   </div>
                 </div>
+              </div>
 
-                {/* Project Progress */}
-                <div className="card" style={{ margin: 0 }}>
-                  <h3 style={{ fontSize: '1rem', fontWeight: '600', marginBottom: '16px' }}>Project Progress</h3>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                    {projects.map(p => {
-                      const client = clients.find(c => c.id === p.clientId);
-                      return (
-                        <div key={p.id} style={{ borderBottom: '1px solid var(--border-color)', paddingBottom: '12px', marginBottom: '4px' }}>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', marginBottom: '8px', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
-                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                              <strong>{p.title}</strong> ({client ? client.name : 'Unknown Client'})
-                              <button 
-                                type="button"
-                                className="btn" 
-                                style={{ padding: '2px 6px', fontSize: '0.7rem', height: 'auto', minWidth: 'auto', border: '1px solid var(--border-color)', borderRadius: '4px', background: 'rgba(255,255,255,0.04)' }}
-                                onClick={() => { setEditingProject(p); setShowProjectEditModal(true); }}
-                              >
-                                Edit Status
-                              </button>
-                            </span>
-                            <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                              <span className={`badge ${p.status === 'Completed' || p.status === 'Delivered' || p.status === 'QC Passed' ? 'badge-success' : p.status === 'On Hold' ? 'badge-danger' : 'badge-warning'}`} style={{ fontSize: '0.7rem' }}>
-                                {p.status || 'In Progress'}
-                              </span>
-                              {p.qc_status && p.qc_status !== 'Not Checked' && (
-                                <span className={`badge ${p.qc_status === 'QC Passed' ? 'badge-success' : 'badge-info'}`} style={{ fontSize: '0.7rem' }}>
-                                  QC: {p.qc_status}
-                                </span>
-                              )}
-                              <span style={{ fontWeight: '600' }}>{p.progress}%</span>
-                            </span>
+              {/* SECTION 2 — Projects */}
+              <div className="card" style={{ marginBottom: '16px', padding: '16px 20px' }}>
+                <SectionHeader id="projects" title="Projects" icon="&#128193;" defaultOpen={true} />
+                <div id="dash-section-projects" style={{ display: 'block', paddingTop: '16px' }}>
+                  {activeProjects.length === 0 ? (
+                    <div style={{ textAlign: 'center', padding: '24px', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
+                      No active projects.
+                      <button className="btn btn-primary" style={{ marginLeft: '12px', padding: '4px 12px', fontSize: '0.8rem' }} onClick={triggerNewProjectFlow}>+ New Project</button>
+                    </div>
+                  ) : (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                      {activeProjects.slice(0, 6).map(p => {
+                        const client = clients.find(c => c.id === (p.clientId || p.client_id));
+                        const daysLeft = p.deadline ? Math.ceil((new Date(p.deadline) - new Date()) / 86400000) : null;
+                        return (
+                          <div key={p.id}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px', marginBottom: '6px' }}>
+                              <div>
+                                <span style={{ fontWeight: '600', fontSize: '0.9rem' }}>{p.title}</span>
+                                <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginLeft: '8px' }}>{client?.name || 'No client'}</span>
+                              </div>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                {daysLeft !== null && (
+                                  <span style={{ fontSize: '0.7rem', color: daysLeft < 7 ? '#EF4444' : daysLeft < 14 ? '#F59E0B' : 'var(--text-muted)', fontWeight: '600' }}>
+                                    {daysLeft < 0 ? Math.abs(daysLeft) + 'd overdue' : daysLeft + 'd left'}
+                                  </span>
+                                )}
+                                <span style={{ fontSize: '0.7rem', fontWeight: '700' }}>{p.progress || 0}%</span>
+                                <button type="button" className="btn btn-secondary" style={{ padding: '2px 8px', fontSize: '0.7rem', minHeight: 'unset' }} onClick={() => { setEditingProject(p); setShowProjectEditModal(true); }}>Update</button>
+                              </div>
+                            </div>
+                            <div style={{ height: '6px', background: 'var(--border-color)', borderRadius: '3px', overflow: 'hidden' }}>
+                              <div style={{ width: (p.progress || 0) + '%', height: '100%', background: (p.progress || 0) >= 80 ? '#10B981' : (p.progress || 0) >= 50 ? '#3B82F6' : 'var(--accent)', borderRadius: '3px', transition: 'width 0.5s ease' }} />
+                            </div>
                           </div>
-                          <div style={{ width: '100%', height: '8px', background: 'var(--border-color)', borderRadius: '4px', overflow: 'hidden' }}>
-                            <div style={{ width: `${p.progress}%`, height: '100%', background: 'linear-gradient(90deg, var(--accent-indigo), var(--accent-purple))', borderRadius: '4px' }}></div>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                {/* Recent Invoices Widget */}
-                <div className="card" style={{ margin: 0 }}>
-                  <h3 style={{ fontSize: '1rem', fontWeight: '600', marginBottom: '16px' }}>Recent Invoices</h3>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                    {invoices.slice(0, 3).map(inv => {
-                      const client = clients.find(c => c.id === inv.client_id);
-                      return (
-                        <div key={inv.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '12px', background: 'rgba(255,255,255,0.04)', borderRadius: '8px', border: '1px solid var(--border-color)', alignItems: 'center' }}>
-                          <div>
-                            <strong>{inv.invoice_number}</strong>
-                            <p style={{ margin: '2px 0 0', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Client: {client ? client.name : 'N/A'} • Due: {inv.due_date}</p>
-                          </div>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                            <span style={{ fontWeight: '600', fontSize: '0.9rem' }}>₹{inv.grand_total.toLocaleString('en-IN')}</span>
-                            <span className={`badge ${inv.payment_status === 'Paid' ? 'badge-success' : inv.payment_status === 'Pending' ? 'badge-warning' : 'badge-danger'}`}>{inv.payment_status}</span>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
+                        );
+                      })}
+                      {activeProjects.length > 6 && (
+                        <button className="btn btn-secondary" style={{ fontSize: '0.8rem', alignSelf: 'flex-start' }} onClick={() => setActiveTab('projects')}>
+                          View all {activeProjects.length} active projects &#8594;
+                        </button>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
 
-              {/* Right Column (35%) */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-                {/* AI Assistant */}
-                <div className="card" style={{ margin: 0, background: 'var(--bg-card)', border: '1px solid var(--border-color)' }}>
-                  <h3 style={{ fontSize: '1rem', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
-                    <BrainCircuit size={18} style={{ color: 'var(--accent)' }} /> AI Assistant
-                  </h3>
-                  <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: '1.5', margin: '0 0 16px' }}>
-                    "Complete Project Apex today. Estimated work: 2h 30m. This keeps your schedule on track."
-                  </p>
-                  <button className={`btn ${focusActive ? 'btn-danger' : 'btn-primary'}`} style={{ width: '100%', justifyContent: 'center' }} onClick={() => setFocusActive(!focusActive)}>
-                    {focusActive ? (
-                      <>
-                        <Square size={16} /> Stop Focus Mode ({Math.floor(focusSeconds / 60)}m)
-                      </>
-                    ) : (
-                      <>
-                        <Play size={16} /> Start Focus Mode
-                      </>
+              {/* SECTION 3 — Finance (Admin only) */}
+              {hasPermission(user?.role, 'canViewRevenue') && (
+                <div className="card" style={{ marginBottom: '16px', padding: '16px 20px' }}>
+                  <SectionHeader id="finance" title="Finance" icon="&#128200;" defaultOpen={true} />
+                  <div id="dash-section-finance" style={{ display: 'block', paddingTop: '16px' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '10px', marginBottom: '16px' }}>
+                      {[
+                        { label: 'Total Revenue', value: '&#8377;' + totalRevenue.toLocaleString('en-IN'), color: '#10B981' },
+                        { label: 'Collected', value: '&#8377;' + totalPaid.toLocaleString('en-IN'), color: '#3B82F6' },
+                        { label: 'Pending', value: '&#8377;' + totalPending.toLocaleString('en-IN'), color: '#F59E0B' },
+                        { label: 'Collection %', value: collectionPct + '%', color: collectionPct >= 80 ? '#10B981' : '#F59E0B' },
+                        { label: 'Outstanding GST', value: '&#8377;' + totalGst.toLocaleString('en-IN'), color: '#8B5CF6' },
+                        { label: 'Invoices / Month', value: invoicesThisMonth, color: 'var(--accent)' },
+                      ].map(kpi => (
+                        <div key={kpi.label} style={{ background: 'var(--bg-card)', borderRadius: '10px', padding: '12px', border: '1px solid var(--border-color)' }}>
+                          <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', fontWeight: '600', textTransform: 'uppercase', marginBottom: '4px' }}>{kpi.label}</div>
+                          <div style={{ fontSize: '1.3rem', fontWeight: '800', color: kpi.color }} dangerouslySetInnerHTML={{ __html: kpi.value }} />
+                        </div>
+                      ))}
+                    </div>
+                    {invoices.length > 0 && (
+                      <div>
+                        <div style={{ fontSize: '0.7rem', fontWeight: '700', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '8px' }}>Recent Invoices</div>
+                        {invoices.slice(0, 4).map(inv => {
+                          const cl = clients.find(c => c.id === inv.client_id);
+                          return (
+                            <div key={inv.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 0', borderBottom: '1px solid var(--border-color)' }}>
+                              <div>
+                                <span style={{ fontSize: '0.85rem', fontWeight: '600' }}>{inv.invoice_number}</span>
+                                <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginLeft: '8px' }}>{cl?.name || 'N/A'}</span>
+                              </div>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                <span style={{ fontSize: '0.85rem', fontWeight: '700' }}>&#8377;{(inv.grand_total || 0).toLocaleString('en-IN')}</span>
+                                <span className={'badge ' + (inv.payment_status === 'Paid' ? 'badge-success' : inv.payment_status === 'Pending' ? 'badge-warning' : 'badge-danger')} style={{ fontSize: '0.65rem' }}>{inv.payment_status}</span>
+                              </div>
+                            </div>
+                          );
+                        })}
+                        <button className="btn btn-secondary" style={{ fontSize: '0.8rem', marginTop: '10px' }} onClick={() => setActiveTab('invoices')}>View all invoices &#8594;</button>
+                      </div>
                     )}
-                  </button>
+                  </div>
                 </div>
+              )}
 
-                {/* Upcoming Deadlines */}
-                <div className="card" style={{ margin: 0 }}>
-                  <h3 style={{ fontSize: '1rem', fontWeight: '600', marginBottom: '12px' }}>Upcoming Deadlines</h3>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.85rem' }}>
-                      <span>Villa Project</span>
-                      <span className="badge badge-danger">Tomorrow 🔴</span>
+              {/* SECTION 4 — Planner (collapsed) */}
+              <div className="card" style={{ marginBottom: '16px', padding: '16px 20px' }}>
+                <SectionHeader id="planner" title="Planner" icon="&#128197;" defaultOpen={false} />
+                <div id="dash-section-planner" style={{ display: 'none', paddingTop: '16px' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                    <div>
+                      <div style={{ fontSize: '0.7rem', fontWeight: '700', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '10px' }}>Upcoming Tasks</div>
+                      {tasks.filter(t => !t.completed).slice(0, 5).map(t => (
+                        <div key={t.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '7px 0', borderBottom: '1px solid var(--border-color)', gap: '8px' }}>
+                          <span style={{ fontSize: '0.85rem', flex: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{t.title}</span>
+                          <span className={'badge ' + (t.priority === 'High' ? 'badge-danger' : t.priority === 'Medium' ? 'badge-warning' : 'badge-info')} style={{ fontSize: '0.65rem' }}>{t.priority}</span>
+                        </div>
+                      ))}
+                      {tasks.filter(t => !t.completed).length === 0 && <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>No pending tasks</div>}
                     </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.85rem' }}>
-                      <span>Factory Layout</span>
-                      <span className="badge badge-warning">In 3 Days 🟠</span>
+                    <div>
+                      <div style={{ fontSize: '0.7rem', fontWeight: '700', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '10px' }}>Project Deadlines</div>
+                      {projects.filter(p => p.deadline).sort((a, b) => new Date(a.deadline) - new Date(b.deadline)).slice(0, 4).map(p => {
+                        const daysLeft = Math.ceil((new Date(p.deadline) - new Date()) / 86400000);
+                        return (
+                          <div key={p.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '7px 0', borderBottom: '1px solid var(--border-color)' }}>
+                            <span style={{ fontSize: '0.85rem', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.title}</span>
+                            <span style={{ fontSize: '0.75rem', fontWeight: '700', color: daysLeft < 7 ? '#EF4444' : '#F59E0B', whiteSpace: 'nowrap', marginLeft: '8px' }}>{daysLeft < 0 ? 'Overdue' : daysLeft + 'd'}</span>
+                          </div>
+                        );
+                      })}
                     </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.85rem' }}>
-                      <span>Apartment Model</span>
-                      <span className="badge badge-info">Next Week 🟢</span>
+                  </div>
+                  <div style={{ marginTop: '14px' }}>
+                    <button
+                      type="button"
+                      onClick={() => toggleSection('ai-suggestions')}
+                      style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', fontSize: '0.75rem', fontWeight: '700', textTransform: 'uppercase', padding: '8px 0', display: 'flex', alignItems: 'center', gap: '6px' }}
+                    >
+                      AI Suggestions <span id="dash-chevron-ai-suggestions" style={{ transition: 'transform 0.2s', transform: 'rotate(-90deg)' }}>&#9660;</span>
+                    </button>
+                    <div id="dash-section-ai-suggestions" style={{ display: 'none' }}>
+                      {['Finish Villa Project before 4 PM', 'Invoice PM-INV-2026-0001 is due tomorrow', 'Weekly progress meeting with Apex Builders', '2h focus block for Revit modeling'].map((s, i) => (
+                        <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', padding: '5px 0', fontSize: '0.82rem', color: 'var(--text-secondary)' }}>
+                          <span style={{ color: 'var(--accent)', fontWeight: '700', marginTop: '1px' }}>&#9654;</span> {s}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  <button className="btn btn-secondary" style={{ fontSize: '0.8rem', marginTop: '12px' }} onClick={() => setActiveTab('planner')}>Open Full Planner &#8594;</button>
+                </div>
+              </div>
+
+              {/* SECTION 5 — Personal (collapsed) */}
+              <div className="card" style={{ marginBottom: '16px', padding: '16px 20px' }}>
+                <SectionHeader id="personal" title="Personal Tracker" icon="&#128150;" defaultOpen={false} />
+                <div id="dash-section-personal" style={{ display: 'none', paddingTop: '16px' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '10px' }}>
+                    {[
+                      { label: "Today's Tasks", value: personalTasks.filter(pt => pt.due_date === todayStr).length, color: '#EC4899' },
+                      { label: 'Pending Work', value: personalTasks.filter(pt => pt.status !== 'Done').length, color: '#3B82F6' },
+                      { label: 'Completed', value: personalTasks.filter(pt => pt.status === 'Done').length, color: '#10B981' },
+                      { label: 'Habit Streak', value: habits.reduce((max, h) => Math.max(max, h.streak_count || 0), 0) + 'd', color: '#F59E0B' },
+                      { label: 'Bills Pending', value: personalTasks.filter(pt => pt.category === 'Bills & Payments' && pt.status !== 'Done').length, color: '#EF4444' },
+                      { label: 'Reminders', value: personalTasks.filter(pt => pt.reminder_date && pt.status !== 'Done').length, color: 'var(--accent)' },
+                    ].map(kpi => (
+                      <div key={kpi.label} style={{ background: 'var(--bg-card)', borderRadius: '10px', padding: '12px', border: '1px solid var(--border-color)', borderLeft: '3px solid ' + kpi.color }}>
+                        <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', fontWeight: '600', textTransform: 'uppercase', marginBottom: '4px' }}>{kpi.label}</div>
+                        <div style={{ fontSize: '1.4rem', fontWeight: '800', color: kpi.color }}>{kpi.value}</div>
+                      </div>
+                    ))}
+                  </div>
+                  {user?.role === 'Employee' && (
+                    <button className="btn btn-secondary" style={{ fontSize: '0.8rem', marginTop: '12px' }} onClick={() => setActiveTab('personal-tracker')}>Open Personal Tracker &#8594;</button>
+                  )}
+                </div>
+              </div>
+
+              {/* SECTION 6 — Analytics (collapsed) */}
+              <div className="card" style={{ marginBottom: '16px', padding: '16px 20px' }}>
+                <SectionHeader id="analytics" title="Analytics" icon="&#128202;" defaultOpen={false} />
+                <div id="dash-section-analytics" style={{ display: 'none', paddingTop: '16px' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                    <div>
+                      <div style={{ fontSize: '0.7rem', fontWeight: '700', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '10px' }}>Project Distribution</div>
+                      {['In Progress', 'Completed', 'On Hold', 'Draft'].map(status => {
+                        const count = projects.filter(p => p.status === status).length;
+                        const pct = projects.length > 0 ? Math.round((count / projects.length) * 100) : 0;
+                        return (
+                          <div key={status} style={{ marginBottom: '10px' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', marginBottom: '3px' }}>
+                              <span>{status}</span>
+                              <span style={{ fontWeight: '600' }}>{count} ({pct}%)</span>
+                            </div>
+                            <div style={{ height: '5px', background: 'var(--border-color)', borderRadius: '3px', overflow: 'hidden' }}>
+                              <div style={{ width: pct + '%', height: '100%', background: status === 'In Progress' ? '#3B82F6' : status === 'Completed' ? '#10B981' : '#F59E0B', borderRadius: '3px' }} />
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                    <div>
+                      <div style={{ fontSize: '0.7rem', fontWeight: '700', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '10px' }}>Weekly Task Trend</div>
+                      <div style={{ display: 'flex', alignItems: 'flex-end', gap: '6px', height: '80px' }}>
+                        {['M','T','W','T','F','S','S'].map((day, i) => {
+                          const h = [40, 65, 80, 55, 90, 30, 20][i];
+                          return (
+                            <div key={day + i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
+                              <div style={{ width: '100%', height: h + '%', background: i === (new Date().getDay() + 6) % 7 ? 'var(--accent)' : '#3B82F6', borderRadius: '3px 3px 0 0', opacity: 0.7 }} />
+                              <span style={{ fontSize: '0.6rem', color: 'var(--text-muted)' }}>{day}</span>
+                            </div>
+                          );
+                        })}
+                      </div>
                     </div>
                   </div>
                 </div>
+              </div>
+            </div>
+          );
+        })()}
 
-                {/* Modern AI Productivity Calendar */}
-                <div className="card" style={{ margin: 0, background: 'rgba(255, 255, 255, 0.8)', backdropFilter: 'blur(12px)', border: '1px solid rgba(226, 232, 240, 0.8)', boxShadow: 'var(--shadow-hover)' }}>
-                  
-                  {/* Search Query Input */}
-                  <div style={{ display: 'flex', gap: '8px', marginBottom: '14px', alignItems: 'center' }}>
-                    <Search size={16} style={{ color: 'var(--text-muted)' }} />
-                    <input
-                      type="text"
-                      className="form-input"
-                      placeholder="Search meetings, tasks, deadlines..."
-                      style={{ padding: '6px 12px', fontSize: '0.8rem', flex: 1 }}
-                      value={calendarSearchQuery}
-                      onChange={(e) => setCalendarSearchQuery(e.target.value)}
-                    />
-                    {calendarSearchQuery && (
-                      <button type="button" className="btn btn-secondary" style={{ padding: '4px 8px', fontSize: '0.75rem', minWidth: 'auto' }} onClick={() => setCalendarSearchQuery('')}>Clear</button>
-                    )}
+
+        {/* TAB: CLIENTS */}
+        {activeTab === 'clients' && (() => {
+          const groups = [
+            { label: 'Active', filter: c => !c.status || c.status === 'Active', color: '#10B981' },
+            { label: 'Prospects', filter: c => c.status === 'Prospect', color: '#3B82F6' },
+            { label: 'Completed', filter: c => c.status === 'Completed', color: '#8B5CF6' },
+            { label: 'Archived', filter: c => c.status === 'Archived', color: 'var(--text-muted)' },
+          ];
+          const toggleClientGroup = (id) => {
+            const el = document.getElementById('client-group-' + id);
+            const ch = document.getElementById('client-chevron-' + id);
+            if (el) { const o = el.style.display !== 'none'; el.style.display = o ? 'none' : 'block'; if (ch) ch.style.transform = o ? 'rotate(-90deg)' : 'rotate(0deg)'; }
+          };
+
+          if (selectedClient) {
+            const clientProjects = projects.filter(p => p.clientId === selectedClient.id || p.client_id === selectedClient.id);
+            const clientQuotes = quotations.filter(q => q.client_name?.toLowerCase() === selectedClient.name?.toLowerCase() || q.client_name?.toLowerCase() === selectedClient.company?.toLowerCase());
+            const clientInvoices = invoices.filter(inv => inv.client_id === selectedClient.id);
+            const clientMeetings = meetings.filter(m => m.clientId === selectedClient.id || m.client_id === selectedClient.id);
+
+            if (selectedProject) {
+              const projectQuotes = clientQuotes.filter(q => q.project_name?.toLowerCase() === selectedProject.title?.toLowerCase());
+              const projectInvoices = clientInvoices.filter(inv => inv.project_id === selectedProject.id);
+              const projectTasks = tasks.filter(t => t.projectId === selectedProject.id || t.project_id === selectedProject.id);
+
+              return (
+                <div>
+                  {/* Breadcrumbs */}
+                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '16px', fontSize: '0.85rem' }}>
+                    <span style={{ cursor: 'pointer', color: 'var(--accent)' }} onClick={() => { setSelectedProject(null); setSelectedClient(null); }}>Clients</span>
+                    <span style={{ color: 'var(--text-muted)' }}>&gt;</span>
+                    <span style={{ cursor: 'pointer', color: 'var(--accent)' }} onClick={() => setSelectedProject(null)}>{selectedClient.name}</span>
+                    <span style={{ color: 'var(--text-muted)' }}>&gt;</span>
+                    <span style={{ color: 'var(--text-primary)', fontWeight: 'bold' }}>{selectedProject.title}</span>
                   </div>
 
-                  {/* Quick Filters */}
-                  <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap', marginBottom: '14px' }}>
-                    {['All', 'Projects', 'Tasks', 'Invoices', 'Meetings', 'QC', 'Personal'].map(f => (
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                    <div>
+                      <span style={{ fontSize: '0.75rem', color: 'var(--accent)', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '1px' }}>Project Workspace</span>
+                      <h1 style={{ fontSize: '1.5rem', fontWeight: '800', margin: '2px 0 0' }}>{selectedProject.title}</h1>
+                      <p style={{ margin: '4px 0 0 0', fontSize: '0.8rem', color: 'var(--text-muted)' }}>Code: PRJ-{selectedProject.id.slice(0, 6).toUpperCase()} | Discipline: {selectedProject.cadType || selectedProject.cad_type || 'Naval Architecture'}</p>
+                    </div>
+                    <button className="btn btn-primary" onClick={() => {
+                      triggerInvoiceCreationFromProject(selectedClient.id, selectedProject.id);
+                    }}>💰 Generate Invoice</button>
+                  </div>
+
+                  {/* Project subtabs */}
+                  <div style={{ display: 'flex', gap: '8px', borderBottom: '1px solid var(--border-color)', marginBottom: '20px', paddingBottom: '2px', overflowX: 'auto' }}>
+                    {['Summary', 'Deliverables', 'Milestones', 'Quotations', 'Invoices', 'Documents', 'Activity Timeline'].map(t => (
                       <button
-                        key={f}
-                        type="button"
-                        className={`btn ${calendarFilter === f ? 'btn-primary' : 'btn-secondary'}`}
-                        style={{ padding: '4px 10px', fontSize: '0.75rem', borderRadius: '16px', border: '1px solid var(--border-color)', minWidth: 'auto' }}
-                        onClick={() => setCalendarFilter(f)}
+                        key={t}
+                        className="btn"
+                        style={{ border: 'none', background: projectSubTab === t ? 'rgba(153, 27, 27, 0.15)' : 'none', color: projectSubTab === t ? 'var(--accent)' : 'var(--text-secondary)', padding: '6px 12px', fontSize: '0.85rem', fontWeight: '600' }}
+                        onClick={() => setProjectSubTab(t)}
                       >
-                        {f}
+                        {t}
                       </button>
                     ))}
                   </div>
 
-                  {/* Header Row */}
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', flexWrap: 'wrap', gap: '8px' }}>
-                    <div>
-                      <h3 style={{ fontSize: '1.1rem', fontWeight: '800', display: 'inline-flex', alignItems: 'center', gap: '8px', margin: 0, color: 'var(--text-primary)' }}>
-                        📅 {MONTH_NAMES[currentMonth]} {currentYear}
-                      </h3>
-                    </div>
-                    <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
-                      <button type="button" className="btn btn-secondary" style={{ padding: '4px 8px', fontSize: '0.75rem', minWidth: 'auto', border: '1px solid var(--border-color)', borderRadius: '6px' }} onClick={handlePrevMonth}>&lt;</button>
-                      <button type="button" className="btn btn-secondary" style={{ padding: '4px 8px', fontSize: '0.75rem', minWidth: 'auto', fontWeight: '600', border: '1px solid var(--border-color)', borderRadius: '6px' }} onClick={handleToday}>Today</button>
-                      <button type="button" className="btn btn-secondary" style={{ padding: '4px 8px', fontSize: '0.75rem', minWidth: 'auto', border: '1px solid var(--border-color)', borderRadius: '6px' }} onClick={handleNextMonth}>&gt;</button>
-                    </div>
-                  </div>
-
-                  {/* View Toggles & AI Suggest Actions */}
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '8px', borderBottom: '1px solid var(--border-color)', paddingBottom: '12px' }}>
-                    <div style={{ display: 'flex', background: 'rgba(255,255,255,0.04)', borderRadius: '8px', padding: '2px', gap: '2px' }}>
-                      {['month', 'week', 'day'].map(view => (
-                        <button
-                          key={view}
-                          type="button"
-                          className="btn"
-                          style={{
-                            padding: '4px 10px',
-                            fontSize: '0.75rem',
-                            borderRadius: '6px',
-                            background: calendarView === view ? 'white' : 'transparent',
-                            color: calendarView === view ? 'var(--accent)' : 'var(--text-secondary)',
-                            boxShadow: calendarView === view ? '0 1px 2px rgba(0,0,0,0.05)' : 'none',
-                            border: 'none',
-                            minWidth: 'auto',
-                            fontWeight: '600'
-                          }}
-                          onClick={() => setCalendarView(view)}
-                        >
-                          {view.toUpperCase()}
-                        </button>
-                      ))}
-                    </div>
-                    
-                    <button
-                      type="button"
-                      className="btn btn-secondary"
-                      style={{ padding: '4px 10px', fontSize: '0.75rem', minWidth: 'auto', display: 'flex', alignItems: 'center', gap: '4px', borderColor: 'var(--accent)', color: 'var(--accent)' }}
-                      onClick={() => setShowAiSuggestions(!showAiSuggestions)}
-                    >
-                      <BrainCircuit size={14} /> AI Suggestions
-                    </button>
-                  </div>
-
-                  {/* Dynamic Calendar Grid */}
-                  <div style={{ background: 'rgba(255,255,255,0.04)', borderRadius: '12px', padding: '12px', border: '1px solid var(--border-color)' }}>
-                    
-                    {calendarView === 'month' && (
-                      <div>
-                        {/* Weekday Names */}
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '6px', marginBottom: '8px', fontWeight: '700', color: 'var(--text-muted)', fontSize: '0.75rem', textAlign: 'center' }}>
-                          {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((day, i) => <div key={i}>{day}</div>)}
+                  <div className="card" style={{ padding: '20px' }}>
+                    {projectSubTab === 'Summary' && (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                        <div className="grid-3" style={{ gap: '16px' }}>
+                          <div style={{ background: 'var(--bg-card)', padding: '16px', borderRadius: '10px', border: '1px solid var(--border-color)' }}>
+                            <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: '600', textTransform: 'uppercase' }}>Contract Value</div>
+                            <div style={{ fontSize: '1.4rem', fontWeight: '800', marginTop: '6px', color: 'var(--text-primary)' }}>Rs. {(selectedProject.quoteAmount || 0).toLocaleString()}</div>
+                          </div>
+                          <div style={{ background: 'var(--bg-card)', padding: '16px', borderRadius: '10px', border: '1px solid var(--border-color)' }}>
+                            <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: '600', textTransform: 'uppercase' }}>Progress</div>
+                            <div style={{ fontSize: '1.4rem', fontWeight: '800', marginTop: '6px', color: '#10B981' }}>{selectedProject.progress || 0}%</div>
+                          </div>
+                          <div style={{ background: 'var(--bg-card)', padding: '16px', borderRadius: '10px', border: '1px solid var(--border-color)' }}>
+                            <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: '600', textTransform: 'uppercase' }}>Status</div>
+                            <div style={{ fontSize: '1.4rem', fontWeight: '800', marginTop: '6px', color: 'var(--accent)' }}>{selectedProject.status}</div>
+                          </div>
                         </div>
-
-                        {/* Month Grid Cells */}
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '6px' }}>
-                          {getMonthDays(currentYear, currentMonth).map((dayNum, i) => {
-                            if (dayNum === null) return <div key={`empty-${i}`} />;
-                            
-                            const formattedMonth = String(currentMonth + 1).padStart(2, '0');
-                            const formattedDay = String(dayNum).padStart(2, '0');
-                            const dateStr = `${currentYear}-${formattedMonth}-${formattedDay}`;
-                            
-                            const todayDate = new Date();
-                            const isToday = todayDate.getDate() === dayNum && todayDate.getMonth() === currentMonth && todayDate.getFullYear() === currentYear;
-                            
-                            const dayEvents = getDayEvents(dateStr);
-                            
-                            // Gather event displays
-                            let displayEvents = [];
-                            if (calendarFilter === 'All' || calendarFilter === 'Meetings') {
-                              dayEvents.meetings.forEach(m => displayEvents.push({ id: m.id, type: 'meeting', label: m.title, color: '#3B82F6', icon: '📞' }));
-                              dayEvents.birthdays.forEach(b => displayEvents.push({ id: b.id, type: 'birthday', label: b.name, color: '#EC4899', icon: '🩷' }));
-                            }
-                            if (calendarFilter === 'All' || calendarFilter === 'Tasks') {
-                              dayEvents.tasks.forEach(t => {
-                                const isHigh = t.priority === 'High';
-                                displayEvents.push({ id: t.id, type: 'client-task', label: t.title, color: t.status === 'Done' ? '#10B981' : (isHigh ? '#EF4444' : '#3B82F6'), icon: t.status === 'Done' ? '🟢' : (isHigh ? '🔴' : '🔵') });
-                              });
-                            }
-                            if (calendarFilter === 'All' || calendarFilter === 'Projects') {
-                              dayEvents.projects.forEach(p => displayEvents.push({ id: p.id, type: 'project', label: p.title, color: 'var(--accent)', icon: '🟣' }));
-                            }
-                            if (calendarFilter === 'All' || calendarFilter === 'Invoices') {
-                              dayEvents.invoices.forEach(inv => displayEvents.push({ id: inv.id, type: 'invoice', label: inv.invoice_number, color: '#F59E0B', icon: '🟠' }));
-                              dayEvents.bills.forEach(b => displayEvents.push({ id: b.id, type: 'bill', label: b.title, color: '#F59E0B', icon: '🟠' }));
-                            }
-                            if (calendarFilter === 'All' || calendarFilter === 'Personal') {
-                              dayEvents.personalTasks.forEach(pt => {
-                                if (pt.category !== 'Bills & Payments') {
-                                  displayEvents.push({ id: pt.id, type: 'personal-task', label: pt.title, color: pt.status === 'Done' ? '#10B981' : '#EAB308', icon: pt.status === 'Done' ? '🟢' : '🟡' });
-                                }
-                              });
-                              dayEvents.personalReminders.forEach(r => displayEvents.push({ id: r.id, type: 'personal-reminder', label: r.title, color: 'var(--accent)', icon: '⚙️' }));
-                            }
-                            if (calendarFilter === 'All' || calendarFilter === 'QC') {
-                              dayEvents.qcTasks.forEach(q => displayEvents.push({ id: q.id, type: 'qc-task', label: q.title, color: '#6B7280', icon: '⚙️' }));
-                            }
-
-                            if (calendarSearchQuery) {
-                              displayEvents = displayEvents.filter(e => e.label.toLowerCase().includes(calendarSearchQuery.toLowerCase()));
-                            }
-
-                            const totalCount = displayEvents.length;
-
-                            return (
-                              <div
-                                key={`day-${dayNum}`}
-                                style={{
-                                  padding: '6px 4px',
-                                  borderRadius: '8px',
-                                  background: isToday ? '#EEF2F6' : 'white',
-                                  border: isToday ? '2px solid var(--accent)' : '1px solid var(--border-color)',
-                                  color: 'var(--text-primary)',
-                                  cursor: 'pointer',
-                                  transition: 'all 0.2s',
-                                  display: 'flex',
-                                  flexDirection: 'column',
-                                  alignItems: 'center',
-                                  minHeight: '80px',
-                                  position: 'relative'
-                                }}
-                                onDragOver={(e) => e.preventDefault()}
-                                onDrop={(e) => {
-                                  e.preventDefault();
-                                  try {
-                                    const dataStr = e.dataTransfer.getData("text/plain");
-                                    const dragData = JSON.parse(dataStr);
-                                    if (dragData.type === 'client-task') {
-                                      const updated = tasks.map(t => t.id === dragData.id ? { ...t, due_date: dateStr, dueDate: dateStr } : t);
-                                      setTasks(updated);
-                                      saveState("aura_tasks_v7", updated);
-                                      triggerToast(`Task rescheduled to ${dateStr}`);
-                                    } else if (dragData.type === 'personal-task') {
-                                      const updated = personalTasks.map(pt => pt.id === dragData.id ? { ...pt, due_date: dateStr } : pt);
-                                      setPersonalTasks(updated);
-                                      saveState("aura_personal_tasks_v7", updated);
-                                      triggerToast(`Personal task rescheduled to ${dateStr}`);
-                                    }
-                                  } catch (err) {
-                                    console.error(err);
-                                  }
-                                }}
-                                onClick={() => { setSelectedDateStr(dateStr); setShowSidePanel(true); }}
-                              >
-                                {/* Day Number Header */}
-                                <div style={{ display: 'flex', width: '100%', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
-                                  <span style={{ fontSize: '0.8rem', fontWeight: '700', color: isToday ? 'var(--accent)' : 'inherit' }}>{dayNum}</span>
-                                  {totalCount > 0 && (
-                                    <span style={{ fontSize: '0.65rem', background: 'var(--accent-light)', color: 'var(--accent)', borderRadius: '10px', padding: '1px 6px', fontWeight: '700' }}>
-                                      {totalCount}
-                                    </span>
-                                  )}
-                                </div>
-
-                                {/* Up to 3 Event Indicators */}
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', width: '100%', overflow: 'hidden' }}>
-                                  {displayEvents.slice(0, 3).map((ev, idx) => (
-                                    <div
-                                      key={idx}
-                                      draggable
-                                      onDragStart={(e) => {
-                                        e.dataTransfer.setData("text/plain", JSON.stringify({ type: ev.type, id: ev.id }));
-                                      }}
-                                      style={{
-                                        fontSize: '0.65rem',
-                                        padding: '2px 4px',
-                                        borderRadius: '4px',
-                                        background: ev.color + '22',
-                                        color: ev.color,
-                                        border: `1px solid ${ev.color}44`,
-                                        width: '100%',
-                                        overflow: 'hidden',
-                                        textOverflow: 'ellipsis',
-                                        whiteSpace: 'nowrap',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        gap: '2px',
-                                        transition: 'transform 0.15s'
-                                      }}
-                                    >
-                                      <span>{ev.icon}</span>
-                                      <span style={{ fontSize: '0.6rem', fontWeight: '600' }}>{ev.label}</span>
-                                    </div>
-                                  ))}
-                                  {totalCount > 3 && (
-                                    <span style={{ fontSize: '0.6rem', color: 'var(--text-muted)', textAlign: 'center', fontWeight: '600' }}>
-                                      +{totalCount - 3} more
-                                    </span>
-                                  )}
-                                </div>
-                              </div>
-                            );
-                          })}
+                        <div>
+                          <h4 style={{ margin: '0 0 8px 0', fontSize: '0.9rem' }}>Project General Information</h4>
+                          <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: '1.5' }}>
+                            <strong>Engineer in Charge:</strong> Ashok Kumar<br />
+                            <strong>Deadline:</strong> {selectedProject.deadline || 'N/A'}<br />
+                            <strong>Notes:</strong> {selectedProject.fileNotes || 'No notes added.'}
+                          </p>
                         </div>
                       </div>
                     )}
 
-                    {calendarView === 'week' && (
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                        {/* Weekly view (Lists matching events in the current week) */}
-                        {(() => {
-                          const today = new Date();
-                          const currentDayIndex = today.getDay() === 0 ? 6 : today.getDay() - 1; // Mon=0
-                          const startOfWeek = new Date(today);
-                          startOfWeek.setDate(today.getDate() - currentDayIndex);
-
-                          return Array.from({ length: 7 }).map((_, idx) => {
-                            const date = new Date(startOfWeek);
-                            date.setDate(startOfWeek.getDate() + idx);
-                            const dateStr = date.toISOString().split('T')[0];
-                            const dayEvents = getDayEvents(dateStr);
-                            const count = dayEvents.tasks.length + dayEvents.meetings.length + dayEvents.projects.length;
-
-                            return (
-                              <div key={idx} style={{ background: 'var(--bg-card)', padding: '10px 12px', borderRadius: '8px', border: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    {projectSubTab === 'Deliverables' && (
+                      <div>
+                        <h4 style={{ margin: '0 0 12px 0', fontSize: '0.95rem' }}>Quoted Engineering Scope & Deliverables</h4>
+                        {projectQuotes.length > 0 && projectQuotes[0].deliverables ? (
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                            {projectQuotes[0].deliverables.map((d, index) => (
+                              <div key={index} style={{ padding: '8px 12px', background: 'rgba(255,255,255,0.02)', borderRadius: '8px', border: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                 <div>
-                                  <strong style={{ fontSize: '0.85rem' }}>{date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}</strong>
-                                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '2px' }}>
-                                    {count} Events scheduled
-                                  </div>
+                                  <strong style={{ fontSize: '0.85rem' }}>{d.deliverable}</strong>
+                                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{d.remarks || 'Standard Drawing Pack'}</div>
                                 </div>
-                                <button type="button" className="btn btn-secondary" style={{ padding: '4px 8px', fontSize: '0.75rem', minWidth: 'auto' }} onClick={() => { setSelectedDateStr(dateStr); setShowSidePanel(true); }}>
-                                  View
-                                </button>
+                                <span style={{ fontSize: '0.8rem', color: 'var(--accent)' }}>{d.estimated_hours || 0} hrs</span>
                               </div>
-                            );
-                          });
-                        })()}
+                            ))}
+                          </div>
+                        ) : (
+                          <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>No deliverables list found for this project scope.</p>
+                        )}
                       </div>
                     )}
 
-                    {calendarView === 'day' && (
+                    {projectSubTab === 'Milestones' && (
                       <div>
-                        {/* Hourly simple view */}
-                        <strong style={{ fontSize: '0.85rem', display: 'block', marginBottom: '8px' }}>Today's Tasks & Meetings</strong>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                          {tasks.slice(0, 5).map(t => (
-                            <div key={t.id} style={{ display: 'flex', gap: '12px', alignItems: 'center', background: 'var(--bg-card)', padding: '8px 12px', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
-                              <span style={{ fontSize: '0.75rem', color: 'var(--color-info)', fontWeight: '600' }}>{t.task_time || '09:00'}</span>
-                              <span style={{ fontSize: '0.85rem' }}>{t.title}</span>
+                        <h4 style={{ margin: '0 0 12px 0', fontSize: '0.95rem' }}>Planner & Project Milestone Status</h4>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                          {projectTasks.map(t => (
+                            <div key={t.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 14px', background: 'rgba(255,255,255,0.02)', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
+                              <div>
+                                <strong style={{ fontSize: '0.85rem' }}>{t.title}</strong>
+                                <span style={{ fontSize: '0.7rem', marginLeft: '10px', color: 'var(--text-muted)' }}>Due: {t.due_date || t.dueDate}</span>
+                              </div>
+                              <span className={`badge ${t.status === 'Completed' ? 'badge-success' : 'badge-warning'}`}>{t.status}</span>
+                            </div>
+                          ))}
+                          {projectTasks.length === 0 && (
+                            <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>No milestones mapped in daily planner.</p>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {projectSubTab === 'Quotations' && (
+                      <div>
+                        <h4 style={{ margin: '0 0 12px 0', fontSize: '0.95rem' }}>Linked Project Quotations</h4>
+                        <div className="grid-2" style={{ gap: '12px' }}>
+                          {projectQuotes.map(q => (
+                            <div key={q.id} className="card" style={{ margin: 0, padding: '14px' }}>
+                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <strong>{q.quotation_number}</strong>
+                                <span className={`badge ${q.status === 'Approved' ? 'badge-success' : 'badge-warning'}`}>{q.status}</span>
+                              </div>
+                              <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', margin: '8px 0 0 0' }}>Value: Rs. {(q.costing?.grand_total || q.costing?.subtotal || 0).toLocaleString()}</p>
                             </div>
                           ))}
                         </div>
                       </div>
                     )}
 
-                  </div>
+                    {projectSubTab === 'Invoices' && (
+                      <div>
+                        <h4 style={{ margin: '0 0 12px 0', fontSize: '0.95rem' }}>Project Billing Ledger</h4>
+                        {projectInvoices.length > 0 ? (
+                          <table className="data-table">
+                            <thead>
+                              <tr>
+                                <th>Invoice</th>
+                                <th>Billing Amount</th>
+                                <th>Grand Total</th>
+                                <th>Status</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {projectInvoices.map(inv => (
+                                <tr key={inv.id}>
+                                  <td><strong>{inv.invoice_number}</strong></td>
+                                  <td>Rs. {(inv.current_billing_amount || 0).toLocaleString()}</td>
+                                  <td>Rs. {(inv.grand_total || 0).toLocaleString()}</td>
+                                  <td>
+                                    <span className={`badge ${inv.payment_status === 'Paid' ? 'badge-success' : inv.payment_status === 'Warning' ? 'badge-warning' : 'badge-info'}`}>{inv.payment_status}</span>
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        ) : (
+                          <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>No invoices raised yet.</p>
+                        )}
+                      </div>
+                    )}
 
-                  {/* Sync Buttons */}
-                  <div style={{ display: 'flex', justifyContent: 'center', gap: '8px', marginTop: '16px' }}>
-                    <button type="button" className="btn btn-secondary" style={{ padding: '6px 12px', fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '4px' }} onClick={() => alert("Calendar synced with Google Calendar!")}>Google Calendar</button>
-                    <button type="button" className="btn btn-secondary" style={{ padding: '6px 12px', fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '4px' }} onClick={() => alert("Calendar synced with Outlook Calendar!")}>Outlook Calendar</button>
-                    <button type="button" className="btn btn-secondary" style={{ padding: '6px 12px', fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '4px' }} onClick={() => alert("ICS file downloaded!")}>Export .ics</button>
-                  </div>
-
-                </div>
-
-                {/* AI Planning suggestions & Heat Map & timeline */}
-                {showAiSuggestions && (
-                  <div className="card" style={{ margin: '16px 0 0 0', background: 'rgba(211,47,69,0.08)', border: '1px solid var(--border-color)' }}>
-                    <h4 style={{ margin: '0 0 8px 0', fontSize: '0.9rem', fontWeight: '700', color: 'var(--accent)', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <BrainCircuit size={16} /> AI Calendar Suggestions
-                    </h4>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '0.8rem', color: 'var(--accent)' }}>
-                      <p style={{ margin: 0 }}>💡 <strong>Finish Villa Project before Friday.</strong> Your next milestone deadline is approaching.</p>
-                      <p style={{ margin: 0 }}>💡 <strong>Move Review Meeting to tomorrow.</strong> Your afternoon slot today is fully booked with CAD assemblies.</p>
-                      <p style={{ margin: 0 }}>💡 <strong>You have 6 hours free today.</strong> Ideal window for focused Revit modeling.</p>
-                      <p style={{ margin: 0 }}>💡 <strong>Invoice payment due in 2 days.</strong> Remember to follow up with Client A.</p>
-                    </div>
-                  </div>
-                )}
-
-                {/* Monthly Productivity Heat Map */}
-                <div className="card" style={{ margin: '16px 0 0 0' }}>
-                  <h4 style={{ margin: '0 0 10px 0', fontSize: '0.85rem', fontWeight: '700' }}>📊 Monthly Productivity Heat Map</h4>
-                  <div style={{ display: 'flex', gap: '3px', flexWrap: 'wrap' }}>
-                    {getMonthDays(currentYear, currentMonth).filter(d => d !== null).map(dayNum => {
-                      const formattedMonth = String(currentMonth + 1).padStart(2, '0');
-                      const formattedDay = String(dayNum).padStart(2, '0');
-                      const dateStr = `${currentYear}-${formattedMonth}-${formattedDay}`;
-                      const events = getDayEvents(dateStr);
-                      const completedCount = events.completedTasks.length + events.habits.length;
-                      
-                      // Depth colors
-                      let bg = 'rgba(255,255,255,0.04)';
-                      if (completedCount > 0 && completedCount <= 1) bg = 'rgba(211,47,69,0.15)';
-                      else if (completedCount > 1 && completedCount <= 2) bg = '#C4B5FD';
-                      else if (completedCount > 2) bg = 'var(--accent)';
-
-                      return (
-                        <div
-                          key={dayNum}
-                          title={`Day ${dayNum}: ${completedCount} Completed`}
-                          style={{ width: '20px', height: '20px', background: bg, borderRadius: '4px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.65rem', fontWeight: '600' }}
-                        >
-                          {dayNum}
+                    {projectSubTab === 'Documents' && (
+                      <div>
+                        <h4 style={{ margin: '0 0 12px 0', fontSize: '0.95rem' }}>Project Engineering Files & Documents</h4>
+                        <div style={{ padding: '24px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
+                          📂 No engineering design PDF documents uploaded yet.
                         </div>
-                      );
-                    })}
+                      </div>
+                    )}
+
+                    {projectSubTab === 'Activity Timeline' && (
+                      <div>
+                        <h4 style={{ margin: '0 0 12px 0', fontSize: '0.95rem' }}>Project Activity Feed</h4>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                          <div style={{ borderLeft: '2px solid var(--accent)', paddingLeft: '12px', fontSize: '0.8rem' }}>
+                            <strong>Project Spawned in ERP</strong> - system<br />
+                            <span style={{ color: 'var(--text-muted)' }}>Spawned from approved engineering quotation reference.</span>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            }
+
+            return (
+              <div>
+                {/* Breadcrumbs */}
+                <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '16px', fontSize: '0.85rem' }}>
+                  <span style={{ cursor: 'pointer', color: 'var(--accent)' }} onClick={() => setSelectedClient(null)}>Clients</span>
+                  <span style={{ color: 'var(--text-muted)' }}>&gt;</span>
+                  <span style={{ color: 'var(--text-primary)', fontWeight: 'bold' }}>{selectedClient.name}</span>
+                </div>
+
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                  <div>
+                    <span style={{ fontSize: '0.75rem', color: 'var(--accent)', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '1px' }}>Client Profile</span>
+                    <h1 style={{ fontSize: '1.5rem', fontWeight: '800', margin: '2px 0 0' }}>{selectedClient.name}</h1>
+                    <p style={{ margin: '4px 0 0 0', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{selectedClient.company} | GSTIN: {selectedClient.notes?.includes("GSTIN:") ? selectedClient.notes.split("GSTIN:")[1].trim().slice(0, 15) : '29BBBBB2222B2Z2'}</p>
+                  </div>
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <button className="btn btn-secondary" onClick={() => setSelectedClient(null)}>Back to list</button>
+                    <button className="btn btn-primary" onClick={triggerNewProjectFlow}>+ New Project</button>
                   </div>
                 </div>
 
-                {/* Deadline Timeline */}
-                <div className="card" style={{ margin: '16px 0 0 0' }}>
-                  <h4 style={{ margin: '0 0 12px 0', fontSize: '0.85rem', fontWeight: '700' }}>⏳ Next 7 Days Timeline</h4>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                    <div style={{ fontSize: '0.8rem' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-                        <strong>Villa Project</strong>
-                        <span style={{ color: 'var(--color-danger)' }}>Tomorrow 🔴</span>
-                      </div>
-                      <div style={{ height: '6px', background: 'var(--border-color)', borderRadius: '3px', overflow: 'hidden' }}>
-                        <div style={{ width: '90%', height: '100%', background: 'var(--color-danger)' }} />
-                      </div>
-                    </div>
-
-                    <div style={{ fontSize: '0.8rem' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-                        <strong>Factory Layout</strong>
-                        <span style={{ color: 'var(--color-warning)' }}>3 Days 🟠</span>
-                      </div>
-                      <div style={{ height: '6px', background: 'var(--border-color)', borderRadius: '3px', overflow: 'hidden' }}>
-                        <div style={{ width: '60%', height: '100%', background: 'var(--color-warning)' }} />
-                      </div>
-                    </div>
-
-                    <div style={{ fontSize: '0.8rem' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-                        <strong>Invoice INV-2026-0001</strong>
-                        <span style={{ color: 'var(--color-success)' }}>Today 🟢</span>
-                      </div>
-                      <div style={{ height: '6px', background: 'var(--border-color)', borderRadius: '3px', overflow: 'hidden' }}>
-                        <div style={{ width: '100%', height: '100%', background: 'var(--color-success)' }} />
-                      </div>
-                    </div>
-                  </div>
+                {/* Subtabs */}
+                <div style={{ display: 'flex', gap: '8px', borderBottom: '1px solid var(--border-color)', marginBottom: '20px', paddingBottom: '2px', overflowX: 'auto' }}>
+                  {['Overview', `Projects (${clientProjects.length})`, `Quotations (${clientQuotes.length})`, `Invoices (${clientInvoices.length})`, 'Payments', 'Documents', `Meetings (${clientMeetings.length})`, 'Notes', 'Timeline'].map(t => (
+                    <button
+                      key={t}
+                      className="btn"
+                      style={{ border: 'none', background: clientSubTab === t.split(' ')[0] ? 'rgba(153, 27, 27, 0.15)' : 'none', color: clientSubTab === t.split(' ')[0] ? 'var(--accent)' : 'var(--text-secondary)', padding: '6px 12px', fontSize: '0.85rem', fontWeight: '600' }}
+                      onClick={() => setClientSubTab(t.split(' ')[0])}
+                    >
+                      {t}
+                    </button>
+                  ))}
                 </div>
-              </div>
-            </div>
-          </div>
-        )}
 
-        {/* TAB: CLIENTS */}
-        {activeTab === 'clients' && (
-          <div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-              <h1 style={{ fontSize: '1.6rem', fontWeight: '700', margin: 0 }}>Client Database</h1>
-              <div style={{ display: 'flex', gap: '8px' }}>
-                <button className="btn btn-secondary" style={{ background: '#E0F2FE', color: '#0369A1', border: 'none' }} onClick={() => setShowClientModal(true)}>➕ Add Client</button>
-                <button className="btn btn-primary" style={{ background: '#E0E7FF', color: '#4338CA', border: 'none' }} onClick={triggerNewProjectFlow}>📁 New Project</button>
-              </div>
-            </div>
+                <div className="card" style={{ padding: '20px' }}>
+                  {clientSubTab === 'Overview' && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                      <h4 style={{ margin: '0 0 4px 0', fontSize: '0.95rem' }}>General Information</h4>
+                      <div style={{ fontSize: '0.85rem', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                        <div><strong>Primary Contact Person:</strong> {selectedClient.name}</div>
+                        <div><strong>Email Address:</strong> {selectedClient.email || 'N/A'}</div>
+                        <div><strong>Phone Number:</strong> {selectedClient.phone || 'N/A'}</div>
+                        <div><strong>Billing Address:</strong> {selectedClient.notes || 'Bangalore Office, India'}</div>
+                      </div>
+                    </div>
+                  )}
 
-            {clients.length === 0 ? (
-              <div className="card" style={{ textAlign: 'center', padding: '40px' }}>
-                <p style={{ color: 'var(--text-secondary)', marginBottom: '16px' }}>Please create a client before starting a new project.</p>
-                <button className="btn btn-primary" onClick={() => setShowClientModal(true)}>+ Add Client</button>
-              </div>
-            ) : (
-              <div className="grid-3">
-                {clients.map(c => (
-                  <div key={c.id} className="card" style={{ margin: 0, display: 'flex', flexDirection: 'column', justifyBetween: 'space-between' }}>
+                  {clientSubTab === 'Projects' && (
                     <div>
-                      <h3 style={{ margin: '0 0 4px 0' }}>{c.name}</h3>
-                      <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', margin: '0 0 12px 0' }}>{c.company}</p>
-                      <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-                        <div>📞 {c.phone}</div>
-                        <div>✉ {c.email}</div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                        <h4 style={{ margin: 0, fontSize: '0.95rem' }}>Active Client Projects</h4>
+                        <button className="btn btn-secondary" style={{ padding: '4px 10px', fontSize: '0.75rem' }} onClick={triggerNewProjectFlow}>+ New Project</button>
+                      </div>
+                      {clientProjects.length > 0 ? (
+                        <table className="data-table">
+                          <thead>
+                            <tr>
+                              <th>Project Code</th>
+                              <th>Name</th>
+                              <th>Status</th>
+                              <th>Value</th>
+                              <th>Engineer</th>
+                              <th>Progress</th>
+                              <th style={{ textAlign: 'center' }}>Actions</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {clientProjects.map(p => (
+                              <tr key={p.id}>
+                                <td><strong>PRJ-{p.id.slice(0, 5).toUpperCase()}</strong></td>
+                                <td>{p.title}</td>
+                                <td><span className={`badge ${p.status === 'In Progress' ? 'badge-warning' : 'badge-success'}`}>{p.status}</span></td>
+                                <td>Rs. {(p.quoteAmount || 0).toLocaleString()}</td>
+                                <td>Ashok</td>
+                                <td>{p.progress || 0}%</td>
+                                <td>
+                                  <button className="btn btn-secondary" style={{ padding: '3px 8px', fontSize: '0.75rem' }} onClick={() => { setSelectedProject(p); setProjectSubTab('Summary'); }}>View</button>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      ) : (
+                        <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>No projects mapped under this client.</p>
+                      )}
+                    </div>
+                  )}
+
+                  {clientSubTab === 'Quotations' && (
+                    <div>
+                      <h4 style={{ margin: '0 0 12px 0', fontSize: '0.95rem' }}>Linked Client Proposals & Quotations</h4>
+                      {clientQuotes.length > 0 ? (
+                        <table className="data-table">
+                          <thead>
+                            <tr>
+                              <th>Quotation No</th>
+                              <th>Project Scope</th>
+                              <th>Value</th>
+                              <th>Status</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {clientQuotes.map(q => (
+                              <tr key={q.id}>
+                                <td><strong>{q.quotation_number}</strong></td>
+                                <td>{q.project_name}</td>
+                                <td>Rs. {(q.costing?.grand_total || q.costing?.subtotal || 0).toLocaleString()}</td>
+                                <td><span className={`badge ${q.status === 'Approved' ? 'badge-success' : 'badge-warning'}`}>{q.status}</span></td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      ) : (
+                        <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>No quotations mapped for this client.</p>
+                      )}
+                    </div>
+                  )}
+
+                  {clientSubTab === 'Invoices' && (
+                    <div>
+                      <h4 style={{ margin: '0 0 12px 0', fontSize: '0.95rem' }}>Client Invoice Summary</h4>
+                      {clientInvoices.length > 0 ? (
+                        <table className="data-table">
+                          <thead>
+                            <tr>
+                              <th>Invoice No</th>
+                              <th>Current Billing</th>
+                              <th>Grand Total</th>
+                              <th>Status</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {clientInvoices.map(inv => (
+                              <tr key={inv.id}>
+                                <td><strong>{inv.invoice_number}</strong></td>
+                                <td>Rs. {(inv.current_billing_amount || 0).toLocaleString()}</td>
+                                <td>Rs. {(inv.grand_total || 0).toLocaleString()}</td>
+                                <td><span className={`badge ${inv.payment_status === 'Paid' ? 'badge-success' : 'badge-warning'}`}>{inv.payment_status}</span></td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      ) : (
+                        <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>No invoices raised yet for this client.</p>
+                      )}
+                    </div>
+                  )}
+
+                  {clientSubTab === 'Meetings' && (
+                    <div>
+                      <h4 style={{ margin: '0 0 12px 0', fontSize: '0.95rem' }}>Client Interaction Logs</h4>
+                      {clientMeetings.length > 0 ? (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                          {clientMeetings.map(m => (
+                            <div key={m.id} style={{ padding: '10px 14px', background: 'rgba(255,255,255,0.02)', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
+                              <strong>{m.title || 'Technical Meeting'}</strong><br />
+                              <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Date: {m.date} | Time: {m.time || 'N/A'}</span>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>No meetings mapped.</p>
+                      )}
+                    </div>
+                  )}
+
+                  {clientSubTab === 'Notes' && (
+                    <div>
+                      <h4 style={{ margin: '0 0 10px 0', fontSize: '0.95rem' }}>Quick Client Notes</h4>
+                      <textarea
+                        style={{ width: '100%', minHeight: '120px', padding: '12px', background: 'rgba(0,0,0,0.2)', border: '1px solid var(--border-color)', borderRadius: '8px', color: 'var(--text-primary)', resize: 'none', fontSize: '0.85rem' }}
+                        placeholder="Write client-specific instructions, billing references or timeline updates..."
+                        value={selectedClient.notes || ''}
+                        onChange={(e) => {
+                          const updatedNotes = e.target.value;
+                          setClients(prev => prev.map(c => c.id === selectedClient.id ? { ...c, notes: updatedNotes } : c));
+                        }}
+                      />
+                    </div>
+                  )}
+
+                  {clientSubTab === 'Payments' && (
+                    <div>
+                      <h4 style={{ margin: '0 0 12px 0', fontSize: '0.95rem' }}>Client Invoice Ledger & Receipts</h4>
+                      <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>No client payment receipts logged in this period.</p>
+                    </div>
+                  )}
+
+                  {clientSubTab === 'Documents' && (
+                    <div>
+                      <h4 style={{ margin: '0 0 12px 0', fontSize: '0.95rem' }}>Client Documents & Service Agreement Files</h4>
+                      <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>No uploaded contracts or signed master agreements found.</p>
+                    </div>
+                  )}
+
+                  {clientSubTab === 'Timeline' && (
+                    <div>
+                      <h4 style={{ margin: '0 0 12px 0', fontSize: '0.95rem' }}>Client Interaction & System Event Timeline</h4>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                        <div style={{ borderLeft: '2px solid var(--accent)', paddingLeft: '12px', fontSize: '0.8rem' }}>
+                          <strong>Client Database Record Activated</strong> - system<br />
+                          <span style={{ color: 'var(--text-muted)' }}>Created successfully via workspace registration interface.</span>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  )}
+                </div>
               </div>
-            )}
-          </div>
-        )}
+            );
+          }
+
+          return (
+            <div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                <div>
+                  <span style={{ fontSize: '0.75rem', color: 'var(--accent)', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '1px' }}>CRM</span>
+                  <h1 style={{ fontSize: '1.5rem', fontWeight: '800', margin: '2px 0 0' }}>Client Database</h1>
+                </div>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <button className="btn btn-secondary" onClick={() => setShowClientModal(true)}>+ Add Client</button>
+                </div>
+              </div>
+
+              {clients.length === 0 ? (
+                <div className="card" style={{ textAlign: 'center', padding: '40px' }}>
+                  <p style={{ color: 'var(--text-secondary)', marginBottom: '16px' }}>No clients yet. Add your first client to get started.</p>
+                  <button className="btn btn-primary" onClick={() => setShowClientModal(true)}>+ Add Client</button>
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  {groups.map(group => {
+                    const groupClients = clients.filter(group.filter);
+                    if (groupClients.length === 0) return null;
+                    return (
+                      <div key={group.label} className="card" style={{ padding: '0' }}>
+                        <button
+                          type="button"
+                          onClick={() => toggleClientGroup(group.label)}
+                          style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'none', border: 'none', cursor: 'pointer', padding: '14px 20px', color: 'var(--text-primary)' }}
+                        >
+                          <span style={{ display: 'flex', alignItems: 'center', gap: '10px', fontWeight: '700', fontSize: '0.9rem' }}>
+                            <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: group.color, display: 'inline-block' }} />
+                            {group.label}
+                            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: '400' }}>({groupClients.length})</span>
+                          </span>
+                          <span id={'client-chevron-' + group.label} style={{ fontSize: '0.7rem', color: 'var(--text-muted)', transition: 'transform 0.2s' }}>&#9660;</span>
+                        </button>
+                        <div id={'client-group-' + group.label} style={{ display: 'block', padding: '0 12px 12px' }}>
+                          <div className="grid-3">
+                            {groupClients.map(c => (
+                              <div key={c.id} className="card" style={{ margin: 0, borderLeft: '3px solid ' + group.color, cursor: 'pointer' }} onClick={() => { setSelectedClient(c); setClientSubTab('Overview'); setSelectedProject(null); }}>
+                                <h3 style={{ margin: '0 0 4px 0', fontSize: '0.95rem' }}>{c.name}</h3>
+                                <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', margin: '0 0 8px' }}>{c.company}</p>
+                                <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                                  <div>&#128222; {c.phone || 'N/A'}</div>
+                                  <div>&#9993; {c.email || 'N/A'}</div>
+                                </div>
+                                <div style={{ marginTop: '10px', display: 'flex', gap: '6px' }}>
+                                  <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Projects: {projects.filter(p => p.clientId === c.id || p.client_id === c.id).length}</span>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          );
+        })()}
 
         {/* TAB: PROJECTS */}
-        {activeTab === 'projects' && (
-          <div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-              <h1 style={{ fontSize: '1.6rem', fontWeight: '700', margin: 0 }}>Active Projects</h1>
-            </div>
-
-            {/* Project Filters Toolbar */}
-            <div className="card" style={{ background: 'rgba(255,255,255,0.04)', padding: '16px', marginBottom: '20px', display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'var(--bg-card)', padding: '6px 12px', borderRadius: '8px', border: '1px solid var(--border-color)', flex: 1, minWidth: '200px' }}>
-                <Search size={16} style={{ color: 'var(--text-muted)' }} />
-                <input 
-                  type="text" 
-                  placeholder="Search projects..." 
-                  value={projectSearch} 
-                  onChange={(e) => setProjectSearch(e.target.value)} 
-                  style={{ border: 'none', outline: 'none', fontSize: '0.85rem', width: '100%' }}
-                />
-              </div>
-
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <Filter size={16} style={{ color: 'var(--text-secondary)' }} />
-                <select className="form-input" style={{ width: '140px', padding: '6px 12px' }} value={projectFilterStatus} onChange={(e) => setProjectFilterStatus(e.target.value)}>
-                  <option value="All">All Statuses</option>
-                  <option value="In Progress">In Progress</option>
-                  <option value="Completed">Completed</option>
-                </select>
-              </div>
-
-              <div style={{ display: 'flex', gap: '8px', marginLeft: 'auto' }}>
-                <button className="btn btn-secondary" style={{ fontSize: '0.8rem' }} onClick={() => setShowClientModal(true)}>Add Client</button>
-                <button className="btn btn-primary" style={{ fontSize: '0.8rem' }} onClick={triggerNewProjectFlow}>New Project</button>
-                <button className="btn btn-secondary" style={{ fontSize: '0.8rem' }} onClick={() => exportPDF('projects')}>Export</button>
-                <button className="btn btn-secondary" style={{ fontSize: '0.8rem' }} onClick={() => exportExcel('projects')}>Analytics</button>
-              </div>
-            </div>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              {filteredProjects.map(p => {
-                const client = clients.find(c => c.id === p.clientId);
-                return (
-                  <div key={p.id} className="card" style={{ margin: 0, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '16px' }}>
-                    <div>
-                      <h3 style={{ margin: 0 }}>{p.title}</h3>
-                      <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Client: {client ? client.name : 'Unknown Client'} • Deadline: {p.deadline}</span>
-                      {p.fileNotes && <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '4px' }}>📝 {p.fileNotes}</div>}
-                      <div style={{ width: '150px', height: '6px', background: 'var(--border-color)', borderRadius: '3px', overflow: 'hidden', marginTop: '8px' }}>
-                        <div style={{ width: `${p.progress}%`, height: '100%', background: 'var(--accent)' }}></div>
-                      </div>
-                    </div>
-                    <div style={{ textAlign: 'right' }}>
-                      <div style={{ fontWeight: '700' }}>₹{p.quoteAmount.toLocaleString('en-IN')}</div>
-                      <span style={{ fontSize: '0.8rem', color: 'var(--color-success)' }}>Paid: ₹{p.paidAmount.toLocaleString('en-IN')}</span>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
-        {/* TAB: DAILY PLANNER */}
-        {activeTab === 'planner' && (
-          <div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-              <h1 style={{ fontSize: '1.6rem', fontWeight: '700', margin: 0 }}>Planner Tasks</h1>
-              <button className="btn btn-primary" onClick={() => setShowTaskModal(true)}>✅ Add Task</button>
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              {tasks.map(t => (
-                <div key={t.id} className="card" style={{ margin: 0, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span>{t.title}</span>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    <span className={`badge ${t.completed ? 'badge-success' : 'badge-warning'}`}>{t.status || (t.completed ? 'Completed' : 'Pending')}</span>
-                    {renderTaskActions(t)}
-                  </div>
+        {activeTab === 'projects' && (() => {
+          const statusGroups = [
+            { label: 'Active', statuses: ['In Progress', 'Active'], color: '#3B82F6' },
+            { label: 'Completed', statuses: ['Completed', 'QC Passed'], color: '#10B981' },
+            { label: 'On Hold', statuses: ['On Hold'], color: '#F59E0B' },
+            { label: 'Draft', statuses: ['Draft'], color: '#8B5CF6' },
+            { label: 'Cancelled', statuses: ['Cancelled'], color: '#EF4444' },
+          ];
+          const toggleProjGroup = (id) => {
+            const el = document.getElementById('proj-group-' + id);
+            const ch = document.getElementById('proj-chevron-' + id);
+            if (el) { const o = el.style.display !== 'none'; el.style.display = o ? 'none' : 'block'; if (ch) ch.style.transform = o ? 'rotate(-90deg)' : 'rotate(0deg)'; }
+          };
+          return (
+            <div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                <div>
+                  <span style={{ fontSize: '0.75rem', color: 'var(--accent)', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '1px' }}>Engineering ERP</span>
+                  <h1 style={{ fontSize: '1.5rem', fontWeight: '800', margin: '2px 0 0' }}>Projects</h1>
                 </div>
-              ))}
-            </div>
-          </div>
-        )}
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <button className="btn btn-secondary" style={{ fontSize: '0.85rem' }} onClick={() => setShowClientModal(true)}>+ Client</button>
+                  <button className="btn btn-primary" style={{ fontSize: '0.85rem' }} onClick={triggerNewProjectFlow}>+ New Project</button>
+                </div>
+              </div>
 
-        {/* TAB: INVOICES MANAGEMENT */}
-        {activeTab === 'invoices' && (
-          <div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-              <h1 style={{ fontSize: '1.6rem', fontWeight: '700', margin: 0 }}>Invoice Management</h1>
-              <button className="btn btn-primary" onClick={triggerNewInvoiceFlow}>💰 Create Invoice</button>
-            </div>
-
-            {/* Invoices Search & Filter Toolbar */}
-            <div className="card" style={{ background: 'rgba(255,255,255,0.04)', padding: '16px', marginBottom: '24px', display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'var(--bg-card)', padding: '6px 12px', borderRadius: '8px', border: '1px solid var(--border-color)', flex: 1, minWidth: '200px' }}>
+              {/* Search bar */}
+              <div className="card" style={{ padding: '12px 16px', marginBottom: '16px', display: 'flex', gap: '10px', alignItems: 'center' }}>
                 <Search size={16} style={{ color: 'var(--text-muted)' }} />
-                <input 
-                  type="text" 
-                  placeholder="Search invoice no, client or project..." 
-                  value={invoiceSearch}
-                  onChange={(e) => setInvoiceSearch(e.target.value)}
-                  style={{ border: 'none', outline: 'none', fontSize: '0.85rem', width: '100%' }}
-                />
+                <input type="text" placeholder="Search projects..." value={projectSearch} onChange={(e) => setProjectSearch(e.target.value)} style={{ border: 'none', outline: 'none', background: 'transparent', fontSize: '0.85rem', flex: 1, color: 'var(--text-primary)' }} />
               </div>
 
-              {/* Status Filter Subtabs (Drafts, Pending, Paid, Overdue) */}
-              <div style={{ display: 'flex', gap: '4px', background: 'rgba(255,255,255,0.04)', padding: '4px', borderRadius: '8px' }}>
-                {['All', 'Draft', 'Pending', 'Paid', 'Overdue'].map(tab => (
-                  <button 
-                    key={tab} 
-                    className="btn" 
-                    style={{ padding: '6px 12px', fontSize: '0.8rem', background: invoiceSubTab === tab ? 'white' : 'none', border: 'none', boxShadow: invoiceSubTab === tab ? '0 1px 3px rgba(0,0,0,0.05)' : 'none', color: invoiceSubTab === tab ? 'var(--text-primary)' : 'var(--text-secondary)' }}
-                    onClick={() => setInvoiceSubTab(tab)}
-                  >
-                    {tab === 'All' ? 'All Invoices' : `${tab}s`}
-                  </button>
-                ))}
-              </div>
-
-              <div style={{ display: 'flex', gap: '8px', marginLeft: 'auto' }}>
-                <button className="btn btn-secondary" style={{ fontSize: '0.8rem' }} onClick={() => exportPDF('invoices')}>Export PDF</button>
-                <button className="btn btn-secondary" style={{ fontSize: '0.8rem' }} onClick={() => exportExcel('invoices')}>Export Excel</button>
-              </div>
-            </div>
-
-            {/* Invoice Split view layout (65% Invoice list, 35% AI Console) */}
-            <div className="invoices-grid">
-              
-              {/* Invoices List table (65%) */}
-              <div className="card desktop-table-container" style={{ padding: 0, overflowX: 'auto', margin: 0, flex: 2 }}>
-                <table className="data-table">
-                  <thead>
-                    <tr>
-                      <th>Invoice No</th>
-                      <th>Client</th>
-                      <th>Project</th>
-                      <th>Due Date</th>
-                      <th>Grand Total</th>
-                      <th>Payment Status</th>
-                      <th style={{ textAlign: 'center' }}>Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredInvoices.map(inv => {
-                      const client = clients.find(c => c.id === inv.client_id);
-                      const proj = projects.find(p => p.id === inv.project_id);
-                      return (
-                        <tr key={inv.id}>
-                          <td><strong>{inv.invoice_number}</strong></td>
-                          <td style={{ fontSize: '0.85rem' }}>{client ? client.name : 'N/A'}</td>
-                          <td style={{ fontSize: '0.85rem' }}>{proj ? proj.title : 'N/A'}</td>
-                          <td style={{ fontSize: '0.85rem' }}>{inv.due_date}</td>
-                          <td style={{ fontWeight: '600' }}>₹{inv.grand_total.toLocaleString('en-IN')}</td>
-                          <td>
-                            <span className={`badge ${inv.payment_status === 'Paid' ? 'badge-success' : inv.payment_status === 'Draft' ? 'badge-info' : inv.payment_status === 'Pending' ? 'badge-warning' : 'badge-danger'}`}>{inv.payment_status}</span>
-                          </td>
-                          <td>
-                            <div style={{ display: 'flex', gap: '6px', justifyContent: 'center' }}>
-                              <button className="btn btn-secondary" style={{ padding: '4px 6px' }} title="Download PDF" onClick={() => generateAndDownloadPDF(inv)}>
-                                <Download size={12} />
-                              </button>
-                              <button className="btn btn-secondary" style={{ padding: '4px 6px' }} title="Send Email" onClick={() => sendEmail(inv)}>
-                                <Mail size={12} />
-                              </button>
-                              {inv.payment_status !== 'Paid' && (
-                                <button className="btn btn-primary" style={{ padding: '4px 8px', fontSize: '0.75rem' }} onClick={() => handleMarkPaid(inv.id)}>
-                                  Mark Paid
-                                </button>
-                              )}
-                              <button className="btn btn-secondary" style={{ padding: '4px 6px', color: 'var(--color-danger)' }} title="Delete" onClick={() => handleDeleteInvoice(inv.id)}>
-                                <Trash2 size={12} />
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                    {filteredInvoices.length === 0 && (
-                      <tr>
-                        <td colSpan="7" style={{ textAlign: 'center', padding: '24px', color: 'var(--text-muted)' }}>No invoices found matching current criteria.</td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
-
-              {/* Mobile Invoice Card List */}
-              <div className="mobile-card-list" style={{ width: '100%' }}>
-                {filteredInvoices.map(inv => {
-                  const client = clients.find(c => c.id === inv.client_id);
-                  const proj = projects.find(p => p.id === inv.project_id);
+              {/* Grouped by status */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                {statusGroups.map(group => {
+                  const groupProjects = filteredProjects.filter(p => group.statuses.includes(p.status));
+                  if (groupProjects.length === 0) return null;
                   return (
-                    <div key={inv.id} className="card" style={{ margin: 0, padding: '16px' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                        <span style={{ fontWeight: '700', fontSize: '1rem', color: 'var(--text-primary)' }}>{inv.invoice_number}</span>
-                        <span className={`badge ${inv.payment_status === 'Paid' ? 'badge-success' : inv.payment_status === 'Draft' ? 'badge-info' : inv.payment_status === 'Pending' ? 'badge-warning' : 'badge-danger'}`}>{inv.payment_status}</span>
-                      </div>
-                      <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', display: 'flex', flexDirection: 'column', gap: '4px', marginBottom: '16px' }}>
-                        <div><strong>Client:</strong> {client ? client.name : 'N/A'}</div>
-                        <div><strong>Project:</strong> {proj ? proj.title : 'N/A'}</div>
-                        <div><strong>Due Date:</strong> {inv.due_date}</div>
-                        <div style={{ fontSize: '1.1rem', fontWeight: '800', color: 'var(--text-primary)', marginTop: '8px' }}>₹{inv.grand_total.toLocaleString('en-IN')}</div>
-                      </div>
-                      
-                      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                        <button className="btn btn-secondary" style={{ padding: '6px 12px', flex: 1, justifyContent: 'center' }} onClick={() => generateAndDownloadPDF(inv)}>
-                          <Download size={14} /> PDF
-                        </button>
-                        <button className="btn btn-secondary" style={{ padding: '6px 12px', flex: 1, justifyContent: 'center' }} onClick={() => sendEmail(inv)}>
-                          <Mail size={14} /> Mail
-                        </button>
-                        {inv.payment_status !== 'Paid' && (
-                          <button className="btn btn-primary" style={{ padding: '6px 12px', flex: 1, justifyContent: 'center', fontSize: '0.8rem' }} onClick={() => handleMarkPaid(inv.id)}>
-                            Mark Paid
-                          </button>
-                        )}
-                        <button className="btn btn-secondary" style={{ padding: '6px 12px', color: 'var(--color-danger)', borderColor: 'var(--border-color)' }} onClick={() => handleDeleteInvoice(inv.id)}>
-                          <Trash2 size={14} />
-                        </button>
+                    <div key={group.label} className="card" style={{ padding: '0', overflow: 'hidden' }}>
+                      <button
+                        type="button"
+                        onClick={() => toggleProjGroup(group.label)}
+                        style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'none', border: 'none', cursor: 'pointer', padding: '14px 20px', color: 'var(--text-primary)', borderBottom: '1px solid var(--border-color)' }}
+                      >
+                        <span style={{ display: 'flex', alignItems: 'center', gap: '10px', fontWeight: '700', fontSize: '0.9rem' }}>
+                          <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: group.color, display: 'inline-block' }} />
+                          {group.label}
+                          <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: '400' }}>({groupProjects.length})</span>
+                        </span>
+                        <span id={'proj-chevron-' + group.label} style={{ fontSize: '0.7rem', color: 'var(--text-muted)', transition: 'transform 0.2s' }}>&#9660;</span>
+                      </button>
+                      <div id={'proj-group-' + group.label} style={{ display: 'block', padding: '12px' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                          {groupProjects.map(p => {
+                            const client = clients.find(c => c.id === (p.clientId || p.client_id));
+                            return (
+                              <div key={p.id} className="card" style={{ margin: 0, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '12px', borderLeft: '3px solid ' + group.color }}>
+                                <div style={{ flex: 1, minWidth: '200px' }}>
+                                  <h3 style={{ margin: '0 0 4px', fontSize: '0.95rem' }}>{p.title}</h3>
+                                  <span style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>
+                                    {client ? client.name : 'Unknown Client'} &bull; Deadline: {p.deadline || 'TBD'}
+                                  </span>
+                                  {p.fileNotes && <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '4px' }}>{p.fileNotes}</div>}
+                                  <div style={{ marginTop: '8px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                    <div style={{ flex: 1, height: '5px', background: 'var(--border-color)', borderRadius: '3px', overflow: 'hidden', maxWidth: '180px' }}>
+                                      <div style={{ width: (p.progress || 0) + '%', height: '100%', background: group.color, borderRadius: '3px' }} />
+                                    </div>
+                                    <span style={{ fontSize: '0.72rem', fontWeight: '600' }}>{p.progress || 0}%</span>
+                                  </div>
+                                </div>
+                                <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', gap: '4px', alignItems: 'flex-end' }}>
+                                  <div style={{ fontWeight: '700', fontSize: '0.9rem' }}>&#8377;{(p.quoteAmount || 0).toLocaleString('en-IN')}</div>
+                                  <span style={{ fontSize: '0.78rem', color: '#10B981' }}>Paid: &#8377;{(p.paidAmount || 0).toLocaleString('en-IN')}</span>
+                                  <button type="button" className="btn btn-secondary" style={{ padding: '3px 10px', fontSize: '0.75rem', minHeight: 'unset', marginTop: '4px' }} onClick={() => { setEditingProject(p); setShowProjectEditModal(true); }}>Update</button>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
                       </div>
                     </div>
                   );
                 })}
-                {filteredInvoices.length === 0 && (
-                  <div className="card" style={{ padding: '24px', textAlign: 'center', color: 'var(--text-muted)' }}>No invoices found.</div>
+                {filteredProjects.length === 0 && (
+                  <div className="card" style={{ textAlign: 'center', padding: '40px', color: 'var(--text-muted)' }}>
+                    No projects found. <button className="btn btn-primary" style={{ marginLeft: '12px', padding: '4px 12px', fontSize: '0.8rem' }} onClick={triggerNewProjectFlow}>+ New Project</button>
+                  </div>
                 )}
               </div>
+            </div>
+          );
+        })()}
 
-              {/* AI Assistant Console (35%) */}
-              <div className="card" style={{ margin: 0, display: 'flex', flexDirection: 'column', height: '450px', background: 'rgba(255,255,255,0.04)' }}>
-                <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <BrainCircuit style={{ color: 'var(--accent)' }} size={18} />
-                  <strong style={{ fontSize: '0.85rem' }}>Billing & Invoicing AI</strong>
-                </div>
 
-                <div style={{ flex: 1, padding: '16px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                  {aiInvoiceChat.map((msg, idx) => (
-                    <div key={idx} className={`ai-msg ${msg.sender}`} style={{ fontSize: '0.8rem', padding: '8px 12px', margin: 0 }} dangerouslySetInnerHTML={{ __html: msg.text }}></div>
-                  ))}
+        {/* TAB: DAILY PLANNER */}
+        {activeTab === 'planner' && (() => {
+          const pendingProjectTasks = tasks.filter(t => !t.completed);
+          const completedProjectTasks = tasks.filter(t => t.completed);
+          const togglePlannerSection = (id) => {
+            const el = document.getElementById('planner-section-' + id);
+            const ch = document.getElementById('planner-chevron-' + id);
+            if (el) { const o = el.style.display !== 'none'; el.style.display = o ? 'none' : 'block'; if (ch) ch.style.transform = o ? 'rotate(-90deg)' : 'rotate(0deg)'; }
+          };
+          const PlannerSection = ({ id, title, count, color, defaultOpen, children }) => (
+            <div className="card" style={{ padding: '0', marginBottom: '12px' }}>
+              <button type="button" onClick={() => togglePlannerSection(id)} style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'none', border: 'none', cursor: 'pointer', padding: '14px 20px', color: 'var(--text-primary)' }}>
+                <span style={{ display: 'flex', alignItems: 'center', gap: '10px', fontWeight: '700', fontSize: '0.9rem' }}>
+                  <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: color, display: 'inline-block' }} />
+                  {title}
+                  {count !== undefined && <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: '400' }}>({count})</span>}
+                </span>
+                <span id={'planner-chevron-' + id} style={{ fontSize: '0.7rem', color: 'var(--text-muted)', transition: 'transform 0.2s', transform: defaultOpen ? 'rotate(0deg)' : 'rotate(-90deg)' }}>&#9660;</span>
+              </button>
+              <div id={'planner-section-' + id} style={{ display: defaultOpen ? 'block' : 'none', padding: '0 16px 16px' }}>{children}</div>
+            </div>
+          );
+          return (
+            <div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                <div>
+                  <span style={{ fontSize: '0.75rem', color: 'var(--accent)', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '1px' }}>Work Management</span>
+                  <h1 style={{ fontSize: '1.5rem', fontWeight: '800', margin: '2px 0 0' }}>Daily Planner</h1>
                 </div>
-
-                <div style={{ padding: '12px', borderTop: '1px solid var(--border-color)', display: 'flex', flexWrap: 'wrap', gap: '6px', background: 'var(--bg-card)' }}>
-                  <button className="btn btn-secondary" style={{ fontSize: '0.75rem', padding: '4px 8px' }} onClick={() => handleAIInvoiceCommand("Suggest Payment Reminder")}>🔔 Suggest Reminder</button>
-                  <button className="btn btn-secondary" style={{ fontSize: '0.75rem', padding: '4px 8px' }} onClick={() => handleAIInvoiceCommand("Generate Follow-up Email")}>✉ Late Follow-up</button>
-                  <button className="btn btn-secondary" style={{ fontSize: '0.75rem', padding: '4px 8px' }} onClick={() => handleAIInvoiceCommand("Summarize Invoice")}>📊 Summarize Ledger</button>
-                  <button className="btn btn-secondary" style={{ fontSize: '0.75rem', padding: '4px 8px' }} onClick={() => handleAIInvoiceCommand("Predict Late Payment Risk")}>⚠️ Predict Late Risk</button>
-                </div>
+                <button className="btn btn-primary" onClick={() => setShowTaskModal(true)}>+ Add Task</button>
               </div>
 
+              <PlannerSection id="tasks" title="Tasks" count={pendingProjectTasks.length} color="#3B82F6" defaultOpen={true}>
+                {pendingProjectTasks.length === 0 ? (
+                  <div style={{ color: 'var(--text-muted)', fontSize: '0.85rem', padding: '8px 0' }}>All tasks complete!</div>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    {pendingProjectTasks.map(t => (
+                      <div key={t.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 0', borderBottom: '1px solid var(--border-color)', gap: '8px' }}>
+                        <span style={{ fontSize: '0.88rem', flex: 1 }}>{t.title}</span>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <span className={'badge ' + (t.priority === 'High' ? 'badge-danger' : t.priority === 'Medium' ? 'badge-warning' : 'badge-info')} style={{ fontSize: '0.65rem' }}>{t.priority}</span>
+                          <span className={'badge ' + (t.completed ? 'badge-success' : 'badge-warning')} style={{ fontSize: '0.65rem' }}>{t.status || (t.completed ? 'Done' : 'Pending')}</span>
+                          {renderTaskActions(t)}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </PlannerSection>
+
+              <PlannerSection id="deadlines" title="Project Deadlines" count={projects.filter(p => p.deadline).length} color="var(--accent)" defaultOpen={true}>
+                {projects.filter(p => p.deadline).sort((a, b) => new Date(a.deadline) - new Date(b.deadline)).map(p => {
+                  const daysLeft = Math.ceil((new Date(p.deadline) - new Date()) / 86400000);
+                  return (
+                    <div key={p.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 0', borderBottom: '1px solid var(--border-color)' }}>
+                      <span style={{ fontSize: '0.88rem', flex: 1 }}>{p.title}</span>
+                      <span style={{ fontSize: '0.8rem', fontWeight: '700', color: daysLeft < 7 ? '#EF4444' : daysLeft < 14 ? '#F59E0B' : '#10B981', whiteSpace: 'nowrap' }}>
+                        {daysLeft < 0 ? Math.abs(daysLeft) + 'd overdue' : daysLeft + ' days'}
+                      </span>
+                    </div>
+                  );
+                })}
+              </PlannerSection>
+
+              <PlannerSection id="completed" title="Completed Tasks" count={completedProjectTasks.length} color="#10B981" defaultOpen={false}>
+                {completedProjectTasks.length === 0 ? (
+                  <div style={{ color: 'var(--text-muted)', fontSize: '0.85rem', padding: '8px 0' }}>No completed tasks yet.</div>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    {completedProjectTasks.map(t => (
+                      <div key={t.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 0', borderBottom: '1px solid var(--border-color)', gap: '8px', opacity: 0.7 }}>
+                        <span style={{ fontSize: '0.88rem', flex: 1, textDecoration: 'line-through' }}>{t.title}</span>
+                        <span className="badge badge-success" style={{ fontSize: '0.65rem' }}>Done</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </PlannerSection>
+
+              <PlannerSection id="ai" title="AI Suggestions" color="#8B5CF6" defaultOpen={false}>
+                {['Complete Villa Project structural drawings before Friday', 'Invoice PM-INV-2026-0001 is due in 2 days — follow up', 'Schedule Apex Builders progress meeting', '2-hour deep work block for Revit modeling today'].map((s, i) => (
+                  <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', padding: '6px 0', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                    <span style={{ color: '#8B5CF6', fontWeight: '700', marginTop: '1px' }}>&#9654;</span> {s}
+                  </div>
+                ))}
+              </PlannerSection>
             </div>
-          </div>
+          );
+        })()}
+
+
+        {/* TAB: INVOICES MANAGEMENT */}
+        {activeTab === 'invoices' && (
+          <InvoicesView 
+            invoices={invoices}
+            setInvoices={setInvoices}
+            clients={clients}
+            projects={projects}
+            user={user}
+            triggerToast={triggerToast}
+            showInvoiceModal={showInvoiceModal}
+            setShowInvoiceModal={setShowInvoiceModal}
+          />
         )}
 
         {activeTab === 'personal-tracker' && (
@@ -4119,7 +4104,18 @@ export default function Home() {
         )}
 
         {activeTab === 'quotations' && (
-          <QuotationsModule user={user} triggerToast={triggerToast} />
+          <QuotationsModule
+            user={user}
+            triggerToast={triggerToast}
+            projects={projects}
+            setProjects={setProjects}
+            clients={clients}
+            setClients={setClients}
+            invoices={invoices}
+            setInvoices={setInvoices}
+            tasks={tasks}
+            setTasks={setTasks}
+          />
         )}
 
         {activeTab === 'admin' && (
@@ -4135,11 +4131,11 @@ export default function Home() {
             {/* Admin Management Sub-Tabs */}
             <div className="card" style={{ padding: '16px', marginBottom: '24px' }}>
               <div style={{ display: 'flex', gap: '8px', borderBottom: '1px solid var(--border-color)', paddingBottom: '12px', flexWrap: 'wrap' }}>
-                {['Pending', 'Approved', 'Rejected', 'Disabled', 'AuditLogs'].map((subTab) => {
+                {['Pending', 'Approved', 'Rejected', 'Disabled', 'AuditLogs', 'Diagnostics'].map((subTab) => {
                   const filteredCount = adminUsers.filter(u => u.status === subTab).length;
-                  const label = subTab === 'AuditLogs' 
-                    ? '📋 Audit Logs' 
-                    : `${subTab} (${filteredCount})`;
+                  let label = `${subTab} (${filteredCount})`;
+                  if (subTab === 'AuditLogs') label = '📋 Audit Logs';
+                  if (subTab === 'Diagnostics') label = '⚙️ System Diagnostics';
                   return (
                     <button
                       key={subTab}
@@ -4166,6 +4162,8 @@ export default function Home() {
               <div style={{ marginTop: '20px' }}>
                 {adminLoading ? (
                   <p style={{ textAlign: 'center', color: 'var(--text-secondary)', padding: '24px' }}>Loading administrative data...</p>
+                ) : adminActiveSubTab === 'Diagnostics' ? (
+                  <DatabaseHealthCheck supabase={supabase} />
                 ) : adminActiveSubTab === 'AuditLogs' ? (
                   <div>
                     <h3 style={{ fontSize: '1rem', fontWeight: '700', marginBottom: '16px', color: 'var(--text-primary)' }}>System Security & Event History</h3>
@@ -4537,56 +4535,7 @@ export default function Home() {
         )}
       </div>
 
-      {/* Mobile Bottom Navigation Bar */}
-      <div className="mobile-bottom-bar">
-        <button
-          type="button"
-          className="btn"
-          style={{ border: 'none', background: 'transparent', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', color: activeTab === 'dashboard' ? 'var(--accent)' : 'var(--text-secondary)', padding: '4px', flex: 1, minHeight: 'auto' }}
-          onClick={() => setActiveTab('dashboard')}
-        >
-          <LayoutDashboard size={20} />
-          <span style={{ fontSize: '0.65rem', fontWeight: '600' }}>Home</span>
-        </button>
-        <button
-          type="button"
-          className="btn"
-          style={{ border: 'none', background: 'transparent', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', color: activeTab === 'projects' ? 'var(--accent)' : 'var(--text-secondary)', padding: '4px', flex: 1, minHeight: 'auto' }}
-          onClick={() => setActiveTab('projects')}
-        >
-          <FolderKanban size={20} />
-          <span style={{ fontSize: '0.65rem', fontWeight: '600' }}>Projects</span>
-        </button>
-        <button
-          type="button"
-          className="btn"
-          style={{ border: 'none', background: 'transparent', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', color: activeTab === 'planner' ? 'var(--accent)' : 'var(--text-secondary)', padding: '4px', flex: 1, minHeight: 'auto' }}
-          onClick={() => setActiveTab('planner')}
-        >
-          <Calendar size={20} />
-          <span style={{ fontSize: '0.65rem', fontWeight: '600' }}>Planner</span>
-        </button>
-        {hasPermission(user?.role, 'canViewInvoices') && (
-          <button
-            type="button"
-            className="btn"
-            style={{ border: 'none', background: 'transparent', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', color: activeTab === 'invoices' ? 'var(--accent)' : 'var(--text-secondary)', padding: '4px', flex: 1, minHeight: 'auto' }}
-            onClick={() => setActiveTab('invoices')}
-          >
-            <FileText size={20} />
-            <span style={{ fontSize: '0.65rem', fontWeight: '600' }}>Invoices</span>
-          </button>
-        )}
-        <button
-          type="button"
-          className="btn"
-          style={{ border: 'none', background: 'transparent', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', color: activeTab === 'profile' ? 'var(--accent)' : 'var(--text-secondary)', padding: '4px', flex: 1, minHeight: 'auto' }}
-          onClick={() => setActiveTab('profile')}
-        >
-          <Users size={20} />
-          <span style={{ fontSize: '0.65rem', fontWeight: '600' }}>Profile</span>
-        </button>
-      </div>
+
 
       {/* ==========================================================================
           MODALS & FORMS
@@ -4758,133 +4707,7 @@ export default function Home() {
         </div>
       )}
 
-      {/* 4. Invoice Wizard Modal */}
-      {showInvoiceModal && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}>
-          <div className="card" style={{ maxWidth: '580px', width: '100%', margin: 0, maxHeight: '90vh', overflowY: 'auto' }}>
-            <h3 style={{ fontSize: '1.1rem', fontWeight: '700', marginBottom: '16px' }}>💰 Generate AURA Invoice</h3>
-            
-            {invoiceLoading && (
-              <div style={{ padding: '8px 12px', background: 'rgba(52,152,219,0.15)', color: '#3498DB', fontSize: '0.85rem', borderRadius: '8px', marginBottom: '12px', display: 'flex', gap: '8px', alignItems: 'center', fontWeight: '500' }}>
-                <Clock size={16} className="animate-spin" /> {invoiceLoading}
-              </div>
-            )}
-            
-            {invoiceError && (
-              <div style={{ padding: '8px 12px', background: 'rgba(231,76,60,0.15)', color: '#E74C3C', fontSize: '0.85rem', borderRadius: '8px', marginBottom: '12px' }}>
-                ⚠️ {invoiceError}
-              </div>
-            )}
-
-            <form onSubmit={handleSaveDraft}>
-              
-              <div className="grid-2">
-                <div className="form-group">
-                  <label className="form-label">Invoice Number</label>
-                  <input type="text" className="form-input" value={invoiceForm.invoice_number} readOnly style={{ background: 'rgba(255,255,255,0.04)' }} />
-                </div>
-                <div className="form-group">
-                  <label className="form-label">Invoice Date</label>
-                  <input type="date" className="form-input" value={invoiceForm.invoice_date} onChange={(e) => setInvoiceForm({...invoiceForm, invoice_date: e.target.value})} />
-                </div>
-              </div>
-
-              <div className="grid-2">
-                <div className="form-group">
-                  <label className="form-label">Select Client *</label>
-                  <select className="form-input" value={invoiceForm.client_id} onChange={(e) => handleInvoiceClientSelect(e.target.value)} required>
-                    <option value="">-- Select Client --</option>
-                    {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                  </select>
-                </div>
-                <div className="form-group">
-                  <label className="form-label">Select Project *</label>
-                  <select className="form-input" value={invoiceForm.project_id} onChange={(e) => handleInvoiceProjectSelect(e.target.value)} disabled={!invoiceForm.client_id} required>
-                    <option value="">-- Select Project --</option>
-                    {projects.filter(p => p.clientId === invoiceForm.client_id).map(p => (
-                      <option key={p.id} value={p.id}>{p.title}</option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              <div className="grid-3">
-                <div className="form-group">
-                  <label className="form-label">Project Amt (₹)</label>
-                  <input type="number" className="form-input" value={invoiceForm.project_amount} onChange={(e) => recalculateInvoiceTotals({ project_amount: parseFloat(e.target.value) || 0 })} />
-                </div>
-                <div className="form-group">
-                  <label className="form-label">Advance Paid (₹)</label>
-                  <input type="number" className="form-input" value={invoiceForm.advance_paid} onChange={(e) => recalculateInvoiceTotals({ advance_paid: parseFloat(e.target.value) || 0 })} />
-                </div>
-                <div className="form-group">
-                  <label className="form-label">Balance Due (₹)</label>
-                  <input type="number" className="form-input" value={invoiceForm.balance_due} readOnly style={{ background: 'rgba(255,255,255,0.04)' }} />
-                </div>
-              </div>
-
-              <div className="grid-3">
-                <div className="form-group">
-                  <label className="form-label">GST %</label>
-                  <input type="number" className="form-input" value={invoiceForm.gst_percentage} onChange={(e) => recalculateInvoiceTotals({ gst_percentage: parseFloat(e.target.value) || 0 })} />
-                </div>
-                <div className="form-group">
-                  <label className="form-label">GST Amt (₹)</label>
-                  <input type="number" className="form-input" value={invoiceForm.gst_amount} readOnly style={{ background: 'rgba(255,255,255,0.04)' }} />
-                </div>
-                <div className="form-group">
-                  <label className="form-label">Discount (₹)</label>
-                  <input type="number" className="form-input" value={invoiceForm.discount} onChange={(e) => recalculateInvoiceTotals({ discount: parseFloat(e.target.value) || 0 })} />
-                </div>
-              </div>
-
-              <div className="grid-2">
-                <div className="form-group">
-                  <label className="form-label">Due Date</label>
-                  <input type="date" className="form-input" value={invoiceForm.due_date} onChange={(e) => setInvoiceForm({...invoiceForm, due_date: e.target.value})} required />
-                </div>
-                <div className="form-group">
-                  <label className="form-label" style={{ color: 'var(--accent)', fontWeight: 'bold' }}>Grand Total Due (₹)</label>
-                  <input type="text" className="form-input" value={`₹ ${invoiceForm.grand_total.toLocaleString('en-IN')}`} readOnly style={{ background: 'var(--bg-card)', fontWeight: 'bold', color: 'var(--accent)' }} />
-                </div>
-              </div>
-
-              <div className="grid-2">
-                <div className="form-group">
-                  <label className="form-label">Payment Status</label>
-                  <select className="form-input" value={invoiceForm.payment_status} onChange={(e) => setInvoiceForm({...invoiceForm, payment_status: e.target.value})}>
-                    <option value="Pending">Pending</option>
-                    <option value="Paid">Paid</option>
-                    <option value="Partial">Partial</option>
-                    <option value="Overdue">Overdue</option>
-                  </select>
-                </div>
-                <div className="form-group">
-                  <label className="form-label">Payment Method</label>
-                  <select className="form-input" value={invoiceForm.payment_method} onChange={(e) => setInvoiceForm({...invoiceForm, payment_method: e.target.value})}>
-                    <option value="Bank Transfer">Bank Transfer</option>
-                    <option value="UPI">UPI</option>
-                    <option value="Cash">Cash</option>
-                    <option value="Cheque">Cheque</option>
-                    <option value="Credit Card">Credit Card</option>
-                  </select>
-                </div>
-              </div>
-
-              <div className="form-group">
-                <label className="form-label">Notes & Instructions</label>
-                <textarea className="form-input" rows="2" value={invoiceForm.notes} onChange={(e) => setInvoiceForm({...invoiceForm, notes: e.target.value})}></textarea>
-              </div>
-
-              <div style={{ display: 'flex', gap: '8px', marginTop: '20px', flexWrap: 'wrap' }}>
-                <button type="submit" className="btn btn-primary" style={{ flex: 1, justifyContent: 'center' }}>Save Draft</button>
-                <button type="button" className="btn btn-secondary" style={{ flex: 1, justifyContent: 'center' }} onClick={() => { generateAndDownloadPDF(invoiceForm); }}>Download PDF</button>
-                <button type="button" className="btn btn-secondary" style={{ flex: 1, justifyContent: 'center' }} onClick={() => { setShowInvoiceModal(false); }}>Cancel</button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      {/* 4. Invoice Wizard Modal Removed (Handled in InvoicesView) */}
 
       {/* 5. Edit Project Status Modal */}
       {showProjectEditModal && editingProject && (

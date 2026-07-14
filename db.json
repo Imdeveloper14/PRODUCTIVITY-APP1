@@ -1054,6 +1054,69 @@
       "actor": "admin",
       "details": "Updated quotation PMC-2026-0001. Status: Draft.",
       "created_at": "2026-07-09T13:20:10.149Z"
+    },
+    {
+      "id": "log-1783854432869",
+      "event_type": "quotation_created",
+      "username": "admin",
+      "email": "admin@auraworkspace.local",
+      "actor": "admin",
+      "details": "Created quotation request PMC-2026-0002 for Akshy.",
+      "created_at": "2026-07-12T11:07:12.869Z"
+    },
+    {
+      "id": "log-1783856051361",
+      "event_type": "quotation_updated",
+      "username": "admin",
+      "email": "admin@auraworkspace.local",
+      "actor": "admin",
+      "details": "Updated quotation PMC-2026-0002. Status: Approved.",
+      "created_at": "2026-07-12T11:34:11.361Z"
+    },
+    {
+      "id": "log-1783946627172",
+      "event_type": "quotation_updated",
+      "username": "admin",
+      "email": "admin@auraworkspace.local",
+      "actor": "admin",
+      "details": "Updated quotation PMC-2026-0002. Status: Approved.",
+      "created_at": "2026-07-13T12:43:47.172Z"
+    },
+    {
+      "id": "log-1783946636697",
+      "event_type": "quotation_updated",
+      "username": "admin",
+      "email": "admin@auraworkspace.local",
+      "actor": "admin",
+      "details": "Updated quotation PMC-2026-0002. Status: Approved.",
+      "created_at": "2026-07-13T12:43:56.697Z"
+    },
+    {
+      "id": "log-1783947258807",
+      "event_type": "quotation_updated",
+      "username": "admin",
+      "email": "admin@auraworkspace.local",
+      "actor": "admin",
+      "details": "Updated quotation PMC-2026-0002. Status: Approved.",
+      "created_at": "2026-07-13T12:54:18.807Z"
+    },
+    {
+      "id": "log-1783947796679",
+      "event_type": "quotation_created",
+      "username": "admin",
+      "email": "admin@auraworkspace.local",
+      "actor": "admin",
+      "details": "Created quotation request PMC-2026-0003 for Akshy.",
+      "created_at": "2026-07-13T13:03:16.679Z"
+    },
+    {
+      "id": "log-1783954563040",
+      "event_type": "quotation_created",
+      "username": "admin",
+      "email": "admin@auraworkspace.local",
+      "actor": "admin",
+      "details": "Created quotation request PMC-2026-0004 for Akshy.",
+      "created_at": "2026-07-13T14:56:03.040Z"
     }
   ],
   "notifications": [
@@ -1084,6 +1147,54 @@
       "commercial_conditions": "Quotation Validity: This quotation is valid for 30 calendar days from the date of issue.\nScope of Work: The quotation covers only the deliverables specifically listed in this proposal. Any additional work requested by the Client shall be treated as a variation and quoted separately.\nPayment Terms: Payments shall be made according to the agreed milestone schedule. All invoices are payable within 15 calendar days from the invoice date.\nProject Commencement: Work will commence only after receipt of the agreed advance payment (where applicable) and all required technical inputs from the Client.\nEngineering Inputs: The Client shall provide all necessary drawings, specifications, design criteria, operational data, and approvals required to execute the work.\nDesign Reviews: Up to two (2) design review/revision cycles are included. Additional revisions arising from changes in scope or Client requirements will be billed at the agreed hourly rate.\nSoftware & QA/QC: Professional engineering software costs, internal quality assurance (QA/QC), and document checking are included in this quotation.\nTravel & Site Visits: Travel, accommodation, visa expenses, inspections, surveys, statutory fees, and third-party costs are excluded unless specifically stated.\nTaxes: Applicable taxes, duties, withholding taxes, or government levies shall be borne by the Client unless otherwise agreed in writing.\nIntellectual Property: All engineering calculations, models, drawings, reports, spreadsheets, and digital files remain the intellectual property of Primelisometrics Consultancy until full payment has been received.\nConfidentiality: Both parties shall maintain confidentiality of all technical and commercial information exchanged during the project.\nSuspension of Services: The Consultant reserves the right to suspend work on overdue invoices exceeding 30 calendar days without liability for schedule impacts.\nClient Delays: Delays caused by late information, approvals, or decisions from the Client may require adjustment of the project schedule and delivery dates.\nLiability: The Consultant's total liability arising from the services provided shall be limited to the value of the fees paid under this quotation.\nCurrency & Banking Charges: All payments shall be made in the agreed currency. Any international bank transfer charges shall be borne by the Client.\nAcceptance: Confirmation of this quotation by Purchase Order, signed acceptance, or written email approval shall constitute acceptance of these commercial conditions.",
       "created_at": "2026-07-09T10:47:25.899Z",
       "updated_at": "2026-07-09T13:20:10.149Z"
+    },
+    {
+      "id": "q-1783854432869",
+      "quotation_number": "PMC-2026-0002",
+      "client_name": "Akshy",
+      "contact_person": "",
+      "project_name": "wtp",
+      "project_location": "",
+      "plant_capacity": "33 hrs scope",
+      "currency": "INR",
+      "status": "Approved",
+      "created_by": "admin",
+      "approved_by": "admin",
+      "commercial_conditions": "1. Offer Validity: This quotation is valid for 30 calendar days.\n2. Intellectual Property: Native models remain Primelisometrics property until final milestone payment clearance.\n3. Delay Fees: Payments delayed beyond 14 days incur a 1.5% weekly delay fee.\n4. Revision Policy: Includes up to 2 major design iterations/reviews. Additional iterations charged hourly.",
+      "created_at": "2026-07-12T11:07:12.869Z",
+      "updated_at": "2026-07-13T12:54:18.807Z"
+    },
+    {
+      "id": "q-1783947796679",
+      "quotation_number": "PMC-2026-0003",
+      "client_name": "Akshy",
+      "contact_person": "",
+      "project_name": "wtp",
+      "project_location": "",
+      "plant_capacity": "245 hrs scope",
+      "currency": "INR",
+      "status": "Draft",
+      "created_by": "admin",
+      "approved_by": null,
+      "commercial_conditions": "1. Offer Validity: This quotation is valid for 30 calendar days.\n2. Intellectual Property: Native models remain Primelisometrics property until final milestone payment clearance.\n3. Delay Fees: Payments delayed beyond 14 days incur a 1.5% weekly delay fee.\n4. Revision Policy: Includes up to 2 major design iterations/reviews. Additional iterations charged hourly.",
+      "created_at": "2026-07-13T13:03:16.679Z",
+      "updated_at": "2026-07-13T13:03:16.679Z"
+    },
+    {
+      "id": "q-1783954563040",
+      "quotation_number": "PMC-2026-0004",
+      "client_name": "Akshy",
+      "contact_person": "",
+      "project_name": "4312",
+      "project_location": "322",
+      "plant_capacity": "251 hrs scope",
+      "currency": "INR",
+      "status": "Draft",
+      "created_by": "admin",
+      "approved_by": null,
+      "commercial_conditions": "1. Offer Validity: This quotation is valid for 30 calendar days.\n2. Intellectual Property: Native models remain Primelisometrics property until final milestone payment clearance.\n3. Delay Fees: Payments delayed beyond 14 days incur a 1.5% weekly delay fee.\n4. Revision Policy: Includes up to 2 major design iterations/reviews. Additional iterations charged hourly.\n",
+      "created_at": "2026-07-13T14:56:03.040Z",
+      "updated_at": "2026-07-13T14:56:03.040Z"
     }
   ],
   "quotation_items": [
@@ -1347,6 +1458,177 @@
       "included": true,
       "estimated_hours": 160,
       "remarks": ""
+    },
+    {
+      "id": "qi-1783856051361-0",
+      "quotation_id": "q-1783854432869",
+      "category": "Mechanical Engineering",
+      "deliverable": "Independent Verification Statement",
+      "included": true,
+      "estimated_hours": 15,
+      "remarks": "Calculation validation summary"
+    },
+    {
+      "id": "qi-1783856051361-1",
+      "quotation_id": "q-1783854432869",
+      "category": "Mechanical Engineering",
+      "deliverable": "Design Discrepancy & Deflection Log",
+      "included": true,
+      "estimated_hours": 18,
+      "remarks": "Tabulated list of structural or safety concerns"
+    },
+    {
+      "id": "qi-1783947796679-0",
+      "quotation_id": "q-1783947796679",
+      "category": "Naval Architecture",
+      "deliverable": "Piping & Instrumentation Diagram (P&ID) Draft",
+      "included": true,
+      "estimated_hours": 20,
+      "remarks": "Process flowsheet translation"
+    },
+    {
+      "id": "qi-1783947796679-1",
+      "quotation_id": "q-1783947796679",
+      "category": "Naval Architecture",
+      "deliverable": "Piping 3D Layout & Routing Plan",
+      "included": true,
+      "estimated_hours": 50,
+      "remarks": "Collision-free routing inside utility corridor"
+    },
+    {
+      "id": "qi-1783947796679-2",
+      "quotation_id": "q-1783947796679",
+      "category": "Naval Architecture",
+      "deliverable": "Pipe Stress Analysis Report",
+      "included": true,
+      "estimated_hours": 30,
+      "remarks": "Thermal growth and load support review"
+    },
+    {
+      "id": "qi-1783947796679-3",
+      "quotation_id": "q-1783947796679",
+      "category": "Naval Architecture",
+      "deliverable": "Isometric Drawings & Bill of Materials",
+      "included": true,
+      "estimated_hours": 25,
+      "remarks": "Fabrication spool isometric exports"
+    },
+    {
+      "id": "qi-1783947796679-4",
+      "quotation_id": "q-1783947796679",
+      "category": "Naval Architecture",
+      "deliverable": "General Arrangement Drawing",
+      "included": true,
+      "estimated_hours": 25,
+      "remarks": "Vessel profile & deck layout review"
+    },
+    {
+      "id": "qi-1783947796679-5",
+      "quotation_id": "q-1783947796679",
+      "category": "Naval Architecture",
+      "deliverable": "Hull Form Definition & Lines Plan",
+      "included": true,
+      "estimated_hours": 40,
+      "remarks": "Surface modeling & fairing"
+    },
+    {
+      "id": "qi-1783947796679-6",
+      "quotation_id": "q-1783947796679",
+      "category": "Naval Architecture",
+      "deliverable": "Intact & Damage Stability Booklet",
+      "included": true,
+      "estimated_hours": 35,
+      "remarks": "IMO MSC.267(85) compliance assessment"
+    },
+    {
+      "id": "qi-1783947796679-7",
+      "quotation_id": "q-1783947796679",
+      "category": "Naval Architecture",
+      "deliverable": "Inclining Experiment Report",
+      "included": true,
+      "estimated_hours": 20,
+      "remarks": "Physical inclining survey witness & post-calc"
+    },
+    {
+      "id": "qi-1783954563040-0",
+      "quotation_id": "q-1783954563040",
+      "category": "Naval Architecture",
+      "deliverable": "General Arrangement Drawing",
+      "included": true,
+      "estimated_hours": 12,
+      "remarks": "Initial revision layout"
+    },
+    {
+      "id": "qi-1783954563040-1",
+      "quotation_id": "q-1783954563040",
+      "category": "Naval Architecture",
+      "deliverable": "Structural Scantling Calculation",
+      "included": true,
+      "estimated_hours": 24,
+      "remarks": "Rule check compliance reports"
+    },
+    {
+      "id": "qi-1783954563040-2",
+      "quotation_id": "q-1783954563040",
+      "category": "Naval Architecture",
+      "deliverable": "Piping & Instrumentation Diagram (P&ID) Draft",
+      "included": true,
+      "estimated_hours": 20,
+      "remarks": "Process flowsheet translation"
+    },
+    {
+      "id": "qi-1783954563040-3",
+      "quotation_id": "q-1783954563040",
+      "category": "Naval Architecture",
+      "deliverable": "Piping 3D Layout & Routing Plan",
+      "included": true,
+      "estimated_hours": 50,
+      "remarks": "Collision-free routing inside utility corridor"
+    },
+    {
+      "id": "qi-1783954563040-4",
+      "quotation_id": "q-1783954563040",
+      "category": "Naval Architecture",
+      "deliverable": "Pipe Stress Analysis Report",
+      "included": true,
+      "estimated_hours": 30,
+      "remarks": "Thermal growth and load support review"
+    },
+    {
+      "id": "qi-1783954563040-5",
+      "quotation_id": "q-1783954563040",
+      "category": "Naval Architecture",
+      "deliverable": "Isometric Drawings & Bill of Materials",
+      "included": true,
+      "estimated_hours": 25,
+      "remarks": "Fabrication spool isometric exports"
+    },
+    {
+      "id": "qi-1783954563040-6",
+      "quotation_id": "q-1783954563040",
+      "category": "Naval Architecture",
+      "deliverable": "3D Finite Element Model Setup",
+      "included": true,
+      "estimated_hours": 30,
+      "remarks": "Geometry import and mesh refinement"
+    },
+    {
+      "id": "qi-1783954563040-7",
+      "quotation_id": "q-1783954563040",
+      "category": "Naval Architecture",
+      "deliverable": "Static Linear & Non-linear Analysis",
+      "included": true,
+      "estimated_hours": 35,
+      "remarks": "Wind and seismic load combinations"
+    },
+    {
+      "id": "qi-1783954563040-8",
+      "quotation_id": "q-1783954563040",
+      "category": "Naval Architecture",
+      "deliverable": "Structural Scantling & Rebar Optimization Report",
+      "included": true,
+      "estimated_hours": 25,
+      "remarks": "Compliance with building codes"
     }
   ],
   "quotation_costings": [
@@ -1362,7 +1644,79 @@
       "gst": 405266.39999999997,
       "grand_total": 2656746.4,
       "created_at": "2026-07-09T10:47:25.900Z"
+    },
+    {
+      "id": "qc-1783854432869",
+      "quotation_id": "q-1783854432869",
+      "hourly_rate": 1500,
+      "engineering_hours": 33,
+      "engineering_fee": 49500,
+      "software_cost": 45000,
+      "contingency": 9450,
+      "subtotal": 103950,
+      "gst": 18711,
+      "grand_total": 122661,
+      "created_at": "2026-07-12T11:07:12.869Z"
+    },
+    {
+      "id": "qc-1783947796679",
+      "quotation_id": "q-1783947796679",
+      "hourly_rate": 1500,
+      "engineering_hours": 245,
+      "engineering_fee": 367500,
+      "software_cost": 50000,
+      "contingency": 41750,
+      "subtotal": 459250,
+      "gst": 82665,
+      "grand_total": 541915,
+      "created_at": "2026-07-13T13:03:16.679Z"
+    },
+    {
+      "id": "qc-1783954563040",
+      "quotation_id": "q-1783954563040",
+      "hourly_rate": 1500,
+      "engineering_hours": 251,
+      "engineering_fee": 376500,
+      "software_cost": 45000,
+      "contingency": 42150,
+      "subtotal": 463650,
+      "gst": 83457,
+      "grand_total": 547107,
+      "created_at": "2026-07-13T14:56:03.040Z"
     }
   ],
-  "quotation_revisions": []
+  "quotation_revisions": [
+    {
+      "id": "rev-1783856051361",
+      "quotation_id": "q-1783854432869",
+      "revision_number": 1,
+      "description": "v0.1",
+      "created_by": "admin",
+      "created_at": "2026-07-12T11:34:11.361Z"
+    },
+    {
+      "id": "rev-1783946627172",
+      "quotation_id": "q-1783854432869",
+      "revision_number": 2,
+      "description": "Project launched in ERP system",
+      "created_by": "admin",
+      "created_at": "2026-07-13T12:43:47.172Z"
+    },
+    {
+      "id": "rev-1783946636697",
+      "quotation_id": "q-1783854432869",
+      "revision_number": 3,
+      "description": "Project launched in ERP system",
+      "created_by": "admin",
+      "created_at": "2026-07-13T12:43:56.697Z"
+    },
+    {
+      "id": "rev-1783947258807",
+      "quotation_id": "q-1783854432869",
+      "revision_number": 4,
+      "description": "Project launched in ERP system",
+      "created_by": "admin",
+      "created_at": "2026-07-13T12:54:18.807Z"
+    }
+  ]
 }
