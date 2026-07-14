@@ -1,20 +1,21 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 const supabase = (supabaseUrl && supabaseAnonKey) ? createClient(supabaseUrl, supabaseAnonKey) : null;
-const JWT_SECRET = process.env.JWT_SECRET || 'aura_secret_key_123456_change_me';
 import { seedDatabase } from '../../../utils/seeder';
 import { getLocalDb, saveLocalDb, isSupabaseTableAvailable } from '../../../utils/dbFallback';
+import { runBootstrap } from '../../../utils/authBootstrap';
+import { signSession } from '../../../utils/session';
 export async function POST(request) {
   try {
     if (!supabase) {
       return NextResponse.json({ error: "Supabase connection is not configured." }, { status: 500 });
     }
 
+    await runBootstrap();
     // Run startup seeder dynamically
     await seedDatabase();
 
@@ -133,9 +134,9 @@ export async function POST(request) {
       return NextResponse.json({ error: errorMsg, status: 'Rejected' }, { status: 403 });
     }
 
-    if (user.status === 'Disabled') {
-      const details = `Login block: account status is Disabled.`;
-      const errorMsg = "Your account has been disabled.";
+    if (user.status === 'Suspended' || user.status === 'Disabled') {
+      const details = `Login block: account status is ${user.status}.`;
+      const errorMsg = "Your account has been suspended.";
       
       if (useSupabase) {
         await supabase.from('aura_audit_logs').insert({
@@ -200,7 +201,7 @@ export async function POST(request) {
       status: user.status
     };
 
-    const token = jwt.sign(tokenPayload, JWT_SECRET, { expiresIn: '7d' });
+    const token = signSession(tokenPayload, '7d');
 
     // Save success audit log
     const details = `Successful login. Role: ${user.role}.`;
@@ -244,7 +245,7 @@ export async function POST(request) {
     response.cookies.set('aura_token', token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
+      sameSite: 'lax',
       maxAge: 7 * 24 * 60 * 60, // 7 days
       path: '/'
     });

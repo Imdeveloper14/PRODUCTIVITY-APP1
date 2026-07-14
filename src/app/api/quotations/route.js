@@ -1,8 +1,6 @@
 import { NextResponse } from 'next/server';
-import jwt from 'jsonwebtoken';
 import { getLocalDb, saveLocalDb, isSupabaseTableAvailable, supabase } from '../../utils/dbFallback';
-
-const JWT_SECRET = process.env.JWT_SECRET || 'aura_secret_key_123456_change_me';
+import { verifySessionToken } from '../../utils/session';
 
 // Helper to authenticate user
 function authenticate(request) {
@@ -15,7 +13,7 @@ function authenticate(request) {
       }
     }
     if (!token) return null;
-    return jwt.verify(token, JWT_SECRET);
+    return verifySessionToken(token);
   } catch (err) {
     return null;
   }
@@ -34,7 +32,7 @@ export async function GET(request) {
     if (useSupabase) {
       // Supabase Query
       let query = supabase.from('quotations').select('*');
-      if (user.role === 'Employee') {
+      if (user.role === 'Employee' || user.role === 'Engineer' || user.role === 'Viewer') {
         query = query.eq('created_by', user.username);
       }
       const { data, error } = await query.order('created_at', { ascending: false });
@@ -44,7 +42,7 @@ export async function GET(request) {
       }
       
       // Load costing and items conditionally based on role
-      const isAdmin = user.role === 'Admin' || user.role === 'SuperAdmin';
+      const isAdmin = user.role === 'Admin' || user.role === 'SuperAdmin' || user.role === 'Super Admin';
       
       for (const q of data) {
         let items = [];
@@ -77,11 +75,11 @@ export async function GET(request) {
       // Local fallback
       const localDb = getLocalDb();
       let dbQuotes = localDb.quotations || [];
-      if (user.role === 'Employee') {
+      if (user.role === 'Employee' || user.role === 'Engineer' || user.role === 'Viewer') {
         dbQuotes = dbQuotes.filter(q => q.created_by === user.username);
       }
 
-      const isAdmin = user.role === 'Admin' || user.role === 'SuperAdmin';
+      const isAdmin = user.role === 'Admin' || user.role === 'SuperAdmin' || user.role === 'Super Admin';
 
       quotations = dbQuotes.map(q => {
         const items = (localDb.quotation_items || []).filter(item => item.quotation_id === q.id);
@@ -170,7 +168,7 @@ export async function POST(request) {
     const quotationNumber = `PMC-${currentYear}-${String(nextNum).padStart(4, '0')}`;
 
     // 2. Pricing calculations (default or custom if admin)
-    const isAdmin = user.role === 'Admin' || user.role === 'SuperAdmin';
+    const isAdmin = user.role === 'Admin' || user.role === 'SuperAdmin' || user.role === 'Super Admin';
     const hourlyRate = (isAdmin && custom_hourly_rate !== undefined) ? Number(custom_hourly_rate) : 1400;
     const softwareCost = (isAdmin && custom_software_cost !== undefined) ? Number(custom_software_cost) : 50000;
     const contingencyPercent = (isAdmin && custom_contingency_percent !== undefined) ? Number(custom_contingency_percent) : 10;

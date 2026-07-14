@@ -1,13 +1,12 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import jwt from 'jsonwebtoken';
-import { getLocalDb, isSupabaseTableAvailable } from '../../../utils/dbFallback';
+import { getLocalDb, saveLocalDb, isSupabaseTableAvailable } from '../../../utils/dbFallback';
+import { verifySessionToken } from '../../../utils/session';
+import { PERMANENT_ADMIN_EMAIL } from '../../../utils/authBootstrap';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 const supabase = (supabaseUrl && supabaseAnonKey) ? createClient(supabaseUrl, supabaseAnonKey) : null;
-
-const JWT_SECRET = process.env.JWT_SECRET || 'aura_secret_key_123456_change_me';
 
 import { hasPermission } from '../../../utils/permissions';
 
@@ -25,11 +24,11 @@ function verifyAdmin(request) {
 
     if (!token) return null;
 
-    const decoded = jwt.verify(token, JWT_SECRET);
+    const decoded = verifySessionToken(token);
     const role = decoded.role || 'Employee';
     const email = decoded.email || '';
     
-    if (hasPermission(role, 'canViewAuditLogs') || email === 'chandrunavalarch@gmail.com' || role === 'SuperAdmin' || role === 'Admin') {
+    if (hasPermission(role, 'canViewAuditLogs') || String(email).toLowerCase() === PERMANENT_ADMIN_EMAIL || role === 'Super Admin' || role === 'Admin' || role === 'SuperAdmin') {
       return decoded;
     }
     

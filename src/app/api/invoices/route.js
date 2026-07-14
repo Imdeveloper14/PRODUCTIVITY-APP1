@@ -1,13 +1,11 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import jwt from 'jsonwebtoken';
 import { hasPermission } from '../../utils/permissions';
+import { verifySessionToken } from '../../utils/session';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 const supabase = (supabaseUrl && supabaseAnonKey) ? createClient(supabaseUrl, supabaseAnonKey) : null;
-
-const JWT_SECRET = process.env.JWT_SECRET || 'aura_secret_key_123456_change_me';
 
 function verifyToken(request) {
   try {
@@ -19,7 +17,7 @@ function verifyToken(request) {
       }
     }
     if (!token) return null;
-    return jwt.verify(token, JWT_SECRET);
+    return verifySessionToken(token);
   } catch (err) {
     return null;
   }

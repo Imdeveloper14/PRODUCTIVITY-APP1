@@ -160,7 +160,7 @@ export default function Home() {
 
   // Admin approval form modal states
   const [approvingUser, setApprovingUser] = useState(null);
-  const [approveRole, setApproveRole] = useState('Employee');
+  const [approveRole, setApproveRole] = useState('Engineer');
   const [approveDept, setApproveDept] = useState('Naval Architecture');
   const [approveDesignation, setApproveDesignation] = useState('Design Engineer');
   const [approveEmpId, setApproveEmpId] = useState('');
@@ -453,6 +453,28 @@ export default function Home() {
     setTheme(savedTheme);
     applyTheme(savedTheme);
 
+    const syncSession = async () => {
+      try {
+        const res = await fetch('/api/auth/session', { credentials: 'include' });
+        const data = await res.json();
+        if (data?.authenticated && data?.user) {
+          const restoredUser = {
+            id: data.user.id,
+            email: data.user.email,
+            name: `${data.user.first_name} ${data.user.last_name}`,
+            username: data.user.username,
+            role: data.user.role,
+            status: data.user.status
+          };
+          setUser(restoredUser);
+          saveState("aura_user_v7", restoredUser);
+          fetchAllUserData(restoredUser.id, restoredUser.role);
+        }
+      } catch (error) {
+        console.warn('Session restore skipped:', error);
+      }
+    };
+
     // 1. Initial Local State Hydration Fallback
     const savedUser = localStorage.getItem("aura_user_v7");
     if (savedUser) {
@@ -461,6 +483,7 @@ export default function Home() {
       fetchAllUserData(parsed.id, parsed.role);
     }
 
+    syncSession();
     if (!supabase) return;
     // Custom JWT Auth handles session locally, no onAuthStateChange listener needed.
   }, []);
@@ -557,7 +580,7 @@ export default function Home() {
     const autoId = 'AURA-' + String(nextNum).padStart(4, '0');
     
     setApprovingUser(targetUser);
-    setApproveRole('Employee');
+    setApproveRole('Engineer');
     setApproveDept('Naval Architecture');
     setApproveDesignation('Design Engineer');
     setApproveEmpId(autoId);
@@ -711,8 +734,11 @@ export default function Home() {
 
   const handleLogout = async () => {
     // Clear cookie by hitting an endpoint or just removing local session details
-    // We can also fetch a dummy logout api if needed, or simply delete cookies
-    document.cookie = 'aura_token=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;';
+    try {
+      await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
+    } catch (error) {
+      console.warn('Logout API failed:', error);
+    }
     setUser(null);
     localStorage.removeItem("aura_user_v7");
     setActiveTab('dashboard');
@@ -4281,14 +4307,16 @@ export default function Home() {
                                   <div style={{ marginTop: '6px', display: 'flex', alignItems: 'center', gap: '6px' }}>
                                     <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Role:</span>
                                     <select 
-                                      value={item.role || 'Employee'} 
+                                      value={item.role || 'Engineer'} 
                                       onChange={(e) => handleUpdateUserStatus(item.id, item.status, e.target.value)}
                                       style={{ padding: '2px 4px', fontSize: '0.75rem', borderRadius: '4px', border: '1px solid var(--border-color)', background: 'var(--bg-card)', color: 'var(--text-primary)' }}
                                     >
-                                      <option value="Employee">Employee</option>
-                                      <option value="Manager">Manager</option>
+                                      <option value="Viewer">Viewer</option>
+                                      <option value="Engineer">Engineer</option>
+                                      <option value="Finance">Finance</option>
+                                      <option value="Project Manager">Project Manager</option>
                                       <option value="Admin">Admin</option>
-                                      <option value="SuperAdmin">SuperAdmin</option>
+                                      <option value="Super Admin">Super Admin</option>
                                     </select>
                                   </div>
                                 </td>
@@ -4368,14 +4396,16 @@ export default function Home() {
                               <div style={{ marginTop: '6px', display: 'flex', alignItems: 'center', gap: '6px' }}>
                                 <strong>Role:</strong>
                                 <select 
-                                  value={item.role || 'Employee'} 
+                                  value={item.role || 'Engineer'} 
                                   onChange={(e) => handleUpdateUserStatus(item.id, item.status, e.target.value)}
                                   style={{ padding: '2px 4px', fontSize: '0.75rem', borderRadius: '4px', border: '1px solid var(--border-color)', background: 'var(--bg-card)', color: 'var(--text-primary)' }}
                                 >
-                                  <option value="Employee">Employee</option>
-                                  <option value="Manager">Manager</option>
+                                  <option value="Viewer">Viewer</option>
+                                  <option value="Engineer">Engineer</option>
+                                  <option value="Finance">Finance</option>
+                                  <option value="Project Manager">Project Manager</option>
                                   <option value="Admin">Admin</option>
-                                  <option value="SuperAdmin">SuperAdmin</option>
+                                  <option value="Super Admin">Super Admin</option>
                                 </select>
                               </div>
                             </div>
@@ -5586,10 +5616,12 @@ export default function Home() {
                   style={{ width: '100%', height: '42px', padding: '8px 12px', border: '1px solid var(--border-color)', borderRadius: '8px', background: 'var(--bg-card)', color: 'var(--text-primary)', fontSize: '0.85rem' }}
                   required
                 >
-                  <option value="Employee">Employee</option>
-                  <option value="Manager">Manager</option>
+                  <option value="Viewer">Viewer</option>
+                  <option value="Engineer">Engineer</option>
+                  <option value="Finance">Finance</option>
+                  <option value="Project Manager">Project Manager</option>
                   <option value="Admin">Admin</option>
-                  <option value="SuperAdmin">SuperAdmin</option>
+                  <option value="Super Admin">Super Admin</option>
                 </select>
               </div>
 
@@ -5663,7 +5695,7 @@ export default function Home() {
                 >
                   <option value="">None / Select Reporting Manager</option>
                   {adminUsers
-                    .filter(u => u.role === 'Manager' || u.role === 'Admin' || u.role === 'SuperAdmin')
+                    .filter(u => u.role === 'Project Manager' || u.role === 'Admin' || u.role === 'Super Admin')
                     .map(u => (
                       <option key={u.id} value={`${u.first_name} ${u.last_name}`}>
                         {u.first_name} {u.last_name} ({u.role})

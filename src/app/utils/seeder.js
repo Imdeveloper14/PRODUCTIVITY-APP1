@@ -1,17 +1,23 @@
 import bcrypt from 'bcryptjs';
 import { getLocalDb, saveLocalDb, isSupabaseTableAvailable, supabase } from './dbFallback';
+import { DEFAULT_ADMIN_PASSWORD, PERMANENT_ADMIN_EMAIL, PERMANENT_ADMIN_USERNAME, normalizeRole } from './authBootstrap';
 
 // Dynamic helper to seed everything
 export async function seedDatabase() {
   try {
+    if (!DEFAULT_ADMIN_PASSWORD) {
+      console.warn('AURA_ADMIN_PASSWORD is not configured; bootstrap admin seeding may be incomplete.');
+      return;
+    }
+
     const salt = await bcrypt.genSalt(10);
-    const password_hash = await bcrypt.hash('Admin@123', salt);
+    const password_hash = await bcrypt.hash(DEFAULT_ADMIN_PASSWORD, salt);
 
     // 1. Check/Seed Users
     const useSupabase = await isSupabaseTableAvailable('aura_users');
 
     const defaultAdminEmail = 'admin@auraworkspace.local';
-    const mainAdminEmail = 'chandrunavalarch@gmail.com';
+    const mainAdminEmail = PERMANENT_ADMIN_EMAIL;
 
     const seedUsersList = [
       {
@@ -21,7 +27,7 @@ export async function seedDatabase() {
         email: defaultAdminEmail,
         password_hash,
         status: 'Active',
-        role: 'SuperAdmin',
+        role: 'Super Admin',
         mobile_number: '',
         department: '',
         designation: '',
@@ -31,11 +37,11 @@ export async function seedDatabase() {
       {
         first_name: 'Chandru',
         last_name: 'Admin',
-        username: 'chandru',
+        username: PERMANENT_ADMIN_USERNAME,
         email: mainAdminEmail,
         password_hash,
         status: 'Active',
-        role: 'SuperAdmin',
+        role: 'Super Admin',
         mobile_number: '',
         department: '',
         designation: '',
@@ -49,7 +55,7 @@ export async function seedDatabase() {
         email: 'jane@auraworkspace.local',
         password_hash,
         status: 'Active',
-        role: 'Manager',
+        role: 'Project Manager',
         mobile_number: '',
         department: 'Naval Architecture',
         designation: 'Department Head',
@@ -63,7 +69,7 @@ export async function seedDatabase() {
         email: 'john@auraworkspace.local',
         password_hash,
         status: 'Active',
-        role: 'Manager',
+        role: 'Project Manager',
         mobile_number: '',
         department: 'Marine Engineering',
         designation: 'Project Manager',
@@ -77,7 +83,7 @@ export async function seedDatabase() {
         email: 'alice@auraworkspace.local',
         password_hash,
         status: 'Active',
-        role: 'Employee',
+        role: 'Engineer',
         mobile_number: '',
         department: 'Naval Architecture',
         designation: 'Design Engineer',
@@ -91,7 +97,7 @@ export async function seedDatabase() {
         email: 'bob@auraworkspace.local',
         password_hash,
         status: 'Active',
-        role: 'Employee',
+        role: 'Engineer',
         mobile_number: '',
         department: 'Marine Engineering',
         designation: 'Design Engineer',
@@ -105,7 +111,7 @@ export async function seedDatabase() {
         email: 'charlie@auraworkspace.local',
         password_hash,
         status: 'Active',
-        role: 'Employee',
+        role: 'Engineer',
         mobile_number: '',
         department: 'Naval Architecture',
         designation: 'Junior Engineer',
@@ -119,7 +125,7 @@ export async function seedDatabase() {
         email: 'david@auraworkspace.local',
         password_hash,
         status: 'Active',
-        role: 'Employee',
+        role: 'Engineer',
         mobile_number: '',
         department: 'Structural Engineering',
         designation: 'Senior Engineer',
@@ -133,7 +139,7 @@ export async function seedDatabase() {
         email: 'eve@auraworkspace.local',
         password_hash,
         status: 'Active',
-        role: 'Employee',
+        role: 'Engineer',
         mobile_number: '',
         department: 'IT',
         designation: 'Administrator',
@@ -161,6 +167,7 @@ export async function seedDatabase() {
       if (!localDb.users || localDb.users.length === 0) {
         localDb.users = seedUsersList.map((u, index) => ({
           ...u,
+          role: normalizeRole(u.role),
           id: `u-${1000 + index}`,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()

@@ -1,8 +1,6 @@
 import { NextResponse } from 'next/server';
-import jwt from 'jsonwebtoken';
 import { getLocalDb, saveLocalDb, isSupabaseTableAvailable, supabase } from '../../../utils/dbFallback';
-
-const JWT_SECRET = process.env.JWT_SECRET || 'aura_secret_key_123456_change_me';
+import { verifySessionToken } from '../../../utils/session';
 
 // Helper to authenticate user
 function authenticate(request) {
@@ -15,7 +13,7 @@ function authenticate(request) {
       }
     }
     if (!token) return null;
-    return jwt.verify(token, JWT_SECRET);
+    return verifySessionToken(token);
   } catch (err) {
     return null;
   }
@@ -47,7 +45,7 @@ export async function GET(request, { params }) {
       items = qItems || [];
 
       // Check roles for costing details
-      const isAdmin = user.role === 'Admin' || user.role === 'SuperAdmin';
+      const isAdmin = user.role === 'Admin' || user.role === 'SuperAdmin' || user.role === 'Super Admin';
       if (isAdmin) {
         const { data: qCost } = await supabase.from('quotation_costing').select('*').eq('quotation_id', id).maybeSingle();
         costing = qCost;
@@ -75,7 +73,7 @@ export async function GET(request, { params }) {
       items = (localDb.quotation_items || []).filter(item => item.quotation_id === id);
       
       const fullCosting = (localDb.quotation_costings || []).find(c => c.quotation_id === id);
-      const isAdmin = user.role === 'Admin' || user.role === 'SuperAdmin';
+      const isAdmin = user.role === 'Admin' || user.role === 'SuperAdmin' || user.role === 'Super Admin';
 
       if (fullCosting) {
         if (isAdmin) {
@@ -92,7 +90,7 @@ export async function GET(request, { params }) {
     }
 
     // Role check: Employee can only see their own quotations
-    if (user.role === 'Employee' && quotation.created_by !== user.username) {
+    if ((user.role === 'Employee' || user.role === 'Engineer' || user.role === 'Viewer') && quotation.created_by !== user.username) {
       return NextResponse.json({ error: "Unauthorized access to this quotation." }, { status: 403 });
     }
 
@@ -155,13 +153,13 @@ export async function PUT(request, { params }) {
     }
 
     // Employees cannot edit other people's stuff or edit pricing metrics
-    if (user.role === 'Employee' && targetQuotation.created_by !== user.username) {
+    if ((user.role === 'Employee' || user.role === 'Engineer' || user.role === 'Viewer') && targetQuotation.created_by !== user.username) {
       return NextResponse.json({ error: "Unauthorized access to edit this quotation." }, { status: 403 });
     }
 
     const updates = {};
-    const isAdmin = user.role === 'Admin' || user.role === 'SuperAdmin';
-    const isManager = user.role === 'Manager';
+    const isAdmin = user.role === 'Admin' || user.role === 'SuperAdmin' || user.role === 'Super Admin';
+    const isManager = user.role === 'Manager' || user.role === 'Project Manager';
 
     if (client_name !== undefined) updates.client_name = client_name;
     if (contact_person !== undefined) updates.contact_person = contact_person;
@@ -174,7 +172,7 @@ export async function PUT(request, { params }) {
     // Status State Workflow Checks
     if (status !== undefined && targetQuotation.status !== status) {
       // Employees can only send to review (Draft -> Under Review)
-      if (user.role === 'Employee' && status !== 'Under Review' && status !== 'Draft') {
+      if ((user.role === 'Employee' || user.role === 'Engineer' || user.role === 'Viewer') && status !== 'Under Review' && status !== 'Draft') {
         return NextResponse.json({ error: "Employees cannot transition to this state directly." }, { status: 403 });
       }
       
@@ -375,7 +373,7 @@ export async function DELETE(request, { params }) {
     }
 
     // Only Admin can delete or archive
-    if (user.role !== 'Admin' && user.role !== 'SuperAdmin') {
+    if (user.role !== 'Admin' && user.role !== 'SuperAdmin' && user.role !== 'Super Admin') {
       return NextResponse.json({ error: "Admin access required to delete quotations." }, { status: 403 });
     }
 

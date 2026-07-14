@@ -116,10 +116,10 @@ export async function POST(request) {
     const salt = await bcrypt.genSalt(10);
     const password_hash = await bcrypt.hash(password, salt);
 
-    // Determine role (chandrunavalarch@gmail.com is auto-SuperAdmin)
-    const role = finalEmail === 'chandrunavalarch@gmail.com' ? 'SuperAdmin' : 'Employee';
-    // If SuperAdmin or Admin, auto-approve, otherwise Pending
-    const status = (role === 'SuperAdmin' || role === 'Admin') ? 'Approved' : 'Pending';
+    // Determine role (permanent admin email gets elevated privileges)
+    const role = finalEmail === 'chandrunavalarch@gmail.com' ? 'Super Admin' : 'Engineer';
+    // If Super Admin or Admin, auto-approve, otherwise Pending
+    const status = (role === 'Super Admin' || role === 'Admin') ? 'Approved' : 'Pending';
 
     let insertedUser = null;
 

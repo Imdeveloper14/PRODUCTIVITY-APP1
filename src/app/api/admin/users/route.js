@@ -1,14 +1,13 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import jwt from 'jsonwebtoken';
 import nodemailer from 'nodemailer';
 import { getLocalDb, saveLocalDb, isSupabaseTableAvailable } from '../../../utils/dbFallback';
+import { PERMANENT_ADMIN_EMAIL, PERMANENT_ADMIN_USERNAME } from '../../../utils/authBootstrap';
+import { verifySessionToken } from '../../../utils/session';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 const supabase = (supabaseUrl && supabaseAnonKey) ? createClient(supabaseUrl, supabaseAnonKey) : null;
-
-const JWT_SECRET = process.env.JWT_SECRET || 'aura_secret_key_123456_change_me';
 
 import { hasPermission } from '../../../utils/permissions';
 
@@ -26,11 +25,12 @@ function verifyAdmin(request) {
 
     if (!token) return null;
 
-    const decoded = jwt.verify(token, JWT_SECRET);
+    const decoded = verifySessionToken(token);
     const role = decoded.role || 'Employee';
     const email = decoded.email || '';
+    const normalizedEmail = String(email).toLowerCase();
     
-    if (hasPermission(role, 'canManageUsers') || email === 'chandrunavalarch@gmail.com' || role === 'SuperAdmin' || role === 'Admin') {
+    if (hasPermission(role, 'canManageUsers') || normalizedEmail === PERMANENT_ADMIN_EMAIL || role === 'Super Admin' || role === 'Admin' || role === 'SuperAdmin') {
       return decoded;
     }
     
@@ -181,6 +181,20 @@ export async function PUT(request) {
       targetUser = localDb.users.find(u => u.id === userId);
       if (!targetUser) {
         return NextResponse.json({ error: "User account not found." }, { status: 404 });
+      }
+    }
+
+    const isPermanentAdmin =
+      String(targetUser.email || '').toLowerCase() === PERMANENT_ADMIN_EMAIL ||
+      String(targetUser.username || '').toLowerCase() === PERMANENT_ADMIN_USERNAME.toLowerCase() ||
+      targetUser.is_system_admin;
+
+    if (isPermanentAdmin) {
+      if (newStatus && newStatus !== 'Approved') {
+        return NextResponse.json({ error: "The permanent administrator cannot be disabled or suspended." }, { status: 403 });
+      }
+      if (newRole && newRole !== 'Super Admin' && newRole !== 'SuperAdmin') {
+        return NextResponse.json({ error: "The permanent administrator cannot be demoted." }, { status: 403 });
       }
     }
 
