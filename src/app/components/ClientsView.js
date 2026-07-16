@@ -47,19 +47,21 @@ export default function ClientsView({
     e.preventDefault();
     if (!newClient.name) return;
 
-    const record = {
-      name: newClient.name,
-      phone: newClient.phone || '',
-      email: newClient.email || '',
-      company: newClient.company || '',
-      notes: newClient.notes || '',
-      project_history: 'None yet',
-      user_id: user?.id || null
-    };
-
     let savedToSupabase = false;
     if (supabase) {
       try {
+        const { data: { user: authUser } } = await supabase.auth.getUser();
+        
+        const record = {
+          name: newClient.name,
+          phone: newClient.phone || '',
+          email: newClient.email || '',
+          company: newClient.company || '',
+          notes: newClient.notes || '',
+          project_history: 'None yet',
+          user_id: authUser?.id || user?.id || null
+        };
+
         const { data, error } = await supabase
           .from('clients')
           .insert([record])
