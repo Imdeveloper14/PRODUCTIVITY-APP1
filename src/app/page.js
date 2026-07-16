@@ -912,27 +912,25 @@ export default function Home() {
     const quote = parseFloat(newProject.quoteAmount) || 0;
     const paid = parseFloat(newProject.paidAmount) || 0;
 
-    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-    const isValidUuid = user?.id && uuidRegex.test(user.id);
-    const isValidClientIdUuid = newProject.clientId && uuidRegex.test(newProject.clientId);
-
-    const record = {
-      title: newProject.title,
-      client_id: newProject.clientId,
-      cad_type: newProject.cadType,
-      status: newProject.status || 'In Progress',
-      deadline: newProject.deadline || null,
-      quote_amount: quote,
-      paid_amount: paid,
-      balance_amount: quote - paid,
-      file_notes: newProject.fileNotes || '',
-      progress: 0,
-      user_id: isValidUuid ? user.id : null
-    };
-
     let savedToSupabase = false;
-    if (supabase && isValidUuid && isValidClientIdUuid) {
+    if (supabase) {
       try {
+        const { data: { user: authUser } } = await supabase.auth.getUser();
+
+        const record = {
+          title: newProject.title,
+          client_id: newProject.clientId,
+          cad_type: newProject.cadType,
+          status: newProject.status || 'In Progress',
+          deadline: newProject.deadline || null,
+          quote_amount: quote,
+          paid_amount: paid,
+          balance_amount: quote - paid,
+          file_notes: newProject.fileNotes || '',
+          progress: 0,
+          user_id: authUser?.id || user?.id || null
+        };
+
         const { data, error } = await supabase
           .from('projects')
           .insert([record])
