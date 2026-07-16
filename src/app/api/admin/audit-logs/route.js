@@ -13,7 +13,7 @@ import { hasPermission } from '../../../utils/permissions';
 // Helper to authenticate admin
 function verifyAdmin(request) {
   try {
-    let token = request.cookies.get('aura_token')?.value;
+    let token = request.cookies.get('supabase_access_token')?.value;
 
     if (!token) {
       const authHeader = request.headers.get('Authorization');
@@ -24,12 +24,21 @@ function verifyAdmin(request) {
 
     if (!token) return null;
 
-    const decoded = verifySessionToken(token);
-    const role = decoded.role || 'Employee';
+    const jwt = require('jsonwebtoken');
+    const decoded = jwt.decode(token);
+    if (!decoded) return null;
+
+    const meta = decoded.user_metadata || {};
+    const role = meta.role || 'Employee';
     const email = decoded.email || '';
     
     if (hasPermission(role, 'canViewAuditLogs') || String(email).toLowerCase() === PERMANENT_ADMIN_EMAIL || role === 'Super Admin' || role === 'Admin' || role === 'SuperAdmin') {
-      return decoded;
+      return {
+        id: decoded.sub,
+        email: email,
+        username: meta.username || email.split('@')[0],
+        role: role
+      };
     }
     
     // Log unauthorized attempt if role lacks permission
@@ -39,8 +48,8 @@ function verifyAdmin(request) {
           supabase.from('aura_audit_logs').insert({
             event_type: 'unauthorized_access_attempt',
             email: email,
-            username: decoded.username || 'unknown',
-            actor: decoded.username || 'unknown',
+            username: meta.username || 'unknown',
+            actor: meta.username || 'unknown',
             details: `Unauthorized attempt to access Admin Audit Logs API by role ${role}`
           }).then(({ error }) => { if (error) console.error("Error logging violation:", error); });
         } else {
@@ -49,8 +58,8 @@ function verifyAdmin(request) {
             id: `log-${Date.now()}`,
             event_type: 'unauthorized_access_attempt',
             email: email,
-            username: decoded.username || 'unknown',
-            actor: decoded.username || 'unknown',
+            username: meta.username || 'unknown',
+            actor: meta.username || 'unknown',
             details: `Unauthorized attempt to access Admin Audit Logs API by role ${role}`,
             created_at: new Date().toISOString()
           });
