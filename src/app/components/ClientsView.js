@@ -47,9 +47,6 @@ export default function ClientsView({
     e.preventDefault();
     if (!newClient.name) return;
 
-    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-    const isValidUuid = user?.id && uuidRegex.test(user.id);
-
     const record = {
       name: newClient.name,
       phone: newClient.phone || '',
@@ -57,7 +54,7 @@ export default function ClientsView({
       company: newClient.company || '',
       notes: newClient.notes || '',
       project_history: 'None yet',
-      user_id: isValidUuid ? user.id : null
+      user_id: user?.id || null
     };
 
     let savedToSupabase = false;
