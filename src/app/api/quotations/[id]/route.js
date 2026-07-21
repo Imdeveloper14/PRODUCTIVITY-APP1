@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
-import { getLocalDb, saveLocalDb, isSupabaseTableAvailable, supabase } from '../../../utils/dbFallback';
+import { getLocalDb, saveLocalDb, isSupabaseTableAvailable } from '../../../utils/dbFallback';
+import { supabase } from '../../../utils/supabase';
 import { verifySessionToken } from '../../../utils/session';
 
 // Helper to authenticate user

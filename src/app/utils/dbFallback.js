@@ -2,6 +2,8 @@ import fs from 'fs';
 import path from 'path';
 import { supabase } from './supabase';
 
+export { supabase };
+
 const DB_FILE = path.join(process.cwd(), 'db.json');
 const IS_VERCEL_RUNTIME = process.env.VERCEL === '1';
 

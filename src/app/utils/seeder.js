@@ -1,5 +1,6 @@
 import bcrypt from 'bcryptjs';
-import { getLocalDb, saveLocalDb, isSupabaseTableAvailable, supabase } from './dbFallback';
+import { getLocalDb, saveLocalDb, isSupabaseTableAvailable } from './dbFallback';
+import { supabase } from './supabase';
 import { DEFAULT_ADMIN_PASSWORD, PERMANENT_ADMIN_EMAIL, PERMANENT_ADMIN_USERNAME, normalizeRole } from './authBootstrap';
 
 // Dynamic helper to seed everything
