@@ -1339,6 +1339,81 @@ export default function Home() {
     triggerToast("Project status updated successfully.");
   };
 
+  const handleSoftDeleteClient = async (clientId) => {
+    let savedToSupabase = false;
+    if (supabase && user?.id && !String(clientId).startsWith('c_')) {
+      try {
+        const { error } = await supabase
+          .from('clients')
+          .update({
+            is_deleted: true,
+            deleted_at: new Date().toISOString(),
+            deleted_by: user.id
+          })
+          .eq('id', clientId);
+        if (!error) savedToSupabase = true;
+      } catch (err) {
+        console.error("Supabase soft delete client error:", err);
+      }
+    }
+    const updated = clients.map(c => c.id === clientId ? { ...c, is_deleted: true, deleted_at: new Date().toISOString(), deleted_by: user?.id } : c);
+    setClients(updated);
+    if (!savedToSupabase) {
+      saveState("aura_clients_v7", updated);
+    }
+    setSelectedClient(null);
+    triggerToast("Client archived successfully.");
+  };
+
+  const handleRestoreClient = async (clientId) => {
+    let savedToSupabase = false;
+    if (supabase && user?.id && !String(clientId).startsWith('c_')) {
+      try {
+        const { error } = await supabase
+          .from('clients')
+          .update({
+            is_deleted: false,
+            deleted_at: null,
+            deleted_by: null
+          })
+          .eq('id', clientId);
+        if (!error) savedToSupabase = true;
+      } catch (err) {
+        console.error("Supabase restore client error:", err);
+      }
+    }
+    const updated = clients.map(c => c.id === clientId ? { ...c, is_deleted: false, deleted_at: null, deleted_by: null } : c);
+    setClients(updated);
+    if (!savedToSupabase) {
+      saveState("aura_clients_v7", updated);
+    }
+    setSelectedClient(null);
+    triggerToast("Client restored successfully.");
+  };
+
+  const handlePermanentDeleteClient = async (clientId) => {
+    if (!window.confirm("Are you sure you want to PERMANENTLY delete this client? This action cannot be undone.")) return;
+    let savedToSupabase = false;
+    if (supabase && user?.id && !String(clientId).startsWith('c_')) {
+      try {
+        const { error } = await supabase
+          .from('clients')
+          .delete()
+          .eq('id', clientId);
+        if (!error) savedToSupabase = true;
+      } catch (err) {
+        console.error("Supabase permanent delete client error:", err);
+      }
+    }
+    const updated = clients.filter(c => c.id !== clientId);
+    setClients(updated);
+    if (!savedToSupabase) {
+      saveState("aura_clients_v7", updated);
+    }
+    setSelectedClient(null);
+    triggerToast("Client permanently deleted.");
+  };
+
 
   const handleDeleteTask = async (id) => {
     let deletedFromSupabase = false;
@@ -3654,10 +3729,10 @@ export default function Home() {
         {/* TAB: CLIENTS */}
         {activeTab === 'clients' && (() => {
           const groups = [
-            { label: 'Active', filter: c => !c.status || c.status === 'Active', color: '#10B981' },
-            { label: 'Prospects', filter: c => c.status === 'Prospect', color: '#3B82F6' },
-            { label: 'Completed', filter: c => c.status === 'Completed', color: '#8B5CF6' },
-            { label: 'Archived', filter: c => c.status === 'Archived', color: 'var(--text-muted)' },
+            { label: 'Active', filter: c => !c.is_deleted && (!c.status || c.status === 'Active'), color: '#10B981' },
+            { label: 'Prospects', filter: c => !c.is_deleted && c.status === 'Prospect', color: '#3B82F6' },
+            { label: 'Completed', filter: c => !c.is_deleted && c.status === 'Completed', color: '#8B5CF6' },
+            { label: 'Archived / Deleted', filter: c => c.is_deleted || c.status === 'Archived', color: 'var(--text-muted)' },
           ];
           const toggleClientGroup = (id) => {
             const el = document.getElementById('client-group-' + id);
@@ -3870,9 +3945,27 @@ export default function Home() {
                     <h1 style={{ fontSize: '1.5rem', fontWeight: '800', margin: '2px 0 0' }}>{selectedClient.name}</h1>
                     <p style={{ margin: '4px 0 0 0', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{selectedClient.company} | GSTIN: {selectedClient.notes?.includes("GSTIN:") ? selectedClient.notes.split("GSTIN:")[1].trim().slice(0, 15) : '29BBBBB2222B2Z2'}</p>
                   </div>
-                  <div style={{ display: 'flex', gap: '8px' }}>
+                  <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                     <button className="btn btn-secondary" onClick={() => setSelectedClient(null)}>Back to list</button>
-                    <button className="btn btn-primary" onClick={triggerNewProjectFlow}>+ New Project</button>
+                    {selectedClient.is_deleted ? (
+                      <>
+                        <button className="btn" style={{ background: 'var(--color-success)', color: 'white', padding: '6px 14px', fontSize: '0.8rem', borderRadius: '6px', border: 'none' }} onClick={() => handleRestoreClient(selectedClient.id)}>
+                          ↩ Restore Client
+                        </button>
+                        {(user?.role === 'Admin' || user?.role === 'Super Admin') && (
+                          <button className="btn" style={{ background: 'var(--color-danger)', color: 'white', padding: '6px 14px', fontSize: '0.8rem', borderRadius: '6px', border: 'none' }} onClick={() => handlePermanentDeleteClient(selectedClient.id)}>
+                            🗑 Permanently Delete
+                          </button>
+                        )}
+                      </>
+                    ) : (
+                      <>
+                        <button className="btn btn-primary" onClick={triggerNewProjectFlow}>+ New Project</button>
+                        <button className="btn" style={{ background: 'var(--color-danger)', color: 'white', padding: '6px 14px', fontSize: '0.8rem', borderRadius: '6px', border: 'none' }} onClick={() => handleSoftDeleteClient(selectedClient.id)}>
+                          🗑 Archive / Delete
+                        </button>
+                      </>
+                    )}
                   </div>
                 </div>
 
