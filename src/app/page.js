@@ -3786,17 +3786,36 @@ export default function Home() {
                     </div>
                   )}
 
-                  {clientSubTab === 'Timeline' && (
-                    <div>
-                      <h4 style={{ margin: '0 0 12px 0', fontSize: '0.95rem' }}>Client Interaction & System Event Timeline</h4>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                        <div style={{ borderLeft: '2px solid var(--accent)', paddingLeft: '12px', fontSize: '0.8rem' }}>
-                          <strong>Client Database Record Activated</strong> - system<br />
-                          <span style={{ color: 'var(--text-muted)' }}>Created successfully via workspace registration interface.</span>
-                        </div>
+                  {clientSubTab === 'Timeline' && (() => {
+                    const clientTimelineEvents = (activities || []).filter(act => 
+                      act.client_id === selectedClient.id || 
+                      (act.meta && act.meta.client_id === selectedClient.id) ||
+                      (act.details && act.details.includes(selectedClient.name))
+                    );
+
+                    return (
+                      <div>
+                        <h4 style={{ margin: '0 0 12px 0', fontSize: '0.95rem' }}>Client Interaction &amp; System Event Timeline</h4>
+                        {clientTimelineEvents.length > 0 ? (
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                            {clientTimelineEvents.map((evt, idx) => (
+                              <div key={evt.id || idx} style={{ borderLeft: '3px solid var(--accent)', paddingLeft: '12px', fontSize: '0.8rem', background: 'rgba(255,255,255,0.02)', padding: '8px 12px', borderRadius: '0 6px 6px 0' }}>
+                                <strong>{evt.action || evt.title || 'System Activity'}</strong> - <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>{evt.created_at || evt.timestamp ? new Date(evt.created_at || evt.timestamp).toLocaleString() : 'Recent'}</span><br />
+                                <span style={{ color: 'var(--text-secondary)' }}>{evt.details || evt.description || 'Activity recorded.'}</span>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                            <div style={{ borderLeft: '3px solid var(--accent)', paddingLeft: '12px', fontSize: '0.8rem', background: 'rgba(255,255,255,0.02)', padding: '8px 12px', borderRadius: '0 6px 6px 0' }}>
+                              <strong>Client Database Record Created</strong> - <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>Initial Profile Event</span><br />
+                              <span style={{ color: 'var(--text-secondary)' }}>Registered in corporate CRM directory. Linked to active project workspace.</span>
+                            </div>
+                          </div>
+                        )}
                       </div>
-                    </div>
-                  )}
+                    );
+                  })()}
                 </div>
               </div>
             );

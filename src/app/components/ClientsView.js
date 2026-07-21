@@ -111,14 +111,80 @@ export default function ClientsView({
     setShowClientModal(false);
   };
 
-  // Filter clients
+  const [activeTab, setActiveTab] = useState('active'); // 'all', 'active', 'archived'
+
+  // Soft delete client
+  const handleSoftDeleteClient = async (clientId) => {
+    if (supabase) {
+      try {
+        const { data: { user: authUser } } = await supabase.auth.getUser();
+        await supabase
+          .from('clients')
+          .update({
+            is_deleted: true,
+            deleted_at: new Date().toISOString(),
+            deleted_by: authUser?.id || user?.id || null
+          })
+          .eq('id', clientId);
+      } catch (err) {
+        console.error("Soft delete client exception:", err);
+      }
+    }
+    setClients(prev => prev.map(c => c.id === clientId ? { ...c, is_deleted: true, deleted_at: new Date().toISOString(), deleted_by: user?.id } : c));
+    triggerToast('Client archived successfully.');
+  };
+
+  // Restore client
+  const handleRestoreClient = async (clientId) => {
+    if (supabase) {
+      try {
+        await supabase
+          .from('clients')
+          .update({
+            is_deleted: false,
+            deleted_at: null,
+            deleted_by: null
+          })
+          .eq('id', clientId);
+      } catch (err) {
+        console.error("Restore client exception:", err);
+      }
+    }
+    setClients(prev => prev.map(c => c.id === clientId ? { ...c, is_deleted: false, deleted_at: null, deleted_by: null } : c));
+    triggerToast('Client restored successfully.');
+  };
+
+  // Permanent delete client (Admin only)
+  const handlePermanentDeleteClient = async (clientId) => {
+    if (!window.confirm('Are you sure you want to PERMANENTLY delete this client? Linked projects and invoices will remain.')) return;
+    if (supabase) {
+      try {
+        await supabase
+          .from('clients')
+          .delete()
+          .eq('id', clientId);
+      } catch (err) {
+        console.error("Permanent delete client exception:", err);
+      }
+    }
+    setClients(prev => prev.filter(c => c.id !== clientId));
+    triggerToast('Client permanently deleted.');
+  };
+
+  // Filter clients by search term and archive tab status
   const filteredClients = clients.filter(c => {
     const searchLower = searchTerm.toLowerCase();
-    return (
+    const matchesSearch = (
       c.name.toLowerCase().includes(searchLower) ||
       (c.company && c.company.toLowerCase().includes(searchLower)) ||
       (c.email && c.email.toLowerCase().includes(searchLower))
     );
+
+    if (!matchesSearch) return false;
+
+    if (activeTab === 'active') return !c.is_deleted;
+    if (activeTab === 'archived') return c.is_deleted === true;
+    return true; // 'all'
   });
 
   // Pagination calculations
@@ -126,6 +192,8 @@ export default function ClientsView({
   const indexOfFirstClient = indexOfLastClient - clientsPerPage;
   const currentClients = filteredClients.slice(indexOfFirstClient, indexOfLastClient);
   const totalPages = Math.ceil(filteredClients.length / clientsPerPage) || 1;
+
+  const isAdmin = user?.role === 'Super Admin' || user?.role === 'Admin';
 
   return (
     <div>
@@ -140,7 +208,31 @@ export default function ClientsView({
         </div>
       </div>
 
-      {/* Search system */}
+      {/* Tabs and Search system */}
+      <div style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
+        <button 
+          className={`btn ${activeTab === 'active' ? 'btn-primary' : 'btn-secondary'}`}
+          style={{ padding: '6px 14px', fontSize: '0.8rem' }}
+          onClick={() => { setActiveTab('active'); setCurrentPage(1); }}
+        >
+          Active Clients ({clients.filter(c => !c.is_deleted).length})
+        </button>
+        <button 
+          className={`btn ${activeTab === 'archived' ? 'btn-primary' : 'btn-secondary'}`}
+          style={{ padding: '6px 14px', fontSize: '0.8rem' }}
+          onClick={() => { setActiveTab('archived'); setCurrentPage(1); }}
+        >
+          Archived Clients ({clients.filter(c => c.is_deleted).length})
+        </button>
+        <button 
+          className={`btn ${activeTab === 'all' ? 'btn-primary' : 'btn-secondary'}`}
+          style={{ padding: '6px 14px', fontSize: '0.8rem' }}
+          onClick={() => { setActiveTab('all'); setCurrentPage(1); }}
+        >
+          All Clients ({clients.length})
+        </button>
+      </div>
+
       <div className="card" style={{ background: 'var(--bg-sidebar)', padding: '16px', marginBottom: '24px', display: 'flex', gap: '12px', alignItems: 'center', margin: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'rgba(0,0,0,0.2)', padding: '6px 12px', borderRadius: '6px', border: '1px solid var(--border-color)', flex: 1 }}>
           <Search size={14} style={{ color: 'var(--text-muted)' }} />
@@ -158,15 +250,22 @@ export default function ClientsView({
         <div className="card" style={{ textAlign: 'center', padding: '60px 40px', background: 'rgba(255,255,255,0.01)', border: '1px dashed var(--border-color)', borderRadius: '12px', marginTop: '24px' }}>
           <div style={{ fontSize: '2.5rem', marginBottom: '16px' }}>👥</div>
           <h3 style={{ margin: '0 0 8px 0', fontSize: '1.1rem' }}>No Clients Found</h3>
-          <p style={{ color: 'var(--text-secondary)', marginBottom: '24px', fontSize: '0.9rem', maxWidth: '360px', marginLeft: 'auto', marginRight: 'auto' }}>Create client profiles to associate with active CAD models.</p>
+          <p style={{ color: 'var(--text-secondary)', marginBottom: '24px', fontSize: '0.9rem', maxWidth: '360px', marginLeft: 'auto', marginRight: 'auto' }}>
+            {activeTab === 'archived' ? 'No archived clients found.' : 'Create client profiles to associate with active CAD models.'}
+          </p>
         </div>
       ) : (
         <>
           <div className="grid-3" style={{ marginTop: '24px' }}>
             {currentClients.map(c => (
-              <div key={c.id} className="card" style={{ margin: 0, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '10px', minHeight: '160px' }}>
+              <div key={c.id} className="card" style={{ margin: 0, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', background: 'var(--bg-card)', border: c.is_deleted ? '1px dashed var(--color-danger)' : '1px solid var(--border-color)', borderRadius: '10px', minHeight: '160px', opacity: c.is_deleted ? 0.8 : 1 }}>
                 <div>
-                  <h3 style={{ fontSize: '1.1rem', fontWeight: '750', margin: '0 0 4px 0', color: 'var(--text-primary)' }}>{c.name}</h3>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                    <h3 style={{ fontSize: '1.1rem', fontWeight: '750', margin: '0 0 4px 0', color: 'var(--text-primary)' }}>{c.name}</h3>
+                    {c.is_deleted && (
+                      <span style={{ fontSize: '0.65rem', padding: '2px 6px', background: 'rgba(239, 68, 68, 0.15)', color: 'var(--color-danger)', borderRadius: '4px', fontWeight: '700' }}>ARCHIVED</span>
+                    )}
+                  </div>
                   <span style={{ fontSize: '0.75rem', color: 'var(--accent)', fontWeight: '600', display: 'block', marginBottom: '12px' }}>{c.company || 'Individual Freelancer'}</span>
                   
                   <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', display: 'flex', flexDirection: 'column', gap: '6px' }}>
@@ -181,9 +280,20 @@ export default function ClientsView({
                   </div>
                 </div>
 
-                <div style={{ borderTop: '1px solid var(--border-color)', marginTop: '16px', paddingTop: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Registered Client</span>
-                  <button className="btn btn-secondary" style={{ padding: '2px 8px', fontSize: '0.7rem', minHeight: '26px' }} onClick={() => triggerToast(`Contacting ${c.name}...`)}>Contact</button>
+                <div style={{ borderTop: '1px solid var(--border-color)', marginTop: '16px', paddingTop: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                  {c.is_deleted ? (
+                    <>
+                      <button className="btn btn-secondary" style={{ padding: '2px 8px', fontSize: '0.7rem', minHeight: '26px', color: 'var(--color-success)' }} onClick={() => handleRestoreClient(c.id)}>↩ Restore</button>
+                      {isAdmin && (
+                        <button className="btn btn-secondary" style={{ padding: '2px 8px', fontSize: '0.7rem', minHeight: '26px', color: 'var(--color-danger)' }} onClick={() => handlePermanentDeleteClient(c.id)}>🗑 Delete Permanently</button>
+                      )}
+                    </>
+                  ) : (
+                    <>
+                      <button className="btn btn-secondary" style={{ padding: '2px 8px', fontSize: '0.7rem', minHeight: '26px' }} onClick={() => triggerToast(`Contacting ${c.name}...`)}>Contact</button>
+                      <button className="btn btn-secondary" style={{ padding: '2px 8px', fontSize: '0.7rem', minHeight: '26px', color: 'var(--color-danger)' }} onClick={() => handleSoftDeleteClient(c.id)}>📁 Archive</button>
+                    </>
+                  )}
                 </div>
               </div>
             ))}

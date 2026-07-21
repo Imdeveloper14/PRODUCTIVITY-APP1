@@ -47,49 +47,13 @@ const safeAutoTable = (doc, options) => {
   }
 };
 
-// Draws a very faint engineering grid background (5% opacity visual grid)
-const drawFaintEngineeringWatermark = (doc) => {
-  const pageHeight = doc.internal.pageSize.height;
-  const pageWidth = doc.internal.pageSize.width;
-  
-  doc.setDrawColor(153, 27, 27); // Dark Red Primary
-  doc.setLineWidth(0.05);
-  
-  // Draw vertical grid lines
-  for (let x = 10; x < pageWidth; x += 20) {
-    doc.line(x, 10, x, pageHeight - 10);
-  }
-  // Draw horizontal grid lines
-  for (let y = 10; y < pageHeight; y += 20) {
-    doc.line(10, y, pageWidth - 10, y);
-  }
-
-  // Centered circular compass watermark symbol
-  doc.setDrawColor(153, 27, 27);
-  doc.circle(pageWidth / 2, pageHeight / 2, 40, 'D');
-  doc.circle(pageWidth / 2, pageHeight / 2, 42, 'D');
-  doc.line(pageWidth / 2 - 50, pageHeight / 2, pageWidth / 2 + 50, pageHeight / 2);
-  doc.line(pageWidth / 2, pageHeight / 2 - 50, pageWidth / 2, pageHeight / 2 + 50);
-
-  doc.setTextColor(153, 27, 27);
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(24);
-  doc.text("PRIMELISOMETRICS CONSULTANCY", pageWidth / 2, pageHeight / 2 + 5, { align: 'center', angle: 45 });
-
-  // Reset graphics state manually to defaults
-  doc.setDrawColor(0, 0, 0);
-  doc.setLineWidth(0.2);
-  doc.setTextColor(0, 0, 0);
-  doc.setFont("helvetica", "normal");
-};
-
-// Shared currency formatting function (avoids Unicode glyph overlaps by using "Rs.")
+// Currency formatting helper using standard Rs. prefix
 export const formatCurrency = (amount) => {
   const val = Number(amount) || 0;
-  return `Rs. ${val.toLocaleString('en-IN')}`;
+  return `Rs. ${val.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 };
 
-// Main function to generate the premium engineering invoice PDF
+// Main function to generate executive consultancy invoice PDF
 export const generateAndDownloadPDF = async ({
   inv,
   clients = [],
@@ -101,7 +65,7 @@ export const generateAndDownloadPDF = async ({
   setInvoiceError = null,
   previewOnly = false
 }) => {
-  if (setInvoiceLoading) setInvoiceLoading('Generating Engineering PDF...');
+  if (setInvoiceLoading) setInvoiceLoading('Generating Executive PDF...');
   if (setInvoiceError) setInvoiceError('');
   
   try {
@@ -109,305 +73,383 @@ export const generateAndDownloadPDF = async ({
     const proj = projects.find(p => p.id === inv.project_id || p.title === inv.project_id);
     const quote = quotations.find(q => q.project_name?.toLowerCase() === proj?.title?.toLowerCase() || q.quotation_number === proj?.quoteAmount);
 
-    const clientName = client ? client.name : "Unknown_Client";
-    const sanitizedClientName = clientName.replace(/\s+/g, '_');
-    const fileName = `${inv.invoice_number}_${sanitizedClientName}.pdf`;
+    // Clean sequential filename: INV-2026-0001.pdf or INV-2026-0001-R1.pdf
+    const baseInvNum = inv.invoice_number || 'INV-2026-0001';
+    const revisionSuffix = inv.revision ? `-R${inv.revision}` : '';
+    const fileName = `${baseInvNum}${revisionSuffix}.pdf`;
 
     const doc = new jsPDF('p', 'mm', 'a4');
-    
-    // Draw 5% opacity engineering grid
-    drawFaintEngineeringWatermark(doc);
-    
+    const pageWidth = doc.internal.pageSize.width; // 210mm
+    const pageHeight = doc.internal.pageSize.height; // 297mm
+
     // Parse GST metadata
     const gstData = parseInvoiceNotes(inv.notes);
     const isLocal = gstData.client_state === 'Karnataka';
-    const taxableAmount = Math.max(0, inv.current_billing_amount - inv.discount);
+    const taxableAmount = Math.max(0, (inv.current_billing_amount || 0) - (inv.discount || 0));
 
-    // 1. Premium Logo & Brand Header
-    doc.setFillColor(153, 27, 27); // Dark Red Brand
-    doc.rect(0, 0, 210, 48, 'F');
+    // ----------------------------------------------------------------------
+    // 1. HEADER & BRANDING (Clean Corporate Executive Bar)
+    // ----------------------------------------------------------------------
+    doc.setFillColor(15, 23, 42); // Deep Navy Primary
+    doc.rect(0, 0, pageWidth, 42, 'F');
     
-    // Brand details (Left)
+    // Company Title & Subtitle (Left)
     doc.setTextColor(255, 255, 255);
     doc.setFont("helvetica", "bold");
     doc.setFontSize(18);
-    doc.text("PRIMELISOMETRICS CONSULTANCY", 15, 16);
-    
-    doc.setFontSize(8);
-    doc.setFont("helvetica", "normal");
-    doc.text("Premium Marine Engineering, 3D BIM, Scantlings & ERP Systems", 15, 21);
-    doc.text("GSTIN: 29AAAAA1111A1Z1 | PAN: AAAAA1111A | CIN: U74140KA2026PTC123456", 15, 25);
-    doc.text("Registered Office: Suite 404, Tech Park, Bangalore, Karnataka, 560001, India", 15, 29);
-    doc.text("Email: support@primelisometrics.com | Web: www.primelisometrics.com | Ph: +91 99999 88888", 15, 33);
-    
-    // Draw Visual Brand Logo Symbol (Hexagon Grid)
-    doc.setDrawColor(255, 255, 255);
-    doc.setLineWidth(0.4);
-    doc.line(15, 39, 195, 39);
+    doc.text("PRIMELISOMETRICS", 14, 15);
 
-    // Invoice Meta Header (Right)
+    doc.setFontSize(9);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(203, 213, 225); // Slate 300
+    doc.text("Marine Engineering Consultancy", 14, 21);
+    doc.setFontSize(7.5);
+    doc.text("GSTIN: 29AAAAA1111A1Z1 | PAN: AAAAA1111A", 14, 26);
+    doc.text("Suite 404, Tech Park, Bangalore, KA, 560001, India", 14, 30);
+    doc.text("Email: support@primelisometrics.com | Ph: +91 99999 88888", 14, 34);
+
+    // Invoice Header Title (Right)
+    doc.setTextColor(255, 255, 255);
     doc.setFontSize(22);
     doc.setFont("helvetica", "bold");
-    doc.text("INVOICE", 150, 16);
-    
-    doc.setFontSize(9);
-    doc.text(`No: ${inv.invoice_number || 'INV-2026-XXXX'}`, 150, 23);
-    doc.setFont("helvetica", "normal");
-    doc.text(`Revision: R-0`, 150, 28);
-    doc.text(`Status: ${(inv.payment_status || 'Pending').toUpperCase()}`, 150, 33);
+    doc.text("INVOICE", pageWidth - 14, 16, { align: 'right' });
 
-    // 2. Client & Project Columns
-    doc.setTextColor(30, 41, 59);
+    doc.setFontSize(9);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(203, 213, 225);
+    doc.text(`Invoice No: ${baseInvNum}`, pageWidth - 14, 23, { align: 'right' });
+    doc.text(`Date: ${inv.invoice_date || new Date().toISOString().split('T')[0]}`, pageWidth - 14, 28, { align: 'right' });
+    doc.text(`Due Date: ${inv.due_date || 'Payment Upon Receipt'}`, pageWidth - 14, 33, { align: 'right' });
+
+    // Status Pill
+    const statusText = (inv.payment_status || 'Draft').toUpperCase();
+    doc.setFillColor(statusText === 'PAID' ? 34 : statusText === 'CLOSED' ? 71 : 217, statusText === 'PAID' ? 197 : statusText === 'CLOSED' ? 85 : 119, statusText === 'PAID' ? 94 : statusText === 'CLOSED' ? 105 : 6);
+    doc.rect(pageWidth - 42, 36, 28, 4.5, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(6.5);
+    doc.setFont("helvetica", "bold");
+    doc.text(statusText, pageWidth - 28, 39.2, { align: 'center' });
+
+    // ----------------------------------------------------------------------
+    // 2. CLIENT DETAILS & INVOICE SUMMARY
+    // ----------------------------------------------------------------------
+    let currentY = 48;
+
+    // Bill To Box (Left Column)
+    doc.setFillColor(248, 250, 252); // Light Gray Background
+    doc.rect(14, currentY, 88, 34, 'F');
+    doc.setDrawColor(226, 232, 240);
+    doc.rect(14, currentY, 88, 34, 'S');
+
+    doc.setTextColor(15, 23, 42);
     doc.setFontSize(8.5);
     doc.setFont("helvetica", "bold");
-    doc.text("CLIENT / BILLING DETAILS:", 15, 55);
-    doc.setFont("helvetica", "normal");
-    doc.text(`Company: ${client?.company || 'Company N/A'}`, 15, 60);
-    doc.text(`Contact: ${client?.name || 'Contact N/A'}`, 15, 64);
-    doc.text(`GSTIN: ${client?.notes?.includes("GSTIN:") ? client.notes.split("GSTIN:")[1].trim().slice(0, 15) : '29BBBBB2222B2Z2'}`, 15, 68);
-    doc.text(`Address: ${client?.notes || 'Bangalore Office, India'}`, 15, 72, { maxWidth: 55 });
-    doc.text(`State: ${gstData.client_state || 'Karnataka'} | Country: India`, 15, 80);
+    doc.text("BILL TO", 18, currentY + 6);
 
+    doc.setFontSize(8);
     doc.setFont("helvetica", "bold");
-    doc.text("PROJECT & ENGINEERING METADATA:", 75, 55);
+    doc.text(client?.company || client?.name || 'Client Name N/A', 18, currentY + 11);
     doc.setFont("helvetica", "normal");
-    doc.text(`Project Code: PRJ-${(proj?.id || 'XXXX').slice(0, 5).toUpperCase()}`, 75, 60);
-    doc.text(`Project Name: ${proj?.title || 'General Engineering'}`, 75, 64);
-    doc.text(`Quote Ref: ${quote?.quotation_number || 'Q-2026-0001'}`, 75, 68);
-    doc.text(`Discipline: Naval Architecture`, 75, 72);
-    doc.text(`Engineer in Charge: Ashok Kumar`, 75, 76);
-    doc.text(`Billing Method: Milestone-Based`, 75, 80);
+    doc.setTextColor(71, 85, 105);
+    doc.text(`Contact: ${client?.name || 'N/A'}`, 18, currentY + 16);
+    doc.text(`Email: ${client?.email || 'N/A'}`, 18, currentY + 20);
+    doc.text(`Phone: ${client?.phone || 'N/A'}`, 18, currentY + 24);
+    doc.text(`GSTIN: ${client?.notes?.includes("GSTIN:") ? client.notes.split("GSTIN:")[1].trim().slice(0, 15) : '29BBBBB2222B2Z2'}`, 18, currentY + 28);
 
+    // Invoice Summary Box (Right Column)
+    doc.setFillColor(248, 250, 252);
+    doc.rect(108, currentY, 88, 34, 'F');
+    doc.setDrawColor(226, 232, 240);
+    doc.rect(108, currentY, 88, 34, 'S');
+
+    doc.setTextColor(15, 23, 42);
+    doc.setFontSize(8.5);
     doc.setFont("helvetica", "bold");
-    doc.text("ERP RUNTIME DATES:", 145, 55);
+    doc.text("INVOICE SUMMARY", 112, currentY + 6);
+
+    doc.setFontSize(8);
     doc.setFont("helvetica", "normal");
-    doc.text(`Creation Date: ${inv.invoice_date || new Date().toISOString().split('T')[0]}`, 145, 60);
-    doc.text(`Approval Date: ${inv.approved_at || inv.invoice_date || new Date().toISOString().split('T')[0]}`, 145, 64);
-    doc.text(`Invoice Date: ${inv.invoice_date || new Date().toISOString().split('T')[0]}`, 145, 68);
-    doc.text(`Due Date: ${inv.due_date || 'N/A'}`, 145, 72);
-    doc.text(`Project Status: ${proj?.status || 'In Progress'}`, 145, 76);
+    doc.setTextColor(71, 85, 105);
+    doc.text(`Project: ${proj?.title || 'Marine Engineering Scope'}`, 112, currentY + 11);
+    doc.text(`Quote Reference: ${quote?.quotation_number || 'Q-2026-0001'}`, 112, currentY + 16);
+    doc.text(`Invoice Reference: ${inv.invoice_number || baseInvNum}`, 112, currentY + 20);
+    doc.text(`Engineer in Charge: ${user?.name || 'Ashok Kumar'}`, 112, currentY + 24);
+    doc.text(`Currency: ${inv.currency || 'INR (Rs.)'}`, 112, currentY + 28);
 
-    // Divider Line
-    doc.setDrawColor(153, 27, 27);
-    doc.setLineWidth(0.4);
-    doc.line(15, 85, 195, 85);
+    currentY += 40;
 
-    // 3. Deliverables Table (Loads actual deliverables from linked quotation if found, else falls back)
-    const headers = [['No', 'Scope / Engineering Deliverables', 'Discipline', 'Hours', 'Rate', 'Amount']];
+    // ----------------------------------------------------------------------
+    // 3. DELIVERABLES TABLE (Clean Professional Grid with Alternating Rows)
+    // ----------------------------------------------------------------------
+    const headers = [['No', 'Description / Deliverable Scope', 'Qty', 'Unit', 'Rate', 'Amount']];
     let tableRows = [];
 
     if (quote && Array.isArray(quote.deliverables) && quote.deliverables.length > 0) {
       quote.deliverables.forEach((item, index) => {
+        const hrs = item.estimated_hours || 1;
+        const rate = quote.custom_hourly_rate || 850;
         tableRows.push([
           String(index + 1),
-          item.deliverable || 'Scope Module',
-          item.category || quote.project_type || 'Naval Architecture',
-          item.estimated_hours ? `${item.estimated_hours} hrs` : '-',
-          formatCurrency(quote.custom_hourly_rate || 850),
-          formatCurrency((item.estimated_hours || 0) * (quote.custom_hourly_rate || 850))
+          item.deliverable || 'Engineering Service',
+          String(hrs),
+          'Hrs',
+          formatCurrency(rate),
+          formatCurrency(hrs * rate)
         ]);
       });
     } else {
-      // Fallback structured deliverables
       tableRows = [
-        ["1", "Hull Structural & Deflection Finite Element Analysis (FEA)", "Structural", "85 hrs", formatCurrency(850), formatCurrency(72250)],
-        ["2", "General Arrangement Drawing & Deck Machinery Revision", "Naval Arch", "24 hrs", formatCurrency(850), formatCurrency(20400)],
-        ["3", "3D CAD Solid Model & Nesting Drawing Pack", "BIM Model", "40 hrs", formatCurrency(850), formatCurrency(34000)]
+        ["1", "Hull Structural Deflection Analysis & FEA Simulation", "85", "Hrs", formatCurrency(850), formatCurrency(72250)],
+        ["2", "General Arrangement & Deck Machinery Machinery Plan", "24", "Hrs", formatCurrency(850), formatCurrency(20400)],
+        ["3", "3D CAD Solid Model & Nesting Drawing Release", "40", "Hrs", formatCurrency(850), formatCurrency(34000)]
       ];
     }
 
     safeAutoTable(doc, {
       head: headers,
       body: tableRows,
-      startY: 90,
-      theme: 'striped',
-      headStyles: { fillColor: [153, 27, 27], textColor: [255, 255, 255], fontStyle: 'bold' },
-      styles: { fontSize: 8, cellPadding: 3 },
+      startY: currentY,
+      theme: 'grid',
+      headStyles: { 
+        fillColor: [15, 23, 42], 
+        textColor: [255, 255, 255], 
+        fontStyle: 'bold',
+        fontSize: 8.5,
+        cellPadding: 4 
+      },
+      alternateRowStyles: { fillColor: [248, 250, 252] },
+      styles: { fontSize: 8, cellPadding: 3.5, lineColor: [226, 232, 240], lineWidth: 0.1 },
       columnStyles: {
-        0: { cellWidth: 10, halign: 'center' },
+        0: { cellWidth: 12, halign: 'center' },
         1: { cellWidth: 90 },
-        2: { cellWidth: 25 },
-        3: { cellWidth: 15, halign: 'center' },
-        4: { cellWidth: 20, halign: 'right' },
-        5: { cellWidth: 25, halign: 'right' }
+        2: { cellWidth: 16, halign: 'center' },
+        3: { cellWidth: 16, halign: 'center' },
+        4: { cellWidth: 24, halign: 'right' },
+        5: { cellWidth: 26, halign: 'right' }
       }
     });
 
-    // 4. ERP Financial Summary
-    let finalY = doc.lastAutoTable.finalY + 8;
+    currentY = doc.lastAutoTable.finalY + 8;
+
+    // ----------------------------------------------------------------------
+    // 4. FINANCIAL TOTALS BLOCK
+    // ----------------------------------------------------------------------
+    const labelX = 122;
+    const valueX = pageWidth - 14;
+
     doc.setFontSize(8.5);
-    doc.setTextColor(30, 41, 59);
-
-    const alignXLabel = 120;
-    const alignXValue = 195;
-
-    // Reset font for clean measurements
     doc.setFont("helvetica", "normal");
-    
-    // Render each total row ONCE with formatting
-    doc.text("Contract Value (GST Exclusive):", alignXLabel, finalY);
-    doc.text(formatCurrency(inv.contract_value || 0), alignXValue, finalY, { align: 'right' });
-    
-    finalY += 4.5;
-    doc.text("Previously Invoiced:", alignXLabel, finalY);
-    doc.text(formatCurrency(inv.previously_invoiced || 0), alignXValue, finalY, { align: 'right' });
+    doc.setTextColor(71, 85, 105);
 
-    finalY += 4.5;
-    doc.text("Current Billing Amount:", alignXLabel, finalY);
-    doc.text(formatCurrency(inv.current_billing_amount || 0), alignXValue, finalY, { align: 'right' });
+    // Subtotal
+    doc.text("Subtotal:", labelX, currentY);
+    doc.text(formatCurrency(inv.current_billing_amount || 0), valueX, currentY, { align: 'right' });
+    currentY += 4.5;
 
-    finalY += 4.5;
-    doc.text("Remaining Contract Value:", alignXLabel, finalY);
-    doc.text(formatCurrency(inv.remaining_contract_value || 0), alignXValue, finalY, { align: 'right' });
-
-    if (inv.discount > 0) {
-      finalY += 4.5;
-      doc.text("Discount:", alignXLabel, finalY);
-      doc.text(`- ${formatCurrency(inv.discount)}`, alignXValue, finalY, { align: 'right' });
+    // Discount
+    if (inv.discount && inv.discount > 0) {
+      doc.text("Discount:", labelX, currentY);
+      doc.text(`- ${formatCurrency(inv.discount)}`, valueX, currentY, { align: 'right' });
+      currentY += 4.5;
     }
 
-    finalY += 4.5;
+    // Taxable Value
     doc.setFont("helvetica", "bold");
-    doc.text("Taxable Value:", alignXLabel, finalY);
-    doc.text(formatCurrency(taxableAmount), alignXValue, finalY, { align: 'right' });
+    doc.setTextColor(15, 23, 42);
+    doc.text("Taxable Value:", labelX, currentY);
+    doc.text(formatCurrency(taxableAmount), valueX, currentY, { align: 'right' });
     doc.setFont("helvetica", "normal");
+    doc.setTextColor(71, 85, 105);
+    currentY += 4.5;
 
-    // GST Taxes Rows
+    // Taxes
     if (isLocal) {
-      finalY += 4.5;
-      doc.text(`CGST (9%):`, alignXLabel, finalY);
-      doc.text(formatCurrency(gstData.cgst_amount), alignXValue, finalY, { align: 'right' });
-      finalY += 4.5;
-      doc.text(`SGST (9%):`, alignXLabel, finalY);
-      doc.text(formatCurrency(gstData.sgst_amount), alignXValue, finalY, { align: 'right' });
+      doc.text("CGST (9%):", labelX, currentY);
+      doc.text(formatCurrency(gstData.cgst_amount), valueX, currentY, { align: 'right' });
+      currentY += 4.5;
+      doc.text("SGST (9%):", labelX, currentY);
+      doc.text(formatCurrency(gstData.sgst_amount), valueX, currentY, { align: 'right' });
+      currentY += 4.5;
     } else {
-      finalY += 4.5;
-      doc.text(`IGST (18%):`, alignXLabel, finalY);
-      doc.text(formatCurrency(gstData.igst_amount), alignXValue, finalY, { align: 'right' });
+      doc.text("IGST (18%):", labelX, currentY);
+      doc.text(formatCurrency(gstData.igst_amount), valueX, currentY, { align: 'right' });
+      currentY += 4.5;
     }
 
     // Round Off
-    finalY += 4.5;
     const rawTotal = taxableAmount + (gstData.cgst_amount + gstData.sgst_amount + gstData.igst_amount);
     const grandTotal = inv.grand_total || Math.round(rawTotal);
     const roundOff = grandTotal - rawTotal;
-    doc.text("Round Off:", alignXLabel, finalY);
-    doc.text(formatCurrency(roundOff), alignXValue, finalY, { align: 'right' });
+    doc.text("Round Off:", labelX, currentY);
+    doc.text(formatCurrency(roundOff), valueX, currentY, { align: 'right' });
+    currentY += 6;
 
-    // GRAND TOTAL PAYABLE
-    finalY += 6.5;
-    doc.setDrawColor(153, 27, 27);
-    doc.setLineWidth(0.4);
-    doc.line(alignXLabel, finalY - 3, alignXValue, finalY - 3);
-    
+    // Bold Grand Total Line
+    doc.setDrawColor(15, 23, 42);
+    doc.setLineWidth(0.5);
+    doc.line(labelX, currentY - 3, valueX, currentY - 3);
+
     doc.setFont("helvetica", "bold");
-    doc.setFontSize(10);
-    doc.text("TOTAL PAYABLE:", alignXLabel, finalY);
-    doc.text(formatCurrency(grandTotal), alignXValue, finalY, { align: 'right' });
+    doc.setFontSize(11);
+    doc.setTextColor(15, 23, 42);
+    doc.text("GRAND TOTAL:", labelX, currentY);
+    doc.text(formatCurrency(grandTotal), valueX, currentY, { align: 'right' });
+    doc.line(labelX, currentY + 2, valueX, currentY + 2);
 
-    // 5. High-Resolution QR Payment Section (38mm Square)
-    let leftInfoY = doc.lastAutoTable.finalY + 8;
+    // ----------------------------------------------------------------------
+    // 5. PAYMENT INFORMATION & RIGHT-ALIGNED QR CODE
+    // ----------------------------------------------------------------------
+    let paymentY = doc.lastAutoTable.finalY + 8;
+    
+    // Left Box: Payment Details
     doc.setFontSize(8.5);
-    doc.setTextColor(30, 41, 59);
     doc.setFont("helvetica", "bold");
-    doc.text("PAYMENT INSTRUCTIONS & INSTANT QR:", 15, leftInfoY);
+    doc.setTextColor(15, 23, 42);
+    doc.text("PAYMENT INFORMATION", 14, paymentY);
+    
+    doc.setFontSize(8);
     doc.setFont("helvetica", "normal");
-    
-    // Draw QR Code Border Block (38mm x 38mm)
-    const qrSize = 32;
-    doc.setDrawColor(153, 27, 27);
-    doc.setLineWidth(0.3);
-    doc.setFillColor(255, 255, 255);
-    doc.rect(15, leftInfoY + 3, qrSize, qrSize, 'FD');
-    
-    // Render Simulated High-res QR Grid Matrix
-    doc.setFillColor(30, 41, 59);
-    doc.rect(17, leftInfoY + 5, 8, 8, 'F');
-    doc.rect(37, leftInfoY + 5, 8, 8, 'F');
-    doc.rect(17, leftInfoY + 25, 8, 8, 'F');
-    // Inner white squares for QR finder patterns
-    doc.setFillColor(255, 255, 255);
-    doc.rect(19, leftInfoY + 7, 4, 4, 'F');
-    doc.rect(39, leftInfoY + 7, 4, 4, 'F');
-    doc.rect(19, leftInfoY + 27, 4, 4, 'F');
-    // Dummy micro alignment pattern
-    doc.setFillColor(30, 41, 59);
-    doc.rect(33, leftInfoY + 21, 3, 3, 'F');
-    doc.rect(27, leftInfoY + 13, 5, 5, 'F');
+    doc.setTextColor(71, 85, 105);
+    doc.text("Bank: HDFC Bank Corporate Primary", 14, paymentY + 5);
+    doc.text("Account Name: Primelisometrics Consultancy Pvt Ltd", 14, paymentY + 9);
+    doc.text("Account Number: 501009988776655", 14, paymentY + 13);
+    doc.text("IFSC Code: HDFC0001234", 14, paymentY + 17);
+    doc.text("UPI ID: primelisometrics@hdfcbank", 14, paymentY + 21);
 
-    // QR Details Text Column
-    doc.setFontSize(7.5);
-    doc.text(`UPI ID: primelisometrics@hdfcbank`, 50, leftInfoY + 8);
-    doc.text(`Bank Name: HDFC Corporate Primary`, 50, leftInfoY + 13);
-    doc.text(`Account No: 501009988776655`, 50, leftInfoY + 18);
-    doc.text(`IFSC: HDFC0001234`, 50, leftInfoY + 23);
-    doc.text(`Scan QR via BHIM / GPay / PhonePe`, 50, leftInfoY + 28);
+    // Right-Aligned QR Code Box (Without Overlapping)
+    const qrX = 148;
+    const qrY = paymentY - 2;
+    doc.setDrawColor(226, 232, 240);
+    doc.setFillColor(255, 255, 255);
+    doc.rect(qrX, qrY, 48, 28, 'FD');
 
-    // 6. Signatures Area
-    let termsY = Math.max(leftInfoY + 40, finalY + 12);
-    if (termsY > 230) {
+    // Clean Simulated QR Matrix
+    doc.setFillColor(15, 23, 42);
+    doc.rect(qrX + 3, qrY + 3, 6, 6, 'F');
+    doc.rect(qrX + 17, qrY + 3, 6, 6, 'F');
+    doc.rect(qrX + 3, qrY + 17, 6, 6, 'F');
+    // Inner white centers
+    doc.setFillColor(255, 255, 255);
+    doc.rect(qrX + 4.5, qrY + 4.5, 3, 3, 'F');
+    doc.rect(qrX + 18.5, qrY + 4.5, 3, 3, 'F');
+    doc.rect(qrX + 4.5, qrY + 18.5, 3, 3, 'F');
+    // QR micro pattern
+    doc.setFillColor(15, 23, 42);
+    doc.rect(qrX + 12, qrY + 10, 4, 4, 'F');
+    doc.rect(qrX + 18, qrY + 15, 4, 4, 'F');
+
+    // QR Label (Right side of QR box)
+    doc.setFontSize(7);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(15, 23, 42);
+    doc.text("Scan to Pay", qrX + 26, qrY + 8);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(100, 116, 139);
+    doc.text("Supports GPay,", qrX + 26, qrY + 13);
+    doc.text("PhonePe, BHIM", qrX + 26, qrY + 17);
+    doc.text("& UPI Apps", qrX + 26, qrY + 21);
+
+    // ----------------------------------------------------------------------
+    // 6. NOTES & TERMS
+    // ----------------------------------------------------------------------
+    let notesY = Math.max(paymentY + 30, currentY + 10);
+    if (notesY > 235) {
       doc.addPage();
-      drawFaintEngineeringWatermark(doc);
-      termsY = 30; // reset
+      notesY = 25;
     }
-    
-    doc.setDrawColor(200, 200, 200);
+
+    doc.setDrawColor(226, 232, 240);
     doc.setLineWidth(0.2);
-    doc.line(15, termsY - 4, 195, termsY - 4);
-    
-    // Terms columns
+    doc.line(14, notesY, pageWidth - 14, notesY);
+    notesY += 5;
+
+    doc.setFontSize(8);
     doc.setFont("helvetica", "bold");
+    doc.setTextColor(15, 23, 42);
+    doc.text("TERMS & PAYMENT CONDITIONS", 14, notesY);
+    notesY += 4.5;
+
     doc.setFontSize(7.5);
-    doc.text("TERMS AND CONDITIONS:", 15, termsY);
     doc.setFont("helvetica", "normal");
-    doc.text("1. All model drafts must undergo final structural engineering sign-off.", 15, termsY + 3.5);
-    doc.text("2. Please transfer payments to the listed corporate account within 15 days.", 15, termsY + 7);
-    doc.text("3. The Contract Value is exclusive of GST.", 15, termsY + 10.5);
-    doc.text("4. GST has been applied only to current invoice as per tax regulations.", 15, termsY + 14);
+    doc.setTextColor(71, 85, 105);
+    doc.text("1. Payments delayed beyond 14 calendar days from due date incur a 1.5% weekly late fee.", 14, notesY);
+    notesY += 3.5;
+    doc.text("2. All CAD models and report files remain Primelisometrics property until final milestone payment clearance.", 14, notesY);
+    notesY += 3.5;
+    doc.text("3. Proposal & invoice validity is subject to standard consultancy terms and conditions.", 14, notesY);
+
     if (gstData.clean_notes) {
+      notesY += 4.5;
       doc.setFont("helvetica", "bold");
-      doc.text("Billing & Scope Notes:", 15, termsY + 19);
+      doc.setTextColor(15, 23, 42);
+      doc.text("Scope & Billing Notes:", 14, notesY);
+      notesY += 3.5;
       doc.setFont("helvetica", "normal");
-      doc.text(gstData.clean_notes, 15, termsY + 22.5, { maxWidth: 95 });
+      doc.setTextColor(71, 85, 105);
+      doc.text(gstData.clean_notes, 14, notesY, { maxWidth: 100 });
     }
 
-    // Signatures blocks
+    // ----------------------------------------------------------------------
+    // 7. FOOTER & SIGNATURE VERIFICATION
+    // ----------------------------------------------------------------------
+    let footerY = Math.max(notesY + 10, 245);
+    if (footerY > 260) {
+      doc.addPage();
+      footerY = 245;
+    }
+
+    doc.setDrawColor(226, 232, 240);
+    doc.setLineWidth(0.2);
+    doc.line(14, footerY, pageWidth - 14, footerY);
+    footerY += 6;
+
+    // Prepared By Block
     doc.setFontSize(7.5);
     doc.setFont("helvetica", "bold");
-    doc.text("PREPARED BY (ENGINEER):", 120, termsY);
+    doc.setTextColor(15, 23, 42);
+    doc.text("PREPARED BY", 14, footerY);
     doc.setFont("helvetica", "normal");
-    doc.text("Name: Ashok Kumar", 120, termsY + 4.5);
-    doc.text("Designation: Lead Marine Designer", 120, termsY + 8);
-    doc.text("Digital Signature: [ASHOK_KUMAR_2026]", 120, termsY + 11.5);
-    
-    doc.setFont("helvetica", "bold");
-    doc.text("CLIENT VALIDATION & APPROVAL:", 158, termsY);
-    doc.setFont("helvetica", "normal");
-    doc.text("Name:", 158, termsY + 4.5);
-    doc.text("Designation:", 158, termsY + 8);
-    doc.text("Company Stamp & Sign:", 158, termsY + 11.5);
-    doc.line(167, termsY + 4.5, 195, termsY + 4.5);
-    doc.line(174, termsY + 8, 195, termsY + 8);
-    doc.line(186, termsY + 11.5, 195, termsY + 11.5);
+    doc.setTextColor(71, 85, 105);
+    doc.text("Ashok Kumar", 14, footerY + 4);
+    doc.text("Lead Marine Designer", 14, footerY + 7.5);
 
-    // 7. Page Footer Branding
+    // Approved By Block
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(15, 23, 42);
+    doc.text("APPROVED BY", 85, footerY);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(71, 85, 105);
+    doc.text("Chandru Admin", 85, footerY + 4);
+    doc.text("Managing Director", 85, footerY + 7.5);
+
+    // Client Signature Line
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(15, 23, 42);
+    doc.text("CLIENT SIGNATURE", 150, footerY);
+    doc.setDrawColor(148, 163, 184);
+    doc.line(150, footerY + 8, pageWidth - 14, footerY + 8);
+
+    // ----------------------------------------------------------------------
+    // 8. MULTI-PAGE PAGE NUMBERING FOOTER
+    // ----------------------------------------------------------------------
     const totalPages = doc.internal.getNumberOfPages();
     for (let i = 1; i <= totalPages; i++) {
       doc.setPage(i);
       
-      // Footer text on every page
-      doc.setFillColor(245, 245, 245);
-      doc.rect(0, 282, 210, 15, 'F');
+      doc.setFillColor(248, 250, 252);
+      doc.rect(0, pageHeight - 12, pageWidth, 12, 'F');
+      doc.setDrawColor(226, 232, 240);
+      doc.line(0, pageHeight - 12, pageWidth, pageHeight - 12);
       
-      doc.setFontSize(7.5);
+      doc.setFontSize(7);
       doc.setFont("helvetica", "bold");
-      doc.setTextColor(153, 27, 27);
-      doc.text("AURA Workspace ERP", 15, 290);
+      doc.setTextColor(15, 23, 42);
+      doc.text("PRIMELISOMETRICS", 14, pageHeight - 5);
       
       doc.setFont("helvetica", "normal");
-      doc.setTextColor(120, 120, 120);
-      doc.text(" | Primelisometrics Consultancy | www.primelisometrics.com", 45, 290);
-      doc.text(`Page ${i} of ${totalPages}`, 195, 290, { align: 'right' });
+      doc.setTextColor(100, 116, 139);
+      doc.text(" Marine Engineering Consultancy | www.primelisometrics.com", 42, pageHeight - 5);
+      doc.text(`Page ${i} of ${totalPages}`, pageWidth - 14, pageHeight - 5, { align: 'right' });
     }
 
     if (previewOnly) {
@@ -418,11 +460,11 @@ export const generateAndDownloadPDF = async ({
 
     // Download PDF file
     doc.save(fileName);
-    console.log(`Development Log: ERP PDF Generated successfully as ${fileName}`);
+    console.log(`Development Log: Executive PDF Generated successfully as ${fileName}`);
 
     // Upload to Supabase Storage
     const pdfBlob = doc.output('blob');
-    const storagePath = `invoices/2026/${inv.invoice_number}.pdf`;
+    const storagePath = `invoices/2026/${baseInvNum}.pdf`;
     let publicUrl = `https://supabase.co/storage/v1/object/private/invoice-pdfs/${storagePath}`;
 
     if (supabase) {
@@ -441,19 +483,18 @@ export const generateAndDownloadPDF = async ({
           if (publicData?.publicUrl) {
             publicUrl = publicData.publicUrl;
           }
-          console.log("Uploaded PDF successfully. Path:", storagePath);
-        } else {
-          console.error("Storage upload error:", error?.message);
         }
       } catch (err) {
         console.error("Storage upload execution error:", err);
       }
     }
+
     if (setInvoiceLoading) setInvoiceLoading('');
     return publicUrl;
   } catch (err) {
-    console.error("Error generating engineering PDF:", err);
+    console.error("Error generating executive PDF:", err);
     if (setInvoiceError) setInvoiceError("Failed to generate PDF. Check fields consistency.");
     if (setInvoiceLoading) setInvoiceLoading('');
   }
 };
+

@@ -689,6 +689,15 @@ export default function InvoicesView({
                         <option value="Cash">Cash Mode</option>
                       </select>
                     </div>
+                    <div className="form-group" style={{ margin: 0 }}>
+                      <label className="form-label" style={{ fontSize: '0.7rem' }}>Invoice Status</label>
+                      <select className="form-input" value={invoiceForm.payment_status} onChange={(e) => handleFieldChange({ payment_status: e.target.value })}>
+                        <option value="Draft">Draft</option>
+                        <option value="Sent">Sent</option>
+                        <option value="Paid">Paid</option>
+                        <option value="Closed">Closed</option>
+                      </select>
+                    </div>
                   </div>
 
                   <div style={{ background: 'rgba(255,255,255,0.03)', padding: '12px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.06)' }}>

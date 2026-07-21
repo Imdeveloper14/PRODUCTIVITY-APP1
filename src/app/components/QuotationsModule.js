@@ -745,7 +745,51 @@ export default function QuotationsModule({
   const calculatedGst = 0; 
   const calculatedGrandTotal = calculatedSubtotal;
 
-  // Save Quotation payload
+  // 30-Second Background Autosave Effect
+  useEffect(() => {
+    if (viewMode !== 'editor') return;
+
+    const interval = setInterval(() => {
+      if (clientName || projectName || deliverables.length > 0) {
+        const draftData = {
+          clientName, contactPerson, projectName, projectLocation,
+          currency, projectType, deliverables, commercialConditions,
+          hourlyRate, softwareCost, contingencyPercent, editingQuoteId,
+          savedAt: new Date().toISOString()
+        };
+        localStorage.setItem('aura_quotation_draft', JSON.stringify(draftData));
+        console.log('[Autosave] Quotation draft saved locally at', draftData.savedAt);
+      }
+    }, 30000); // 30 seconds
+
+    return () => clearInterval(interval);
+  }, [viewMode, clientName, contactPerson, projectName, projectLocation, currency, projectType, deliverables, commercialConditions, hourlyRate, softwareCost, contingencyPercent, editingQuoteId]);
+
+  // Restore draft on mount if available
+  const handleRestoreLocalDraft = () => {
+    try {
+      const saved = localStorage.getItem('aura_quotation_draft');
+      if (saved) {
+        const draft = JSON.parse(saved);
+        if (draft.clientName) setClientName(draft.clientName);
+        if (draft.contactPerson) setContactPerson(draft.contactPerson);
+        if (draft.projectName) setProjectName(draft.projectName);
+        if (draft.projectLocation) setProjectLocation(draft.projectLocation);
+        if (draft.currency) setCurrency(draft.currency);
+        if (draft.projectType) setProjectType(draft.projectType);
+        if (Array.isArray(draft.deliverables)) setDeliverables(draft.deliverables);
+        if (draft.commercialConditions) setCommercialConditions(draft.commercialConditions);
+        if (draft.hourlyRate) setHourlyRate(draft.hourlyRate);
+        if (draft.softwareCost) setSoftwareCost(draft.softwareCost);
+        if (draft.contingencyPercent) setContingencyPercent(draft.contingencyPercent);
+        triggerToast("Restored unsaved quotation draft.");
+      }
+    } catch (e) {
+      console.error("Failed to restore quotation draft:", e);
+    }
+  };
+
+  // Save Quotation payload with Authorization bearer header & Supabase upsert fallback
   const handleSaveQuotation = async (statusOverride = null) => {
     if (!clientName || !projectName) {
       triggerToast("Client and Project names are mandatory.");
@@ -761,6 +805,20 @@ export default function QuotationsModule({
       return;
     }
 
+    let token = null;
+    let authUserId = user?.id || null;
+    if (supabase) {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        token = session?.access_token;
+        if (session?.user?.id) authUserId = session.user.id;
+      } catch (err) {
+        console.warn("Session check in handleSaveQuotation error:", err);
+      }
+    }
+
+    const targetStatus = statusOverride || 'Draft';
+
     const payload = {
       client_name: clientName,
       contact_person: contactPerson,
@@ -774,32 +832,70 @@ export default function QuotationsModule({
       custom_hourly_rate: hourlyRate,
       custom_software_cost: softwareCost,
       custom_contingency_percent: contingencyPercent,
-      revision_description: revisionDesc || "Updated settings"
+      revision_description: revisionDesc || "Updated settings",
+      status: targetStatus,
+      updated_at: new Date().toISOString(),
+      ...(authUserId ? { created_by: authUserId, user_id: authUserId } : {})
     };
 
-    if (statusOverride) {
-      payload.status = statusOverride;
+    let saved = false;
+
+    // 1. Direct Supabase Upsert fallback if authorized
+    if (supabase) {
+      try {
+        const dbPayload = {
+          ...(editingQuoteId ? { id: editingQuoteId } : {}),
+          ...payload
+        };
+
+        const { data: quoteData, error: quoteErr } = await supabase
+          .from('quotations')
+          .upsert([dbPayload])
+          .select();
+
+        if (!quoteErr && quoteData) {
+          saved = true;
+          triggerToast(targetStatus === 'Draft' ? 'Quotation draft saved successfully.' : `Quotation marked as ${targetStatus}.`);
+          localStorage.removeItem('aura_quotation_draft');
+          setViewMode('dashboard');
+          fetchQuotations();
+        } else if (quoteErr) {
+          console.warn("Direct Supabase quotation upsert warning:", quoteErr.message);
+        }
+      } catch (err) {
+        console.error("Direct Supabase quotation save exception:", err);
+      }
     }
 
-    try {
-      const url = editingQuoteId ? `/api/quotations/${editingQuoteId}` : '/api/quotations';
-      const method = editingQuoteId ? 'PUT' : 'POST';
-      const res = await fetch(url, {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-      const data = await res.json();
-      if (data.success) {
-        triggerToast(editingQuoteId ? "Quotation version saved successfully." : "Quotation draft created.");
-        setViewMode('dashboard');
-        fetchQuotations();
-      } else {
-        triggerToast("Error: " + data.error);
+    // 2. API Route Fallback with Authorization header
+    if (!saved) {
+      try {
+        const url = editingQuoteId ? `/api/quotations/${editingQuoteId}` : '/api/quotations';
+        const method = editingQuoteId ? 'PUT' : 'POST';
+        const headers = {
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        };
+
+        const res = await fetch(url, {
+          method,
+          headers,
+          body: JSON.stringify(payload)
+        });
+
+        const data = await res.json();
+        if (data.success) {
+          triggerToast(editingQuoteId ? "Quotation version saved successfully." : "Quotation draft created.");
+          localStorage.removeItem('aura_quotation_draft');
+          setViewMode('dashboard');
+          fetchQuotations();
+        } else {
+          triggerToast("Error: " + (data.error || "Failed to save quotation record."));
+        }
+      } catch(err) {
+        console.error(err);
+        triggerToast("Failed to save quotation record.");
       }
-    } catch(err) {
-      console.error(err);
-      triggerToast("Failed to save quotation record.");
     }
   };
 
