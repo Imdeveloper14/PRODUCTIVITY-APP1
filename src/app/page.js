@@ -456,6 +456,10 @@ export default function Home() {
         const { data: { session }, error: sessionError } = await supabase.auth.getSession();
         const { data: { user: authUser }, error: userError } = await supabase.auth.getUser();
 
+        console.log("Session", session);
+        console.log("User", authUser);
+        console.log("Access Token", session?.access_token);
+
         if (session && authUser) {
           const meta = authUser.user_metadata || {};
           const restoredUser = {
@@ -493,19 +497,16 @@ export default function Home() {
           setUser(restoredUser);
           saveState("aura_user_v7", restoredUser);
           fetchAllUserData(restoredUser.id, restoredUser.role);
+          return;
         }
+
+        // Unauthenticated -> clear local state
+        setUser(null);
+        localStorage.removeItem("aura_user_v7");
       } catch (error) {
         console.warn('Session restore skipped:', error);
       }
     };
-
-    // 1. Initial Local State Hydration Fallback
-    const savedUser = localStorage.getItem("aura_user_v7");
-    if (savedUser) {
-      const parsed = JSON.parse(savedUser);
-      setUser(parsed);
-      fetchAllUserData(parsed.id, parsed.role);
-    }
 
     syncSession();
     if (!supabase) return;
@@ -513,6 +514,9 @@ export default function Home() {
     // Listen to native Supabase Auth state changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       console.log("Supabase Auth Event:", event, session?.user?.id);
+      console.log("Session", session);
+      console.log("User", session?.user);
+      console.log("Access Token", session?.access_token);
     });
 
     return () => {
@@ -779,6 +783,15 @@ export default function Home() {
               refresh_token: data.session.refresh_token
             });
           }
+
+          if (supabase) {
+            const { data: { session: activeSession } } = await supabase.auth.getSession();
+            const { data: { user: activeUser } } = await supabase.auth.getUser();
+            console.log("Session", activeSession);
+            console.log("User", activeUser);
+            console.log("Access Token", activeSession?.access_token);
+          }
+
           const loggedUser = {
             id: authUser?.id || data.user.id,
             email: authUser?.email || data.user.email,

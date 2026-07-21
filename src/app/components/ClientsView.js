@@ -66,6 +66,9 @@ export default function ClientsView({
           ...(activeUserId ? { user_id: activeUserId } : {})
         };
 
+        console.log("Session", session);
+        console.log("User", authUser);
+        console.log("Access Token", session?.access_token);
         console.log("=== SUPABASE AUTH DIAGNOSTICS BEFORE CLIENT INSERT ===");
         console.log("1. Authenticated User UUID:", authUser?.id || "NONE (UNAUTHENTICATED)");
         console.log("2. User Email:", authUser?.email || "NONE");
