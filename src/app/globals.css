@@ -1,47 +1,49 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
 
 :root {
-  /* Premium Dark Engineering Mode Palette */
-  --bg-main: #0B0B0C;
-  --bg-sidebar: #15171C;
-  --bg-card: #1C1F26;
+  /* Modern Luxury Dark Dashboard Palette */
+  --bg-main: #090A0D;
+  --bg-sidebar: #0D1017;
+  --bg-card: #11151E;
+  --bg-secondary: #1A1F2B;
   --border-color: rgba(255, 255, 255, 0.08);
-  --text-primary: #F5F5F5;
-  --text-secondary: #A1A1AA;
-  --text-muted: #71717A;
+  --text-primary: #FFFFFF;
+  --text-secondary: #9CA3AF;
+  --text-muted: #6B7280;
   
-  --accent: #D7263D;          /* Premium Red accent */
-  --accent-light: rgba(215, 38, 61, 0.15); /* Transparent red highlight */
-  --accent-hover: #B91C32;
-  --accent-indigo: #D7263D;
-  --accent-purple: #D7263D;
+  --accent: #FF2E4D;          /* Vibrant Luxury Red */
+  --accent-light: rgba(255, 46, 77, 0.15);
+  --accent-hover: #E0203C;
+  --accent-indigo: #FF2E4D;
+  --accent-purple: #8B5CF6;
   
   --color-success: #10B981;
   --color-warning: #F59E0B;
   --color-danger: #EF4444;
   --color-info: #3B82F6;
   
-  --border-radius-lg: 10px;
-  --border-radius-md: 8px;
-  --border-radius-sm: 6px;
+  --border-radius-lg: 12px;
+  --border-radius-md: 10px;
+  --border-radius-sm: 8px;
   --shadow-card: 0 4px 20px rgba(0, 0, 0, 0.4);
-  --shadow-hover: 0 10px 30px rgba(215, 38, 61, 0.1);
+  --shadow-hover: 0 8px 24px rgba(255, 46, 77, 0.12);
 }
 
 /* Dark Mode overrides (forced identical dark variables) */
 html.dark {
-  --bg-main: #0B0B0C;
-  --bg-sidebar: #15171C;
-  --bg-card: #1C1F26;
+  --bg-main: #090A0D;
+  --bg-sidebar: #0D1017;
+  --bg-card: #11151E;
+  --bg-secondary: #1A1F2B;
   --border-color: rgba(255, 255, 255, 0.08);
-  --text-primary: #F5F5F5;
-  --text-secondary: #A1A1AA;
-  --text-muted: #71717A;
+  --text-primary: #FFFFFF;
+  --text-secondary: #9CA3AF;
+  --text-muted: #6B7280;
   
-  --accent: #D7263D;
-  --accent-light: rgba(215, 38, 61, 0.15);
+  --accent: #FF2E4D;
+  --accent-light: rgba(255, 46, 77, 0.15);
   --shadow-card: 0 4px 20px rgba(0, 0, 0, 0.4);
-  --shadow-hover: 0 10px 30px rgba(215, 38, 61, 0.1);
+  --shadow-hover: 0 8px 24px rgba(255, 46, 77, 0.12);
 }
 
 body {
@@ -54,7 +56,7 @@ body {
 }
 
 h1, h2, h3, h4, h5, h6 {
-  font-family: 'Poppins', sans-serif;
+  font-family: 'Inter', sans-serif;
   font-weight: 700;
   letter-spacing: -0.02em;
 }

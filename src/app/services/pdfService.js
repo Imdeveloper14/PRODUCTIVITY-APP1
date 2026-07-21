@@ -473,3 +473,127 @@ export const generateAndDownloadPDF = async ({
   }
 };
 
+// Function to generate and download clean A4 Meeting Minutes (MoM) PDF
+export const generateMeetingMinutesPDF = async ({ meeting = {}, client = {}, user = {} }) => {
+  const doc = new jsPDF('p', 'mm', 'a4');
+  const pageWidth = doc.internal.pageSize.width;
+
+  // Header
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(16);
+  doc.setTextColor(15, 23, 42);
+  doc.text("MINUTES OF MEETING (MoM)", 14, 15);
+  
+  doc.setFontSize(9);
+  doc.setFont("helvetica", "normal");
+  doc.setTextColor(71, 85, 105);
+  doc.text("PRIMELISOMETRICS Marine Engineering Consultancy", 14, 21);
+  doc.setDrawColor(203, 213, 225);
+  doc.setLineWidth(0.3);
+  doc.line(14, 25, pageWidth - 14, 25);
+  
+  let currentY = 32;
+  
+  // Meeting Header Information
+  doc.setFontSize(11);
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(15, 23, 42);
+  doc.text(meeting.title || 'Technical Engineering Meeting', 14, currentY);
+  currentY += 6;
+  
+  doc.setFontSize(8.5);
+  doc.setFont("helvetica", "normal");
+  doc.setTextColor(71, 85, 105);
+  doc.text(`Client Partner: ${client.name || meeting.client_name || 'N/A'}`, 14, currentY);
+  doc.text(`Date: ${meeting.date || 'N/A'} | Time: ${meeting.time || '10:00 AM'}`, 110, currentY);
+  currentY += 5;
+  doc.text(`Location / Platform: ${meeting.location || 'Online Conference Workspace'}`, 14, currentY);
+  doc.text(`Chairperson / Organizer: ${user.name || 'Ashok Kumar'}`, 110, currentY);
+  currentY += 9;
+  
+  // 1. Agenda
+  doc.setFontSize(9);
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(15, 23, 42);
+  doc.text("1. MEETING AGENDA", 14, currentY);
+  currentY += 5;
+  doc.setFontSize(8);
+  doc.setFont("helvetica", "normal");
+  doc.setTextColor(71, 85, 105);
+  doc.text(meeting.agenda || 'General engineering review and project deliverables alignment.', 14, currentY, { maxWidth: 180 });
+  currentY += 10;
+  
+  // 2. Attendees
+  doc.setFontSize(9);
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(15, 23, 42);
+  doc.text("2. ATTENDEES", 14, currentY);
+  currentY += 5;
+  doc.setFontSize(8);
+  doc.setFont("helvetica", "normal");
+  doc.setTextColor(71, 85, 105);
+  doc.text(meeting.attendees || `${client.name || 'Client Representative'}, ${user.name || 'Ashok Kumar'}`, 14, currentY, { maxWidth: 180 });
+  currentY += 10;
+  
+  // 3. Discussion Points & Decisions
+  doc.setFontSize(9);
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(15, 23, 42);
+  doc.text("3. KEY DISCUSSION POINTS & DECISIONS TAKEN", 14, currentY);
+  currentY += 5;
+  doc.setFontSize(8);
+  doc.setFont("helvetica", "normal");
+  doc.setTextColor(71, 85, 105);
+  const notesText = meeting.discussion_points || meeting.minutes_notes || meeting.notes || 'Reviewed 3D CAD modeling progress, structural calculations, and billing milestones.';
+  doc.text(notesText, 14, currentY, { maxWidth: 180 });
+  currentY += 14;
+  
+  // 4. Action Items
+  doc.setFontSize(9);
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(15, 23, 42);
+  doc.text("4. ACTION ITEMS", 14, currentY);
+  currentY += 4;
+  
+  const headers = [['#', 'Action Item / Deliverable Description', 'Responsible Person', 'Due Date']];
+  const rows = Array.isArray(meeting.action_items) && meeting.action_items.length > 0
+    ? meeting.action_items.map((item, idx) => [String(idx + 1), item.task || item.description, item.responsible || 'Lead Engineer', item.due_date || 'Next Milestone'])
+    : [
+        ['1', meeting.action_item || 'Finalize structural model revisions', meeting.responsible_person || user.name || 'Lead Designer', meeting.due_date || 'Next Week']
+      ];
+      
+  safeAutoTable(doc, {
+    head: headers,
+    body: rows,
+    startY: currentY,
+    theme: 'grid',
+    headStyles: { fillColor: [15, 23, 42], textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 8.5, cellPadding: 3.5 },
+    styles: { fontSize: 8, cellPadding: 3 }
+  });
+  
+  currentY = doc.lastAutoTable.finalY + 12;
+  if (currentY > 250) {
+    doc.addPage();
+    currentY = 25;
+  }
+  
+  // Footer Signatures
+  doc.setFontSize(7.5);
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(15, 23, 42);
+  doc.text("ORGANIZER / CHAIRPERSON", 14, currentY);
+  doc.setFont("helvetica", "normal");
+  doc.setTextColor(71, 85, 105);
+  doc.text(user.name || 'Ashok Kumar', 14, currentY + 4);
+  
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(15, 23, 42);
+  doc.text("CLIENT ACKNOWLEDGMENT", 120, currentY);
+  doc.setFont("helvetica", "normal");
+  doc.setTextColor(71, 85, 105);
+  doc.text(client.name || 'Client Representative', 120, currentY + 4);
+  
+  const fileName = `MoM_${meeting.date || '2026'}_${(meeting.title || 'Meeting').replace(/\s+/g, '_')}.pdf`;
+  doc.save(fileName);
+};
+

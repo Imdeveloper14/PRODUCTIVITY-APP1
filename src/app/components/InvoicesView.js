@@ -499,94 +499,70 @@ export default function InvoicesView({
         </div>
       </div>
 
-      {/* Invoice Split view layout */}
-      <div className="invoices-grid" style={{ display: 'flex', gap: '24px', flexWrap: 'wrap', marginTop: '24px' }}>
-
-        {/* Invoices List Table (65%) */}
-        <div className="card desktop-table-container" style={{ padding: 0, overflowX: 'auto', margin: 0, flex: '2 1 600px' }}>
-          <table className="data-table">
-            <thead>
-              <tr>
-                <th>Invoice</th>
-                <th>Client</th>
-                <th>Project</th>
-                <th>Status</th>
-                <th>Outstanding</th>
-                <th style={{ textAlign: 'center' }}>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredInvoices.map(inv => {
-                const client = clients.find(c => c.id === inv.client_id);
-                const proj = projects.find(p => p.id === inv.project_id);
-                return (
-                  <tr key={inv.id}>
-                    <td><strong>{inv.invoice_number}</strong></td>
-                    <td style={{ fontSize: '0.85rem' }}>{client ? client.name : 'N/A'}</td>
-                    <td style={{ fontSize: '0.85rem' }}>{proj ? proj.title : 'N/A'}</td>
-                    <td>
-                      <span className={`badge ${inv.payment_status === 'Paid' ? 'badge-success' : inv.payment_status === 'Draft' ? 'badge-info' : inv.payment_status === 'Pending' ? 'badge-warning' : 'badge-danger'}`}>
-                        {inv.payment_status}
-                      </span>
-                    </td>
-                    <td style={{ fontWeight: '600' }}>Rs. {(inv.grand_total || 0).toLocaleString('en-IN')}</td>
-                    <td>
-                      <div style={{ display: 'flex', gap: '6px', justifyContent: 'center', alignItems: 'center' }}>
-                        <button className="btn btn-secondary" style={{ padding: '4px 6px' }} title="Preview Invoice" onClick={async () => {
-                          const url = await generateAndDownloadPDF({ inv, clients, projects, quotations, user, supabase, setInvoiceLoading, setInvoiceError, previewOnly: true });
-                          if (url) { setPreviewPdfUrl(url); setPreviewInvoice(inv); }
-                        }}>
-                          👁 Preview
+      {/* Invoices List Table (100% Full Width) */}
+      <div className="card desktop-table-container" style={{ padding: 0, overflowX: 'auto', margin: '24px 0 0 0', width: '100%' }}>
+        <table className="data-table">
+          <thead>
+            <tr>
+              <th>Invoice</th>
+              <th>Client</th>
+              <th>Project</th>
+              <th>Status</th>
+              <th>Outstanding</th>
+              <th style={{ textAlign: 'center' }}>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {filteredInvoices.map(inv => {
+              const client = clients.find(c => c.id === inv.client_id);
+              const proj = projects.find(p => p.id === inv.project_id);
+              return (
+                <tr key={inv.id}>
+                  <td><strong>{inv.invoice_number}</strong></td>
+                  <td style={{ fontSize: '0.85rem' }}>{client ? client.name : 'N/A'}</td>
+                  <td style={{ fontSize: '0.85rem' }}>{proj ? proj.title : 'N/A'}</td>
+                  <td>
+                    <span className={`badge ${inv.payment_status === 'Paid' ? 'badge-success' : inv.payment_status === 'Draft' ? 'badge-info' : inv.payment_status === 'Pending' ? 'badge-warning' : 'badge-danger'}`}>
+                      {inv.payment_status}
+                    </span>
+                  </td>
+                  <td style={{ fontWeight: '600' }}>Rs. {(inv.grand_total || 0).toLocaleString('en-IN')}</td>
+                  <td>
+                    <div style={{ display: 'flex', gap: '6px', justifyContent: 'center', alignItems: 'center' }}>
+                      <button className="btn btn-secondary" style={{ padding: '4px 6px' }} title="Preview Invoice" onClick={async () => {
+                        const url = await generateAndDownloadPDF({ inv, clients, projects, quotations, user, supabase, setInvoiceLoading, setInvoiceError, previewOnly: true });
+                        if (url) { setPreviewPdfUrl(url); setPreviewInvoice(inv); }
+                      }}>
+                        👁 Preview
+                      </button>
+                      <button className="btn btn-secondary" style={{ padding: '4px 6px' }} title="Download PDF" onClick={() => generateAndDownloadPDF({ inv, clients, projects, quotations, user, supabase, setInvoiceLoading, setInvoiceError })}>
+                        ⬇ Download
+                      </button>
+                      <button className="btn btn-secondary" style={{ padding: '4px 6px' }} title="Send Email" onClick={() => sendEmail(inv)}>
+                        ✉ Email
+                      </button>
+                      {inv.payment_status !== 'Paid' && (
+                        <button className="btn btn-primary" style={{ padding: '4px 8px', fontSize: '0.75rem' }} onClick={() => handleMarkPaid(inv.id)}>
+                          ✓ Mark Paid
                         </button>
-                        <button className="btn btn-secondary" style={{ padding: '4px 6px' }} title="Download PDF" onClick={() => generateAndDownloadPDF({ inv, clients, projects, quotations, user, supabase, setInvoiceLoading, setInvoiceError })}>
-                          ⬇ Download
-                        </button>
-                        <button className="btn btn-secondary" style={{ padding: '4px 6px' }} title="Send Email" onClick={() => sendEmail(inv)}>
-                          ✉ Email
-                        </button>
-                        {inv.payment_status !== 'Paid' && (
-                          <button className="btn btn-primary" style={{ padding: '4px 8px', fontSize: '0.75rem' }} onClick={() => handleMarkPaid(inv.id)}>
-                            ✓ Mark Paid
-                          </button>
-                        )}
-                        <button className="btn btn-secondary" style={{ padding: '4px 6px', color: 'var(--color-danger)' }} title="Delete" onClick={() => handleDeleteInvoice(inv.id)}>
-                          🗑 Delete
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
-              {filteredInvoices.length === 0 && (
-                <tr>
-                  <td colSpan="6" style={{ textAlign: 'center', padding: '24px', color: 'var(--text-muted)' }}>
-                    No invoices found matching current criteria.
+                      )}
+                      <button className="btn btn-secondary" style={{ padding: '4px 6px', color: 'var(--color-danger)' }} title="Delete" onClick={() => handleDeleteInvoice(inv.id)}>
+                        🗑 Delete
+                      </button>
+                    </div>
                   </td>
                 </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-
-        {/* AI Assistant Console (35%) */}
-        <div className="card" style={{ margin: 0, display: 'flex', flexDirection: 'column', height: '450px', background: 'rgba(255,255,255,0.04)', flex: '1 1 300px' }}>
-          <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <BrainCircuit style={{ color: 'var(--accent)' }} size={18} />
-            <strong style={{ fontSize: '0.85rem' }}>Billing &amp; Invoicing AI</strong>
-          </div>
-          <div style={{ flex: 1, padding: '16px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-            {aiInvoiceChat.map((msg, idx) => (
-              <div key={idx} className={`ai-msg ${msg.sender}`} style={{ fontSize: '0.8rem', padding: '8px 12px', margin: 0, alignSelf: msg.sender === 'bot' ? 'flex-start' : 'flex-end', background: msg.sender === 'bot' ? 'rgba(215,38,61,0.08)' : 'rgba(255,255,255,0.05)', borderRadius: '8px' }} dangerouslySetInnerHTML={{ __html: msg.text }}></div>
-            ))}
-          </div>
-          <div style={{ padding: '12px', borderTop: '1px solid var(--border-color)', display: 'flex', flexWrap: 'wrap', gap: '6px', background: 'var(--bg-card)' }}>
-            <button className="btn btn-secondary" style={{ fontSize: '0.75rem', padding: '4px 8px' }} onClick={() => handleAIInvoiceCommand("Suggest Payment Reminder")}>🔔 Suggest Reminder</button>
-            <button className="btn btn-secondary" style={{ fontSize: '0.75rem', padding: '4px 8px' }} onClick={() => handleAIInvoiceCommand("Generate Follow-up Email")}>✉️ Late Follow-up</button>
-            <button className="btn btn-secondary" style={{ fontSize: '0.75rem', padding: '4px 8px' }} onClick={() => handleAIInvoiceCommand("Summarize Invoice")}>📊 Summarize Ledger</button>
-            <button className="btn btn-secondary" style={{ fontSize: '0.75rem', padding: '4px 8px' }} onClick={() => handleAIInvoiceCommand("Predict Late Payment Risk")}>⚠️ Predict Late Risk</button>
-          </div>
-        </div>
-
+              );
+            })}
+            {filteredInvoices.length === 0 && (
+              <tr>
+                <td colSpan="6" style={{ textAlign: 'center', padding: '24px', color: 'var(--text-muted)' }}>
+                  No invoices found matching current criteria.
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
       </div>
 
       {/* Premium Side-by-Side Invoice Wizard Modal */}

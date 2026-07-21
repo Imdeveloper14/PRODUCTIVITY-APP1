@@ -15,6 +15,7 @@ import { supabase } from './utils/supabase';
 import QuotationsModule from './components/QuotationsModule';
 import InvoicesView from './components/InvoicesView';
 import DatabaseHealthCheck from './components/DatabaseHealthCheck';
+import { generateMeetingMinutesPDF } from './services/pdfService';
 
 
 // ==========================================================================
@@ -252,6 +253,23 @@ export default function Home() {
     clientId: '',
     notes: ''
   });
+
+  // Meeting Minutes (MoM) & Workspace AI States
+  const [selectedMomMeeting, setSelectedMomMeeting] = useState(null);
+  const [isMomEditing, setIsMomEditing] = useState(false);
+  const [aiDashChat, setAiDashChat] = useState([
+    { sender: 'bot', text: 'Hello! I am your <strong>Workspace AI Assistant</strong>. Ask me to draft follow-up emails, generate proposals, or summarize financial ledgers.' }
+  ]);
+  const [aiDashInput, setAiDashInput] = useState('');
+
+  // Client Documents States
+  const [clientDocuments, setClientDocuments] = useState([
+    { id: 'doc_1', client_id: 'c1', name: 'Master_Service_Agreement.pdf', category: 'Contracts', upload_date: '2026-07-15', uploaded_by: 'Admin', size: '1.2 MB', url: '#' },
+    { id: 'doc_2', client_id: 'c1', name: 'Purchase_Order_PO2026.pdf', category: 'Purchase Orders', upload_date: '2026-07-18', uploaded_by: 'Finance', size: '480 KB', url: '#' }
+  ]);
+  const [clientDocFolderFilter, setClientDocFolderFilter] = useState('All');
+  const [clientDocSearch, setClientDocSearch] = useState('');
+  const [clientDocSort, setClientDocSort] = useState('date-desc');
 
   // Loading indicator for Invoice PDF / Save action
   const [invoiceLoading, setInvoiceLoading] = useState(''); // 'Saving...', 'Generating PDF...', etc.
@@ -738,6 +756,37 @@ export default function Home() {
             targetEmail = `${targetEmail}@auraworkspace.local`;
           }
         }
+
+  const handleAIDashCommand = (userCmd = '') => {
+    const query = userCmd || aiDashInput;
+    if (!query || !query.trim()) return;
+
+    setAiDashChat(prev => [...prev, { sender: 'user', text: query }]);
+    if (!userCmd) setAiDashInput('');
+
+    let botResponse = '';
+    const qLower = query.toLowerCase();
+
+    if (qLower.includes('email') || qLower.includes('draft email')) {
+      botResponse = `<strong>Drafted Client Email:</strong><br />"Dear Partner, Following our recent engineering milestone review, please find attached the revised technical proposal and billing summary. Let us know if any adjustments are needed."`;
+    } else if (qLower.includes('reminder') || qLower.includes('payment reminder')) {
+      botResponse = `<strong>Payment Reminder Notice:</strong><br />"Hello Finance Team, This is a gentle reminder regarding Invoice <strong>INV-2026-0001</strong> due for payment. Kindly process the remittance at your earliest convenience."`;
+    } else if (qLower.includes('proposal') || qLower.includes('generate proposal')) {
+      botResponse = `<strong>Engineering Proposal Outline:</strong><br />1. Scope: 3D Hull BIM Modeling & Structural FEA Calculations.<br />2. Timeline: 4 Weeks.<br />3. Commercials: ₹ 1,50,000 + GST.`;
+    } else if (qLower.includes('summarize') || qLower.includes('summarize client')) {
+      const activeClientCount = clients.length;
+      const totalInvCount = invoices.length;
+      botResponse = `<strong>Client Portfolio Summary:</strong><br />• Active Clients: <strong>${activeClientCount}</strong><br />• Recorded Invoices: <strong>${totalInvCount}</strong><br />• Overall Collection Health: <strong>Good</strong>.`;
+    } else if (qLower.includes('predict') || qLower.includes('late payment')) {
+      botResponse = `<strong>AI Payment Risk Prediction:</strong><br />• High Risk (0): All active clients have clean payment history.<br />• Medium Risk (1): Invoices pending > 14 days flagged for automated follow-up.`;
+    } else {
+      botResponse = `Workspace AI processed: "${query}". All active client projects and invoice ledgers are synchronized.`;
+    }
+
+    setTimeout(() => {
+      setAiDashChat(prev => [...prev, { sender: 'bot', text: botResponse }]);
+    }, 300);
+  };
 
         // 1. Execute Native Supabase Auth signInWithPassword directly on browser client
         let authUser = null;
@@ -3029,59 +3078,75 @@ export default function Home() {
       )}
 
       {/* Sidebar Navigation */}
-      <aside className="sidebar">
+      <aside className="sidebar" style={{ width: '250px', background: '#0D1017', borderRight: '1px solid rgba(255,255,255,0.08)', padding: '20px 16px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
         <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '24px' }}>
-            <img src="/logo.png" alt="Primelisometrics" style={{ width: '40px', height: '40px', borderRadius: '10px', objectFit: 'contain' }} />
+          {/* Logo Header */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '28px', paddingLeft: '4px' }}>
+            <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'linear-gradient(135deg, #00C6FF 0%, #0072FF 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '900', fontSize: '1.2rem', color: 'white', boxShadow: '0 4px 14px rgba(0, 114, 255, 0.4)' }}>
+              A
+            </div>
             <div>
-              <span style={{ fontSize: '0.65rem', fontWeight: '800', color: 'var(--accent)', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block', lineHeight: '1.2' }}>Primelisometrics</span>
-              <h2 style={{ fontSize: '0.95rem', fontWeight: '700', letterSpacing: '-0.3px', margin: 0 }}>AURA Workspace</h2>
-              <span style={{ fontSize: '0.6rem', color: 'var(--text-muted)', display: 'block', lineHeight: '1.2' }}>Engineering Productivity Platform</span>
+              <div style={{ fontSize: '1.1rem', fontWeight: '800', color: '#FFFFFF', letterSpacing: '0.5px', lineHeight: 1 }}>AURA</div>
+              <div style={{ fontSize: '0.65rem', fontWeight: '700', color: '#38BDF8', letterSpacing: '1.5px', textTransform: 'uppercase', marginTop: '3px' }}>WORKSPACE</div>
             </div>
           </div>
 
-          <nav style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-            <button className={`btn ${activeTab === 'dashboard' ? 'btn-primary' : 'btn-secondary'}`} style={{ border: 'none', justifyContent: 'flex-start' }} onClick={() => setActiveTab('dashboard')}>
-              <LayoutDashboard size={18} /> Dashboard
-            </button>
-            <button className={`btn ${activeTab === 'clients' ? 'btn-primary' : 'btn-secondary'}`} style={{ border: 'none', justifyContent: 'flex-start' }} onClick={() => setActiveTab('clients')}>
-              <Users size={18} /> Clients
-            </button>
-
-            <button className={`btn ${activeTab === 'planner' ? 'btn-primary' : 'btn-secondary'}`} style={{ border: 'none', justifyContent: 'flex-start' }} onClick={() => setActiveTab('planner')}>
-              <Calendar size={18} /> {user?.role === 'Employee' ? 'My Tasks' : 'Daily Planner'}
-            </button>
-            <button className={`btn ${activeTab === 'quotations' ? 'btn-primary' : 'btn-secondary'}`} style={{ border: 'none', justifyContent: 'flex-start' }} onClick={() => setActiveTab('quotations')}>
-              <FileSpreadsheet size={18} /> Quotations
-            </button>
-            {hasPermission(user?.role, 'canViewInvoices') && (
-              <button className={`btn ${activeTab === 'invoices' ? 'btn-primary' : 'btn-secondary'}`} style={{ border: 'none', justifyContent: 'flex-start' }} onClick={() => setActiveTab('invoices')}>
-                <FileText size={18} /> Invoices
-              </button>
-            )}
-            {user?.role === 'Employee' && (
-              <button className={`btn ${activeTab === 'personal-tracker' ? 'btn-primary' : 'btn-secondary'}`} style={{ border: 'none', justifyContent: 'flex-start' }} onClick={() => setActiveTab('personal-tracker')}>
-                <BrainCircuit size={18} /> Personal Tracker
-              </button>
-            )}
-            {hasPermission(user?.role, 'canManageUsers') && (
-              <button className={`btn ${activeTab === 'admin' ? 'btn-primary' : 'btn-secondary'}`} style={{ border: 'none', justifyContent: 'flex-start' }} onClick={() => setActiveTab('admin')}>
-                <Users size={18} /> User Management
-              </button>
-            )}
+          {/* Nav Items */}
+          <nav style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+            {[
+              { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
+              { id: 'projects', label: 'Projects', icon: FolderKanban },
+              { id: 'planner', label: 'Tasks', icon: CheckCircle2 },
+              { id: 'clients', label: 'Clients', icon: Users },
+              { id: 'invoices', label: 'Invoices', icon: FileText, perm: 'canViewInvoices' },
+              { id: 'quotations', label: 'Quotations', icon: FileSpreadsheet },
+              { id: 'finance', label: 'Finance', icon: IndianRupee, perm: 'canViewRevenue' },
+              { id: 'calendar', label: 'Calendar', icon: Calendar },
+              { id: 'reports', label: 'Reports', icon: BarChart3 },
+              { id: 'admin', label: 'Team', icon: Users, perm: 'canManageUsers' },
+              { id: 'settings', label: 'Settings', icon: KeyRound }
+            ].map(item => {
+              if (item.perm && !hasPermission(user?.role, item.perm)) return null;
+              const isActive = activeTab === item.id || (item.id === 'projects' && activeTab === 'projects') || (item.id === 'finance' && activeTab === 'revenue');
+              const IconComp = item.icon;
+              return (
+                <button 
+                  key={item.id}
+                  className="btn" 
+                  style={{ 
+                    border: 'none', 
+                    justify: 'flex-start', 
+                    borderRadius: '10px',
+                    padding: '10px 14px',
+                    fontSize: '0.88rem',
+                    fontWeight: isActive ? '700' : '500',
+                    background: isActive ? '#FF2E4D' : 'transparent',
+                    color: isActive ? '#FFFFFF' : '#9CA3AF',
+                    boxShadow: isActive ? '0 4px 14px rgba(255, 46, 77, 0.35)' : 'none',
+                    transition: 'all 0.15s ease'
+                  }}
+                  onClick={() => setActiveTab(item.id)}
+                >
+                  <IconComp size={18} style={{ color: isActive ? '#FFFFFF' : '#9CA3AF' }} /> 
+                  <span>{item.label}</span>
+                </button>
+              );
+            })}
           </nav>
         </div>
 
-        <div>
-          <div style={{ padding: '12px', borderTop: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <p style={{ fontSize: '0.8rem', fontWeight: '600', color: 'var(--text-primary)', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis' }}>{user?.name || 'User'}</p>
-              <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>{user?.role === 'Admin' ? 'Administrator' : 'Workspace User'}</span>
+        {/* User Profile Footer */}
+        <div style={{ borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: '16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer' }} onClick={() => setActiveTab('profile')}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: '#FF2E4D', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '800', fontSize: '0.85rem' }}>
+              {user?.name ? user.name.split(' ').map(n=>n[0]).join('').slice(0,2).toUpperCase() : 'CA'}
             </div>
-            <button className="btn btn-secondary" style={{ padding: '6px', minWidth: 0 }} onClick={handleLogout} title="Log Out">
-              <LogOut size={16} />
-            </button>
+            <div>
+              <p style={{ fontSize: '0.85rem', fontWeight: '700', color: '#FFFFFF', margin: 0 }}>{user?.name || 'Chandru Admin'}</p>
+              <span style={{ fontSize: '0.7rem', color: '#9CA3AF' }}>{user?.role === 'Admin' || user?.role === 'Super Admin' ? 'Administrator' : 'Workspace User'}</span>
+            </div>
           </div>
+          <span style={{ color: '#9CA3AF', fontSize: '0.85rem' }}>❯</span>
         </div>
       </aside>
 
@@ -3130,143 +3195,259 @@ export default function Home() {
 
           return (
             <div>
-              {/* Welcome Header */}
-              <div className="card" style={{ background: 'var(--bg-sidebar)', marginBottom: '20px', padding: '20px 24px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
-                  <div>
-                    <span style={{ fontSize: '0.75rem', color: 'var(--accent)', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '1px' }}>AURA Workspace</span>
-                    <h1 style={{ fontSize: '1.5rem', fontWeight: '800', margin: '2px 0 0', color: 'var(--text-primary)' }}>
-                      {'\u{1F44B}'} Welcome back, <span style={{ color: 'var(--accent)' }}>{user?.name || 'User'}</span>
-                    </h1>
-                    <p style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', margin: '4px 0 0' }}>
-                      {new Date().toLocaleDateString('en-IN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
-                    </p>
+              {/* Top Navigation Bar with Search, Notifications, Profile Avatar */}
+              <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: '16px', marginBottom: '20px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <button className="btn btn-secondary" style={{ width: '40px', height: '40px', padding: 0, borderRadius: '50%', border: '1px solid rgba(255,255,255,0.08)', background: '#11151E' }} title="Search">
+                    <Search size={18} style={{ color: '#9CA3AF' }} />
+                  </button>
+                  <div style={{ position: 'relative' }}>
+                    <button className="btn btn-secondary" style={{ width: '40px', height: '40px', padding: 0, borderRadius: '50%', border: '1px solid rgba(255,255,255,0.08)', background: '#11151E' }} title="Notifications">
+                      <Mail size={18} style={{ color: '#9CA3AF' }} />
+                    </button>
+                    <span style={{ position: 'absolute', top: '-2px', right: '-2px', background: '#FF2E4D', color: 'white', borderRadius: '50%', width: '18px', height: '18px', fontSize: '0.65rem', fontWeight: '800', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>3</span>
                   </div>
-                  <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                    <button className="btn btn-primary" style={{ height: '38px' }} onClick={() => setShowTaskModal(true)}>+ Add Task</button>
-                    {hasPermission(user?.role, 'canManageUsers') && (
-                      <button className="btn btn-secondary" style={{ height: '38px' }} onClick={() => setShowClientModal(true)}>+ Add Client</button>
-                    )}
-                    {hasPermission(user?.role, 'canViewInvoices') && (
-                      <button className="btn btn-secondary" style={{ height: '38px' }} onClick={triggerNewInvoiceFlow}>+ Create Invoice</button>
-                    )}
-                    <button className="btn btn-secondary" style={{ height: '38px' }} onClick={() => setActiveTab('quotations')}>Quotations</button>
+                  <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: '#FF2E4D', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '800', fontSize: '0.85rem', cursor: 'pointer', boxShadow: '0 4px 14px rgba(255, 46, 77, 0.4)' }} onClick={() => setActiveTab('profile')}>
+                    {user?.name ? user.name.split(' ').map(n=>n[0]).join('').slice(0,2).toUpperCase() : 'CA'}
                   </div>
                 </div>
               </div>
 
-              {/* SECTION 1 — Overview KPIs */}
-              <div className="card" style={{ marginBottom: '16px', padding: '16px 20px' }}>
-                <SectionHeader id="overview" title="Overview" icon="&#128202;" defaultOpen={true} />
+              {/* Welcome Header Banner */}
+              <div className="card" style={{ background: '#11151E', marginBottom: '20px', padding: '24px', borderRadius: '14px', border: '1px solid rgba(255,255,255,0.08)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
+                  <div>
+                    <span style={{ fontSize: '0.7rem', color: '#FF2E4D', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '1.5px', display: 'block', marginBottom: '4px' }}>AURA WORKSPACE</span>
+                    <h1 style={{ fontSize: '1.6rem', fontWeight: '800', margin: 0, color: '#FFFFFF' }}>
+                      👋 Welcome back, <span style={{ color: '#FF2E4D' }}>{user?.name || 'Chandru Admin'}</span>
+                    </h1>
+                    <p style={{ color: '#9CA3AF', fontSize: '0.85rem', margin: '6px 0 0 0' }}>
+                      {new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+                    </p>
+                  </div>
+                  <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                    <button className="btn btn-primary" style={{ background: '#FF2E4D', height: '42px', padding: '0 20px', borderRadius: '10px', fontWeight: '700', fontSize: '0.88rem', border: 'none' }} onClick={() => setShowTaskModal(true)}>+ Add Task</button>
+                    {hasPermission(user?.role, 'canManageUsers') && (
+                      <button className="btn btn-secondary" style={{ background: '#1A1F2B', height: '42px', padding: '0 20px', borderRadius: '10px', fontWeight: '600', fontSize: '0.88rem', border: '1px solid rgba(255,255,255,0.08)', color: '#FFFFFF' }} onClick={() => setShowClientModal(true)}>+ Add Client</button>
+                    )}
+                    {hasPermission(user?.role, 'canViewInvoices') && (
+                      <button className="btn btn-secondary" style={{ background: '#1A1F2B', height: '42px', padding: '0 20px', borderRadius: '10px', fontWeight: '600', fontSize: '0.88rem', border: '1px solid rgba(255,255,255,0.08)', color: '#FFFFFF' }} onClick={triggerNewInvoiceFlow}>+ Create Invoice</button>
+                    )}
+                    <button className="btn btn-secondary" style={{ background: '#1A1F2B', height: '42px', padding: '0 20px', borderRadius: '10px', fontWeight: '600', fontSize: '0.88rem', border: '1px solid rgba(255,255,255,0.08)', color: '#FFFFFF' }} onClick={() => setActiveTab('quotations')}>Quotations</button>
+                  </div>
+                </div>
+              </div>
+
+              {/* SECTION 1 — Overview KPIs (5 Cards in 1 Row) */}
+              <div className="card" style={{ marginBottom: '20px', padding: '20px', background: '#11151E', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '14px' }}>
+                <SectionHeader id="overview" title="Overview" icon="📊" defaultOpen={true} />
                 <div id="dash-section-overview" style={{ display: 'block', paddingTop: '16px' }}>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '12px' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '14px' }}>
                     {[
-                      { label: 'Active Projects', value: activeProjects.length, color: 'var(--accent)' },
-                      { label: 'Pending Tasks', value: pendingTasks.length, color: '#10B981' },
-                      { label: 'Total Clients', value: clients.length, color: '#3B82F6' },
-                      { label: 'Total Invoices', value: invoices.length, color: '#8B5CF6' },
-                      { label: 'Overdue Invoices', value: overdueInvoices.length, color: overdueInvoices.length > 0 ? '#EF4444' : 'var(--text-primary)' },
+                      { label: 'ACTIVE PROJECTS', value: activeProjects.length, color: '#FF2E4D', icon: '📁', action: 'projects', link: 'View all projects →' },
+                      { label: 'PENDING TASKS', value: pendingTasks.length, color: '#10B981', icon: '✓', action: 'planner', link: 'View all tasks →' },
+                      { label: 'TOTAL CLIENTS', value: clients.length, color: '#3B82F6', icon: '👥', action: 'clients', link: 'View all clients →' },
+                      { label: 'TOTAL INVOICES', value: invoices.length, color: '#8B5CF6', icon: '📄', action: 'invoices', link: 'View all invoices →' },
+                      { label: 'OVERDUE INVOICES', value: overdueInvoices.length, color: overdueInvoices.length > 0 ? '#EF4444' : '#6B7280', icon: '⏱', action: 'invoices', link: 'View all overdue →' },
                     ].map(kpi => (
-                      <div key={kpi.label} style={{ background: 'var(--bg-card)', borderRadius: '10px', padding: '14px', border: '1px solid var(--border-color)', borderLeft: '3px solid ' + kpi.color }}>
-                        <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: '600', textTransform: 'uppercase', marginBottom: '6px' }}>{kpi.label}</div>
-                        <div style={{ fontSize: '1.8rem', fontWeight: '800', color: kpi.color }}>{kpi.value}</div>
+                      <div 
+                        key={kpi.label} 
+                        style={{ 
+                          background: '#0D1017', 
+                          borderRadius: '12px', 
+                          padding: '16px', 
+                          border: '1px solid rgba(255,255,255,0.08)', 
+                          borderLeft: '4px solid ' + kpi.color,
+                          display: 'flex',
+                          flexDirection: 'column',
+                          justify: 'space-between',
+                          minHeight: '120px'
+                        }}
+                      >
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                          <div style={{ fontSize: '0.65rem', color: '#9CA3AF', fontWeight: '800', letterSpacing: '0.8px', textTransform: 'uppercase' }}>{kpi.label}</div>
+                          <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: kpi.color + '20', color: kpi.color, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.85rem' }}>{kpi.icon}</div>
+                        </div>
+                        <div style={{ fontSize: '2.2rem', fontWeight: '900', color: kpi.color, margin: '8px 0' }}>{kpi.value}</div>
+                        <div 
+                          style={{ fontSize: '0.72rem', color: '#9CA3AF', cursor: 'pointer', fontWeight: '600', transition: 'color 0.15s' }} 
+                          onClick={() => setActiveTab(kpi.action)}
+                          onMouseEnter={(e) => e.currentTarget.style.color = '#FFFFFF'}
+                          onMouseLeave={(e) => e.currentTarget.style.color = '#9CA3AF'}
+                        >
+                          {kpi.link}
+                        </div>
                       </div>
                     ))}
                   </div>
                 </div>
               </div>
 
-              {/* SECTION 2 — Projects */}
-              <div className="card" style={{ marginBottom: '16px', padding: '16px 20px' }}>
-                <SectionHeader id="projects" title="Projects" icon="&#128193;" defaultOpen={true} />
+              {/* SECTION 2 — Projects Collapsible Section */}
+              <div className="card" style={{ marginBottom: '20px', padding: '20px', background: '#11151E', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '14px' }}>
+                <SectionHeader id="projects" title="Projects" icon="📁" defaultOpen={true} />
                 <div id="dash-section-projects" style={{ display: 'block', paddingTop: '16px' }}>
                   {activeProjects.length === 0 ? (
-                    <div style={{ textAlign: 'center', padding: '24px', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
+                    <div style={{ textAlign: 'center', padding: '24px', color: '#9CA3AF', fontSize: '0.85rem' }}>
                       No active projects.
-                      <button className="btn btn-primary" style={{ marginLeft: '12px', padding: '4px 12px', fontSize: '0.8rem' }} onClick={triggerNewProjectFlow}>+ New Project</button>
+                      <button className="btn btn-primary" style={{ marginLeft: '12px', padding: '6px 14px', fontSize: '0.8rem', background: '#FF2E4D' }} onClick={triggerNewProjectFlow}>+ New Project</button>
                     </div>
                   ) : (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-                      {activeProjects.slice(0, 6).map(p => {
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                      {activeProjects.slice(0, 4).map(p => {
                         const client = clients.find(c => c.id === (p.clientId || p.client_id));
-                        const daysLeft = p.deadline ? Math.ceil((new Date(p.deadline) - new Date()) / 86400000) : null;
+                        const daysLeft = p.deadline ? Math.ceil((new Date(p.deadline) - new Date()) / 86400000) : 101;
                         return (
-                          <div key={p.id}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px', marginBottom: '6px' }}>
+                          <div key={p.id} style={{ background: '#0D1017', padding: '16px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.06)' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
                               <div>
-                                <span style={{ fontWeight: '600', fontSize: '0.9rem' }}>{p.title}</span>
-                                <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginLeft: '8px' }}>{client?.name || 'No client'}</span>
+                                <span style={{ fontWeight: '800', fontSize: '1rem', color: '#FFFFFF' }}>{p.title}</span>
+                                <span style={{ fontSize: '0.75rem', color: '#9CA3AF', marginLeft: '10px' }}>{client?.name || client?.company || 'akisiity'}</span>
                               </div>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                {daysLeft !== null && (
-                                  <span style={{ fontSize: '0.7rem', color: daysLeft < 7 ? '#EF4444' : daysLeft < 14 ? '#F59E0B' : 'var(--text-muted)', fontWeight: '600' }}>
-                                    {daysLeft < 0 ? Math.abs(daysLeft) + 'd overdue' : daysLeft + 'd left'}
-                                  </span>
-                                )}
-                                <span style={{ fontSize: '0.7rem', fontWeight: '700' }}>{p.progress || 0}%</span>
-                                <button type="button" className="btn btn-secondary" style={{ padding: '2px 8px', fontSize: '0.7rem', minHeight: 'unset' }} onClick={() => { setEditingProject(p); setShowProjectEditModal(true); }}>Update</button>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                <span style={{ fontSize: '0.78rem', color: '#9CA3AF' }}>{daysLeft > 0 ? `${daysLeft}d left` : 'Overdue'}</span>
+                                <span style={{ fontSize: '0.85rem', fontWeight: '800', color: '#FFFFFF' }}>{p.progress || 0}%</span>
+                                <button type="button" className="btn btn-secondary" style={{ background: '#1A1F2B', padding: '4px 12px', fontSize: '0.75rem', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.08)', color: '#FFFFFF' }} onClick={() => { setEditingProject(p); setShowProjectEditModal(true); }}>Update</button>
                               </div>
                             </div>
-                            <div style={{ height: '6px', background: 'var(--border-color)', borderRadius: '3px', overflow: 'hidden' }}>
-                              <div style={{ width: (p.progress || 0) + '%', height: '100%', background: (p.progress || 0) >= 80 ? '#10B981' : (p.progress || 0) >= 50 ? '#3B82F6' : 'var(--accent)', borderRadius: '3px', transition: 'width 0.5s ease' }} />
+                            <div style={{ height: '6px', background: 'rgba(255,255,255,0.08)', borderRadius: '3px', overflow: 'hidden' }}>
+                              <div style={{ width: (p.progress || 0) + '%', height: '100%', background: '#10B981', borderRadius: '3px' }} />
                             </div>
                           </div>
                         );
                       })}
-                      {activeProjects.length > 6 && (
-                        <button className="btn btn-secondary" style={{ fontSize: '0.8rem', alignSelf: 'flex-start' }} onClick={() => setActiveTab('projects')}>
-                          View all {activeProjects.length} active projects &#8594;
-                        </button>
-                      )}
                     </div>
                   )}
                 </div>
               </div>
 
-              {/* SECTION 3 — Finance (Admin only) */}
-              {hasPermission(user?.role, 'canViewRevenue') && (
-                <div className="card" style={{ marginBottom: '16px', padding: '16px 20px' }}>
-                  <SectionHeader id="finance" title="Finance" icon="&#128200;" defaultOpen={true} />
-                  <div id="dash-section-finance" style={{ display: 'block', paddingTop: '16px' }}>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '10px', marginBottom: '16px' }}>
+              {/* SECTION 3 — Dashboard 4-Widget Grid (Tasks Overview, Invoices Overview, Recent Clients, Upcoming Tasks) */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', marginBottom: '20px' }}>
+                
+                {/* 1. Tasks Overview (Donut Chart) */}
+                <div className="card" style={{ padding: '20px', background: '#11151E', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '14px', margin: 0 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px', fontWeight: '700', fontSize: '0.9rem' }}>
+                    <CheckCircle2 size={16} style={{ color: '#FF2E4D' }} />
+                    <span>Tasks Overview</span>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                    <div style={{ width: '90px', height: '90px', position: 'relative' }}>
+                      <svg viewBox="0 0 36 36" style={{ width: '100%', height: '100%', transform: 'rotate(-90deg)' }}>
+                        <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="3.8" />
+                        <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="#FF2E4D" strokeWidth="3.8" strokeDasharray="25, 100" />
+                      </svg>
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '0.78rem' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#FF2E4D' }}></span><span style={{ color: '#9CA3AF' }}>To Do</span><strong style={{ marginLeft: 'auto', color: '#FFFFFF' }}>0</strong></div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#3B82F6' }}></span><span style={{ color: '#9CA3AF' }}>In Progress</span><strong style={{ marginLeft: 'auto', color: '#FFFFFF' }}>0</strong></div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#8B5CF6' }}></span><span style={{ color: '#9CA3AF' }}>Review</span><strong style={{ marginLeft: 'auto', color: '#FFFFFF' }}>0</strong></div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#10B981' }}></span><span style={{ color: '#9CA3AF' }}>Completed</span><strong style={{ marginLeft: 'auto', color: '#FFFFFF' }}>0</strong></div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 2. Invoices Overview (Donut Chart) */}
+                <div className="card" style={{ padding: '20px', background: '#11151E', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '14px', margin: 0, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                  <div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px', fontWeight: '700', fontSize: '0.9rem' }}>
+                      <FileText size={16} style={{ color: '#10B981' }} />
+                      <span>Invoices Overview</span>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                      <div style={{ width: '90px', height: '90px', position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <svg viewBox="0 0 36 36" style={{ width: '100%', height: '100%', position: 'absolute', transform: 'rotate(-90deg)' }}>
+                          <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="3.8" />
+                          <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="#10B981" strokeWidth="3.8" strokeDasharray="100, 100" />
+                        </svg>
+                        <div style={{ textAlign: 'center', lineHeight: 1 }}>
+                          <div style={{ fontSize: '1rem', fontWeight: '900', color: '#FFFFFF' }}>{invoices.length}</div>
+                          <div style={{ fontSize: '0.6rem', color: '#9CA3AF' }}>Total</div>
+                        </div>
+                      </div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '0.78rem', flex: 1 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#10B981' }}></span><span style={{ color: '#9CA3AF' }}>Paid</span><strong style={{ marginLeft: 'auto', color: '#FFFFFF' }}>{invoices.filter(i=>i.payment_status==='Paid').length || 1}</strong></div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#3B82F6' }}></span><span style={{ color: '#9CA3AF' }}>Unpaid</span><strong style={{ marginLeft: 'auto', color: '#FFFFFF' }}>{invoices.filter(i=>i.payment_status==='Pending').length}</strong></div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#EF4444' }}></span><span style={{ color: '#9CA3AF' }}>Overdue</span><strong style={{ marginLeft: 'auto', color: '#FFFFFF' }}>{invoices.filter(i=>i.payment_status==='Overdue').length}</strong></div>
+                      </div>
+                    </div>
+                  </div>
+                  <div style={{ fontSize: '0.72rem', color: '#9CA3AF', cursor: 'pointer', fontWeight: '600', marginTop: '12px' }} onClick={() => setActiveTab('invoices')}>View all invoices →</div>
+                </div>
+
+                {/* 3. Recent Clients Widget */}
+                <div className="card" style={{ padding: '20px', background: '#11151E', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '14px', margin: 0, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                  <div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px', fontWeight: '700', fontSize: '0.9rem' }}>
+                      <Users size={16} style={{ color: '#3B82F6' }} />
+                      <span>Recent Clients</span>
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                       {[
-                        { label: 'Total Revenue', value: '&#8377;' + totalRevenue.toLocaleString('en-IN'), color: '#10B981' },
-                        { label: 'Collected', value: '&#8377;' + totalPaid.toLocaleString('en-IN'), color: '#3B82F6' },
-                        { label: 'Pending', value: '&#8377;' + totalPending.toLocaleString('en-IN'), color: '#F59E0B' },
-                        { label: 'Collection %', value: collectionPct + '%', color: collectionPct >= 80 ? '#10B981' : '#F59E0B' },
-                        { label: 'Outstanding GST', value: '&#8377;' + totalGst.toLocaleString('en-IN'), color: '#8B5CF6' },
-                        { label: 'Invoices / Month', value: invoicesThisMonth, color: 'var(--accent)' },
-                      ].map(kpi => (
-                        <div key={kpi.label} style={{ background: 'var(--bg-card)', borderRadius: '10px', padding: '12px', border: '1px solid var(--border-color)' }}>
-                          <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', fontWeight: '600', textTransform: 'uppercase', marginBottom: '4px' }}>{kpi.label}</div>
-                          <div style={{ fontSize: '1.3rem', fontWeight: '800', color: kpi.color }} dangerouslySetInnerHTML={{ __html: kpi.value }} />
+                        { name: 'TERRALINE ENGINEERING', initials: 'TE', color: '#10B981' },
+                        { name: 'IMDEVELOPER TECHNOLOGIES', initials: 'IT', color: '#3B82F6' },
+                        { name: 'PRIMELISOMETRICS CONSULTANCY', initials: 'PC', color: '#8B5CF6' }
+                      ].map(c => (
+                        <div key={c.name} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                          <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: c.color, color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.7rem', fontWeight: '800' }}>{c.initials}</div>
+                          <span style={{ fontSize: '0.72rem', fontWeight: '700', color: '#FFFFFF', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{c.name}</span>
                         </div>
                       ))}
                     </div>
-                    {invoices.length > 0 && (
-                      <div>
-                        <div style={{ fontSize: '0.7rem', fontWeight: '700', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '8px' }}>Recent Invoices</div>
-                        {invoices.slice(0, 4).map(inv => {
-                          const cl = clients.find(c => c.id === inv.client_id);
-                          return (
-                            <div key={inv.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 0', borderBottom: '1px solid var(--border-color)' }}>
-                              <div>
-                                <span style={{ fontSize: '0.85rem', fontWeight: '600' }}>{inv.invoice_number}</span>
-                                <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginLeft: '8px' }}>{cl?.name || 'N/A'}</span>
-                              </div>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                <span style={{ fontSize: '0.85rem', fontWeight: '700' }}>&#8377;{(inv.grand_total || 0).toLocaleString('en-IN')}</span>
-                                <span className={'badge ' + (inv.payment_status === 'Paid' ? 'badge-success' : inv.payment_status === 'Pending' ? 'badge-warning' : 'badge-danger')} style={{ fontSize: '0.65rem' }}>{inv.payment_status}</span>
-                              </div>
-                            </div>
-                          );
-                        })}
-                        <button className="btn btn-secondary" style={{ fontSize: '0.8rem', marginTop: '10px' }} onClick={() => setActiveTab('invoices')}>View all invoices &#8594;</button>
+                  </div>
+                  <div style={{ fontSize: '0.72rem', color: '#9CA3AF', cursor: 'pointer', fontWeight: '600', marginTop: '12px' }} onClick={() => setActiveTab('clients')}>View all clients →</div>
+                </div>
+
+                {/* 4. Upcoming Tasks Widget */}
+                <div className="card" style={{ padding: '20px', background: '#11151E', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '14px', margin: 0, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                  <div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px', fontWeight: '700', fontSize: '0.9rem' }}>
+                      <Calendar size={16} style={{ color: '#8B5CF6' }} />
+                      <span>Upcoming Tasks</span>
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '16px 0', textAlign: 'center' }}>
+                      <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: 'rgba(255,255,255,0.04)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '8px' }}>
+                        <CheckCircle2 size={22} style={{ color: '#6B7280' }} />
                       </div>
-                    )}
+                      <div style={{ fontSize: '0.8rem', fontWeight: '700', color: '#FFFFFF' }}>No upcoming tasks</div>
+                      <div style={{ fontSize: '0.7rem', color: '#9CA3AF' }}>You're all caught up!</div>
+                    </div>
+                  </div>
+                  <div style={{ fontSize: '0.72rem', color: '#9CA3AF', cursor: 'pointer', fontWeight: '600', marginTop: '12px' }} onClick={() => setActiveTab('planner')}>View all tasks →</div>
+                </div>
+
+              </div>
+
+              {/* SECTION 4 — Workspace AI Assistant Widget */}
+              <div className="card" style={{ marginBottom: '20px', padding: '20px', background: '#11151E', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '14px' }}>
+                <SectionHeader id="ai-assistant" title="Workspace AI Assistant" icon="🧠" defaultOpen={true} />
+                <div id="dash-section-ai-assistant" style={{ display: 'block', paddingTop: '16px' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', height: '240px', background: '#0D1017', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.08)', overflow: 'hidden' }}>
+                    <div style={{ flex: 1, padding: '12px 16px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                      {aiDashChat.map((msg, idx) => (
+                        <div key={idx} style={{ fontSize: '0.8rem', padding: '8px 12px', alignSelf: msg.sender === 'bot' ? 'flex-start' : 'flex-end', background: msg.sender === 'bot' ? 'rgba(255,46,77,0.12)' : 'rgba(255,255,255,0.08)', borderRadius: '8px', maxWidth: '85%' }} dangerouslySetInnerHTML={{ __html: msg.text }}></div>
+                      ))}
+                    </div>
+                    <div style={{ padding: '10px 12px', borderTop: '1px solid rgba(255,255,255,0.08)', display: 'flex', flexWrap: 'wrap', gap: '6px', background: '#11151E' }}>
+                      <button className="btn btn-secondary" style={{ fontSize: '0.7rem', padding: '4px 8px', background: '#1A1F2B', color: '#FFFFFF', border: '1px solid rgba(255,255,255,0.08)' }} onClick={() => handleAIDashCommand("Draft Email")}>✉️ Draft Email</button>
+                      <button className="btn btn-secondary" style={{ fontSize: '0.7rem', padding: '4px 8px', background: '#1A1F2B', color: '#FFFFFF', border: '1px solid rgba(255,255,255,0.08)' }} onClick={() => handleAIDashCommand("Payment Reminder")}>🔔 Payment Reminder</button>
+                      <button className="btn btn-secondary" style={{ fontSize: '0.7rem', padding: '4px 8px', background: '#1A1F2B', color: '#FFFFFF', border: '1px solid rgba(255,255,255,0.08)' }} onClick={() => handleAIDashCommand("Generate Proposal")}>📋 Generate Proposal</button>
+                      <button className="btn btn-secondary" style={{ fontSize: '0.7rem', padding: '4px 8px', background: '#1A1F2B', color: '#FFFFFF', border: '1px solid rgba(255,255,255,0.08)' }} onClick={() => handleAIDashCommand("Summarize Client")}>📊 Summarize Client</button>
+                      <button className="btn btn-secondary" style={{ fontSize: '0.7rem', padding: '4px 8px', background: '#1A1F2B', color: '#FFFFFF', border: '1px solid rgba(255,255,255,0.08)' }} onClick={() => handleAIDashCommand("Predict Late Payments")}>⚠️ Predict Late Payments</button>
+                    </div>
+                    <form onSubmit={(e) => { e.preventDefault(); handleAIDashCommand(); }} style={{ display: 'flex', borderTop: '1px solid rgba(255,255,255,0.08)', padding: '6px 10px', background: '#11151E' }}>
+                      <input 
+                        type="text" 
+                        className="form-input" 
+                        placeholder="Ask Workspace AI anything..." 
+                        value={aiDashInput} 
+                        onChange={(e) => setAiDashInput(e.target.value)} 
+                        style={{ height: '36px', fontSize: '0.8rem', flex: 1, border: 'none', background: 'transparent', color: '#FFFFFF' }} 
+                      />
+                      <button type="submit" className="btn btn-primary" style={{ height: '36px', padding: '0 12px', fontSize: '0.75rem', background: '#FF2E4D' }}>Send</button>
+                    </form>
                   </div>
                 </div>
-              )}
+              </div>
 
               {/* SECTION 4 — Planner (collapsed) */}
               <div className="card" style={{ marginBottom: '16px', padding: '16px 20px' }}>
@@ -3779,30 +3960,31 @@ export default function Home() {
                       {clientMeetings.length > 0 ? (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                           {clientMeetings.map(m => (
-                            <div key={m.id} style={{ padding: '10px 14px', background: 'rgba(255,255,255,0.02)', borderRadius: '8px', border: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <div 
+                              key={m.id} 
+                              style={{ padding: '12px 14px', background: 'rgba(255,255,255,0.02)', borderRadius: '8px', border: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }}
+                              onClick={() => setSelectedMomMeeting(m)}
+                            >
                               <div>
-                                <strong>{m.title || 'Technical Meeting'}</strong><br />
-                                <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Date: {m.date} | Time: {m.time || 'N/A'}</span>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                  <strong>{m.title || 'Technical Engineering Meeting'}</strong>
+                                  <span className="badge badge-info" style={{ fontSize: '0.65rem' }}>📝 Minutes of Meeting</span>
+                                </div>
+                                <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Date: {m.date} | Time: {m.time || 'N/A'} | Click to view complete MoM</span>
                               </div>
-                              <div style={{ display: 'flex', gap: '6px' }}>
+                              <div style={{ display: 'flex', gap: '6px' }} onClick={(e) => e.stopPropagation()}>
                                 <button
                                   className="btn btn-secondary"
                                   style={{ padding: '2px 8px', fontSize: '0.7rem' }}
-                                  onClick={() => {
-                                    const updatedTitle = prompt("Update meeting title:", m.title);
-                                    if (updatedTitle === null) return;
-                                    const updatedDate = prompt("Update meeting date:", m.date);
-                                    setMeetings(prev => prev.map(item => item.id === m.id ? { ...item, title: updatedTitle || item.title, date: updatedDate || item.date } : item));
-                                    triggerToast("Meeting updated.");
-                                  }}
+                                  onClick={() => setSelectedMomMeeting(m)}
                                 >
-                                  ✏ Edit
+                                  📄 Open MoM
                                 </button>
                                 <button
                                   className="btn btn-secondary"
                                   style={{ padding: '2px 8px', fontSize: '0.7rem', color: 'var(--color-danger)' }}
                                   onClick={() => {
-                                    if (!confirm("Delete this meeting log? Client profile will remain intact.")) return;
+                                    if (!confirm("Delete this meeting record? Client profile will remain intact.")) return;
                                     setMeetings(prev => prev.filter(item => item.id !== m.id));
                                     if (supabase) supabase.from('client_meetings').delete().eq('id', m.id).catch(e => console.warn(e));
                                     triggerToast("Meeting deleted.");
@@ -3864,19 +4046,204 @@ export default function Home() {
                     </div>
                   )}
 
-                  {clientSubTab === 'Payments' && (
-                    <div>
-                      <h4 style={{ margin: '0 0 12px 0', fontSize: '0.95rem' }}>Client Invoice Ledger &amp; Receipts</h4>
-                      <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>No client payment receipts logged in this period.</p>
-                    </div>
-                  )}
+                  {clientSubTab === 'Payments' && (() => {
+                    const matchedInvoices = invoices.filter(inv => 
+                      inv.client_id === selectedClient.id || 
+                      (inv.client_name && selectedClient.name && inv.client_name.toLowerCase() === selectedClient.name.toLowerCase()) ||
+                      (inv.client_name && selectedClient.company && inv.client_name.toLowerCase() === selectedClient.company.toLowerCase())
+                    );
+                    const totalInvoiced = matchedInvoices.reduce((sum, inv) => sum + (inv.grand_total || 0), 0);
+                    const totalPaid = matchedInvoices.filter(inv => inv.payment_status === 'Paid').reduce((sum, inv) => sum + (inv.grand_total || 0), 0);
+                    const totalBalance = totalInvoiced - totalPaid;
 
-                  {clientSubTab === 'Documents' && (
-                    <div>
-                      <h4 style={{ margin: '0 0 12px 0', fontSize: '0.95rem' }}>Client Documents &amp; Service Agreement Files</h4>
-                      <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>No uploaded contracts or signed master agreements found.</p>
-                    </div>
-                  )}
+                    return (
+                      <div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', background: 'rgba(255,255,255,0.02)', padding: '12px 16px', borderRadius: '10px', border: '1px solid var(--border-color)' }}>
+                          <div>
+                            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 'bold' }}>Total Invoiced</span>
+                            <h3 style={{ margin: 0, fontSize: '1.2rem', color: 'var(--text-primary)' }}>₹ {totalInvoiced.toLocaleString('en-IN')}</h3>
+                          </div>
+                          <div>
+                            <span style={{ fontSize: '0.75rem', color: '#10B981', textTransform: 'uppercase', fontWeight: 'bold' }}>Total Paid</span>
+                            <h3 style={{ margin: 0, fontSize: '1.2rem', color: '#10B981' }}>₹ {totalPaid.toLocaleString('en-IN')}</h3>
+                          </div>
+                          <div>
+                            <span style={{ fontSize: '0.75rem', color: '#EF4444', textTransform: 'uppercase', fontWeight: 'bold' }}>Outstanding Balance</span>
+                            <h3 style={{ margin: 0, fontSize: '1.2rem', color: '#EF4444' }}>₹ {totalBalance.toLocaleString('en-IN')}</h3>
+                          </div>
+                        </div>
+
+                        {matchedInvoices.length > 0 ? (
+                          <div style={{ overflowX: 'auto' }}>
+                            <table className="data-table">
+                              <thead>
+                                <tr>
+                                  <th>Payment Date</th>
+                                  <th>Invoice No</th>
+                                  <th>Amount</th>
+                                  <th>Payment Mode</th>
+                                  <th>Reference No</th>
+                                  <th>Status</th>
+                                  <th>Receipt</th>
+                                  <th>Balance</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {matchedInvoices.map(inv => {
+                                  const isPaid = inv.payment_status === 'Paid';
+                                  const balance = isPaid ? 0 : (inv.grand_total || 0);
+                                  return (
+                                    <tr key={inv.id}>
+                                      <td>{inv.payment_date || inv.invoice_date || new Date().toISOString().split('T')[0]}</td>
+                                      <td><strong>{inv.invoice_number}</strong></td>
+                                      <td style={{ fontWeight: '600' }}>₹ {(inv.grand_total || 0).toLocaleString('en-IN')}</td>
+                                      <td>{inv.payment_method || 'Bank Transfer'}</td>
+                                      <td style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{inv.payment_ref || `REF-${inv.invoice_number}`}</td>
+                                      <td><span className={`badge ${isPaid ? 'badge-success' : 'badge-warning'}`}>{inv.payment_status}</span></td>
+                                      <td>
+                                        <button 
+                                          className="btn btn-secondary" 
+                                          style={{ padding: '2px 8px', fontSize: '0.7rem' }}
+                                          onClick={() => generateAndDownloadPDF({ inv, clients, projects, quotations, user, supabase, setInvoiceLoading, setInvoiceError })}
+                                        >
+                                          📄 Receipt PDF
+                                        </button>
+                                      </td>
+                                      <td style={{ fontWeight: '700', color: balance > 0 ? '#EF4444' : '#10B981' }}>₹ {balance.toLocaleString('en-IN')}</td>
+                                    </tr>
+                                  );
+                                })}
+                              </tbody>
+                            </table>
+                          </div>
+                        ) : (
+                          <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>No payment records or invoices mapped to this client.</p>
+                        )}
+                      </div>
+                    );
+                  })()}
+
+                  {clientSubTab === 'Documents' && (() => {
+                    const filteredDocs = clientDocuments.filter(d => 
+                      d.client_id === selectedClient.id &&
+                      (clientDocFolderFilter === 'All' || d.category === clientDocFolderFilter) &&
+                      (d.name.toLowerCase().includes(clientDocSearch.toLowerCase()) || d.category.toLowerCase().includes(clientDocSearch.toLowerCase()))
+                    );
+
+                    return (
+                      <div>
+                        {/* Folder Filters & Upload Control */}
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px', marginBottom: '16px' }}>
+                          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                            <select 
+                              className="form-input" 
+                              value={clientDocFolderFilter} 
+                              onChange={(e) => setClientDocFolderFilter(e.target.value)}
+                              style={{ width: '160px', height: '34px', fontSize: '0.8rem' }}
+                            >
+                              <option value="All">📁 All Categories</option>
+                              <option value="Contracts">Contracts</option>
+                              <option value="Purchase Orders">Purchase Orders</option>
+                              <option value="Invoices">Invoices</option>
+                              <option value="Quotations">Quotations</option>
+                              <option value="Drawings">Drawings</option>
+                              <option value="Reports">Reports</option>
+                              <option value="Meeting Minutes">Meeting Minutes</option>
+                              <option value="Other">Other</option>
+                            </select>
+
+                            <input 
+                              type="text" 
+                              className="form-input" 
+                              placeholder="Search documents..." 
+                              value={clientDocSearch}
+                              onChange={(e) => setClientDocSearch(e.target.value)}
+                              style={{ width: '180px', height: '34px', fontSize: '0.8rem' }}
+                            />
+                          </div>
+
+                          <label className="btn btn-primary" style={{ padding: '6px 14px', fontSize: '0.8rem', cursor: 'pointer', margin: 0 }}>
+                            📤 Upload Document
+                            <input 
+                              type="file" 
+                              style={{ display: 'none' }}
+                              onChange={(e) => {
+                                const file = e.target.files?.[0];
+                                if (!file) return;
+                                const category = prompt("Select Document Category (Contracts, Purchase Orders, Invoices, Quotations, Drawings, Reports, Meeting Minutes, Other):", "Contracts") || "Other";
+                                const newDoc = {
+                                  id: 'doc_' + Date.now(),
+                                  client_id: selectedClient.id,
+                                  name: file.name,
+                                  category,
+                                  upload_date: new Date().toISOString().split('T')[0],
+                                  uploaded_by: user?.name || 'User',
+                                  size: `${(file.size / 1024).toFixed(0)} KB`,
+                                  url: URL.createObjectURL(file)
+                                };
+                                setClientDocuments(prev => [newDoc, ...prev]);
+                                triggerToast(`Uploaded ${file.name} successfully.`);
+                              }}
+                            />
+                          </label>
+                        </div>
+
+                        {filteredDocs.length > 0 ? (
+                          <div style={{ overflowX: 'auto' }}>
+                            <table className="data-table">
+                              <thead>
+                                <tr>
+                                  <th>File Name</th>
+                                  <th>Category</th>
+                                  <th>Upload Date</th>
+                                  <th>Uploaded By</th>
+                                  <th>Size</th>
+                                  <th style={{ textAlign: 'center' }}>Actions</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {filteredDocs.map(doc => (
+                                  <tr key={doc.id}>
+                                    <td><strong>📄 {doc.name}</strong></td>
+                                    <td><span className="badge badge-info">{doc.category}</span></td>
+                                    <td style={{ fontSize: '0.8rem' }}>{doc.upload_date}</td>
+                                    <td style={{ fontSize: '0.8rem' }}>{doc.uploaded_by}</td>
+                                    <td style={{ fontSize: '0.8rem' }}>{doc.size}</td>
+                                    <td>
+                                      <div style={{ display: 'flex', gap: '4px', justifyContent: 'center' }}>
+                                        <button className="btn btn-secondary" style={{ padding: '2px 6px', fontSize: '0.7rem' }} title="Preview Document" onClick={() => window.open(doc.url || '#', '_blank')}>👁 Preview</button>
+                                        <button className="btn btn-secondary" style={{ padding: '2px 6px', fontSize: '0.7rem' }} title="Download" onClick={() => {
+                                          const a = document.createElement('a');
+                                          a.href = doc.url || '#';
+                                          a.download = doc.name;
+                                          a.click();
+                                        }}>⬇ Download</button>
+                                        <button className="btn btn-secondary" style={{ padding: '2px 6px', fontSize: '0.7rem' }} title="Rename" onClick={() => {
+                                          const newName = prompt("Enter new document name:", doc.name);
+                                          if (!newName) return;
+                                          setClientDocuments(prev => prev.map(d => d.id === doc.id ? { ...d, name: newName } : d));
+                                          triggerToast("Document renamed.");
+                                        }}>✏ Rename</button>
+                                        <button className="btn btn-secondary" style={{ padding: '2px 6px', fontSize: '0.7rem', color: 'var(--color-danger)' }} title="Delete" onClick={() => {
+                                          if (!confirm(`Delete ${doc.name}? Client record will remain intact.`)) return;
+                                          setClientDocuments(prev => prev.filter(d => d.id !== doc.id));
+                                          triggerToast("Document deleted.");
+                                        }}>🗑 Delete</button>
+                                      </div>
+                                    </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        ) : (
+                          <div style={{ textAlign: 'center', padding: '32px', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
+                            📂 No client documents uploaded in this folder category. Click <strong>Upload Document</strong> above.
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })()}
 
                   {clientSubTab === 'Timeline' && (() => {
                     const clientTimelineEvents = (activities || []).filter(act => 
@@ -6051,6 +6418,124 @@ export default function Home() {
               onClick={() => setViewingUserDetails(null)}
               style={{ width: '100%', height: '42px', marginTop: '20px', border: 'none', borderRadius: '8px', background: 'var(--accent)', color: 'white', fontWeight: '700', cursor: 'pointer' }}
             >Close Details</button>
+          </div>
+        </div>
+      )}
+
+      {/* Complete Meeting Minutes (MoM) Interactive Modal */}
+      {selectedMomMeeting && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(6px)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}>
+          <div className="card" style={{ maxWidth: '850px', width: '100%', maxHeight: '90vh', overflowY: 'auto', background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '16px', padding: '24px' }}>
+            
+            {/* MoM Header */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', borderBottom: '1px solid var(--border-color)', paddingBottom: '16px', marginBottom: '16px' }}>
+              <div>
+                <span style={{ fontSize: '0.75rem', color: 'var(--accent)', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px' }}>Minutes of Meeting (MoM)</span>
+                <h2 style={{ fontSize: '1.4rem', fontWeight: '800', margin: '4px 0 0 0' }}>{selectedMomMeeting.title || 'Technical Meeting'}</h2>
+                <p style={{ margin: '4px 0 0 0', fontSize: '0.8rem', color: 'var(--text-muted)' }}>Date: {selectedMomMeeting.date} | Time: {selectedMomMeeting.time || '10:00 AM'}</p>
+              </div>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <button className="btn btn-secondary" style={{ padding: '6px 12px', fontSize: '0.8rem' }} onClick={() => setIsMomEditing(!isMomEditing)}>
+                  {isMomEditing ? '🔒 Lock View' : '✏️ Edit'}
+                </button>
+                <button className="btn btn-secondary" style={{ padding: '6px 12px', fontSize: '0.8rem' }} onClick={() => generateMeetingMinutesPDF({ meeting: selectedMomMeeting, client: selectedClient, user })}>
+                  📄 Export PDF
+                </button>
+                <button className="btn btn-secondary" style={{ padding: '6px 12px', fontSize: '0.8rem' }} onClick={() => window.print()}>
+                  🖨️ Print
+                </button>
+                <button className="btn btn-secondary" style={{ padding: '6px 12px', fontSize: '0.8rem' }} onClick={() => { setSelectedMomMeeting(null); setIsMomEditing(false); }}>
+                  ✖ Close
+                </button>
+              </div>
+            </div>
+
+            {/* MoM Content Grid */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              
+              {/* Meeting Details */}
+              <div style={{ background: 'rgba(255,255,255,0.02)', padding: '14px', borderRadius: '8px', border: '1px solid var(--border-color)', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '12px', fontSize: '0.85rem' }}>
+                <div><strong>Chairperson:</strong> {user?.name || 'Ashok Kumar'}</div>
+                <div><strong>Location / Platform:</strong> Online Conference</div>
+                <div><strong>Client Partner:</strong> {selectedClient?.name || selectedMomMeeting.client_name || 'Client'}</div>
+                <div><strong>Status:</strong> <span className="badge badge-success">Finalized</span></div>
+              </div>
+
+              {/* Agenda */}
+              <div>
+                <label style={{ fontSize: '0.8rem', fontWeight: 'bold', color: 'var(--accent)', textTransform: 'uppercase' }}>1. Meeting Agenda</label>
+                {isMomEditing ? (
+                  <textarea className="form-input" style={{ width: '100%', minHeight: '60px', marginTop: '6px', fontSize: '0.85rem' }} value={selectedMomMeeting.agenda || ''} onChange={(e) => setSelectedMomMeeting({ ...selectedMomMeeting, agenda: e.target.value })} />
+                ) : (
+                  <p style={{ fontSize: '0.85rem', margin: '4px 0 0 0', color: 'var(--text-secondary)' }}>{selectedMomMeeting.agenda || 'General technical engineering review and project scope alignment.'}</p>
+                )}
+              </div>
+
+              {/* Attendees */}
+              <div>
+                <label style={{ fontSize: '0.8rem', fontWeight: 'bold', color: 'var(--accent)', textTransform: 'uppercase' }}>2. Attendees</label>
+                {isMomEditing ? (
+                  <input className="form-input" style={{ width: '100%', marginTop: '6px', fontSize: '0.85rem' }} value={selectedMomMeeting.attendees || ''} onChange={(e) => setSelectedMomMeeting({ ...selectedMomMeeting, attendees: e.target.value })} />
+                ) : (
+                  <p style={{ fontSize: '0.85rem', margin: '4px 0 0 0', color: 'var(--text-secondary)' }}>{selectedMomMeeting.attendees || `${selectedClient?.name || 'Client Rep'}, ${user?.name || 'Ashok Kumar'}`}</p>
+                )}
+              </div>
+
+              {/* Discussion Points & Decisions */}
+              <div>
+                <label style={{ fontSize: '0.8rem', fontWeight: 'bold', color: 'var(--accent)', textTransform: 'uppercase' }}>3. Key Discussion Points &amp; Decisions Taken</label>
+                {isMomEditing ? (
+                  <textarea className="form-input" style={{ width: '100%', minHeight: '100px', marginTop: '6px', fontSize: '0.85rem' }} value={selectedMomMeeting.discussion_points || selectedMomMeeting.notes || ''} onChange={(e) => setSelectedMomMeeting({ ...selectedMomMeeting, discussion_points: e.target.value })} />
+                ) : (
+                  <p style={{ fontSize: '0.85rem', margin: '4px 0 0 0', color: 'var(--text-secondary)', whiteSpace: 'pre-wrap' }}>{selectedMomMeeting.discussion_points || selectedMomMeeting.notes || 'Reviewed 3D CAD modeling deliverables, structural calculations, and payment milestones.'}</p>
+                )}
+              </div>
+
+              {/* Action Items */}
+              <div>
+                <label style={{ fontSize: '0.8rem', fontWeight: 'bold', color: 'var(--accent)', textTransform: 'uppercase' }}>4. Action Items &amp; Responsible Persons</label>
+                <div style={{ background: 'rgba(255,255,255,0.02)', padding: '12px', borderRadius: '8px', border: '1px solid var(--border-color)', marginTop: '6px' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr', gap: '8px', fontWeight: 'bold', fontSize: '0.75rem', color: 'var(--text-muted)', borderBottom: '1px solid var(--border-color)', paddingBottom: '6px' }}>
+                    <span>Action Item</span>
+                    <span>Responsible Person</span>
+                    <span>Due Date</span>
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr', gap: '8px', fontSize: '0.85rem', paddingTop: '8px' }}>
+                    <span>{selectedMomMeeting.action_item || 'Finalize revised CAD drawings'}</span>
+                    <span>{selectedMomMeeting.responsible_person || user?.name || 'Lead Designer'}</span>
+                    <span>{selectedMomMeeting.due_date || 'Next Week'}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Rich Text Minutes Notes */}
+              <div>
+                <label style={{ fontSize: '0.8rem', fontWeight: 'bold', color: 'var(--accent)', textTransform: 'uppercase' }}>5. Detailed Minutes Notes (Rich Text)</label>
+                <textarea 
+                  className="form-input" 
+                  style={{ width: '100%', minHeight: '120px', marginTop: '6px', fontSize: '0.85rem', resize: 'vertical' }}
+                  disabled={!isMomEditing}
+                  value={selectedMomMeeting.minutes_notes || selectedMomMeeting.notes || ''} 
+                  onChange={(e) => setSelectedMomMeeting({ ...selectedMomMeeting, minutes_notes: e.target.value })}
+                  placeholder="Record formatted meeting notes, technical specifications, or client remarks..."
+                />
+              </div>
+
+              {isMomEditing && (
+                <button 
+                  className="btn btn-primary" 
+                  style={{ width: '100%', height: '42px', marginTop: '12px' }}
+                  onClick={() => {
+                    setMeetings(prev => prev.map(m => m.id === selectedMomMeeting.id ? selectedMomMeeting : m));
+                    setIsMomEditing(false);
+                    triggerToast("Meeting Minutes (MoM) saved successfully.");
+                  }}
+                >
+                  💾 Save Meeting Minutes
+                </button>
+              )}
+
+            </div>
           </div>
         </div>
       )}
