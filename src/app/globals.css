@@ -455,4 +455,176 @@ h1, h2, h3, h4, h5, h6 {
   }
 }
 
+/* Sidebar Group Headers & Layouts */
+.sidebar-group-title {
+  font-size: 0.65rem;
+  font-weight: 800;
+  color: var(--text-muted);
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  margin: 16px 0 8px 12px;
+  display: block;
+}
+
+.sidebar-collapsed .sidebar-group-title {
+  display: none;
+}
+
+/* Sidebar Nav Button States */
+.sidebar-nav-btn {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 0.82rem;
+  font-weight: 600;
+  padding: 8px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  width: 100%;
+  text-align: left;
+  transition: all 0.18s ease;
+  position: relative;
+}
+
+.sidebar-nav-btn:hover {
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--text-primary);
+}
+
+.sidebar-nav-btn.active {
+  background: rgba(255, 46, 77, 0.06);
+  color: var(--text-primary);
+  font-weight: 700;
+  border-left: 4px solid var(--accent);
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+}
+
+.sidebar-collapsed .sidebar-nav-btn {
+  justify-content: center;
+  padding: 10px 0;
+  border-left: none;
+}
+
+.sidebar-collapsed .sidebar-nav-btn.active {
+  background: rgba(255, 46, 77, 0.12);
+  border-left: none;
+  box-shadow: inset 3px 0 0 var(--accent);
+}
+
+.sidebar-collapsed .sidebar-nav-btn span {
+  display: none;
+}
+
+/* Responsive Dashboard KPIs Grid */
+.dashboard-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 14px;
+}
+
+@media (max-width: 1024px) {
+  .dashboard-kpi-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 640px) {
+  .dashboard-kpi-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Desktop vs Mobile display utilities */
+@media (max-width: 768px) {
+  .desktop-only {
+    display: none !important;
+  }
+  .mobile-only {
+    display: block !important;
+  }
+  .mobile-card-item {
+    background: var(--bg-card);
+    border-radius: 18px;
+    padding: 16px;
+    margin-bottom: 12px;
+    border: 1px solid var(--border-color);
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+}
+
+@media (min-width: 769px) {
+  .desktop-only {
+    display: block !important;
+  }
+  .mobile-only {
+    display: none !important;
+  }
+}
+
+/* Floating Action Button (FAB) */
+.mobile-fab-container {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 999;
+}
+
+.mobile-fab-btn {
+  width: 56px;
+  height: 56px;
+  background: var(--accent);
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 16px rgba(255, 46, 77, 0.4);
+  border: none;
+  font-size: 1.8rem;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.mobile-fab-btn:active {
+  transform: scale(0.95);
+}
+
+.mobile-fab-menu {
+  position: absolute;
+  bottom: 70px;
+  right: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  padding: 8px;
+  border-radius: 12px;
+  box-shadow: var(--shadow-card);
+  min-width: 140px;
+}
+
+.mobile-fab-item {
+  padding: 8px 12px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  border: none;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+  border-radius: 6px;
+}
+
+.mobile-fab-item:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+
 

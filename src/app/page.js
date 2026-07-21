@@ -299,6 +299,8 @@ export default function Home() {
 
   // Project Detail Reports Modal Sub-tab State
   const [projectModalSubTab, setProjectModalSubTab] = useState('status'); // 'status', 'reports', 'finance', 'documents'
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [mobileFabOpen, setMobileFabOpen] = useState(false);
 
   // Loading indicator for Invoice PDF / Save action
   const [invoiceLoading, setInvoiceLoading] = useState(''); // 'Saving...', 'Generating PDF...', etc.
@@ -3066,12 +3068,14 @@ export default function Home() {
                 <button className={`btn ${activeTab === 'dashboard' ? 'btn-primary' : 'btn-secondary'}`} style={{ border: 'none', justifyContent: 'flex-start' }} onClick={() => { setActiveTab('dashboard'); setDrawerOpen(false); }}>
                   <LayoutDashboard size={18} /> Dashboard
                 </button>
+                <button className={`btn ${activeTab === 'projects' ? 'btn-primary' : 'btn-secondary'}`} style={{ border: 'none', justifyContent: 'flex-start' }} onClick={() => { setActiveTab('projects'); setDrawerOpen(false); }}>
+                  <FolderKanban size={18} /> Projects
+                </button>
+                <button className={`btn ${activeTab === 'planner' ? 'btn-primary' : 'btn-secondary'}`} style={{ border: 'none', justifyContent: 'flex-start' }} onClick={() => { setActiveTab('planner'); setDrawerOpen(false); }}>
+                  <CheckCircle2 size={18} /> Tasks
+                </button>
                 <button className={`btn ${activeTab === 'clients' ? 'btn-primary' : 'btn-secondary'}`} style={{ border: 'none', justifyContent: 'flex-start' }} onClick={() => { setActiveTab('clients'); setDrawerOpen(false); }}>
                   <Users size={18} /> Clients
-                </button>
-
-                <button className={`btn ${activeTab === 'planner' ? 'btn-primary' : 'btn-secondary'}`} style={{ border: 'none', justifyContent: 'flex-start' }} onClick={() => { setActiveTab('planner'); setDrawerOpen(false); }}>
-                  <Calendar size={18} /> {user?.role === 'Employee' ? 'My Tasks' : 'Daily Planner'}
                 </button>
                 <button className={`btn ${activeTab === 'quotations' ? 'btn-primary' : 'btn-secondary'}`} style={{ border: 'none', justifyContent: 'flex-start' }} onClick={() => { setActiveTab('quotations'); setDrawerOpen(false); }}>
                   <FileSpreadsheet size={18} /> Quotations
@@ -3081,16 +3085,25 @@ export default function Home() {
                     <FileText size={18} /> Invoices
                   </button>
                 )}
-                {user?.role === 'Employee' && (
-                  <button className={`btn ${activeTab === 'personal-tracker' ? 'btn-primary' : 'btn-secondary'}`} style={{ border: 'none', justifyContent: 'flex-start' }} onClick={() => { setActiveTab('personal-tracker'); setDrawerOpen(false); }}>
-                    <BrainCircuit size={18} /> Personal Tracker
+                {hasPermission(user?.role, 'canViewRevenue') && (
+                  <button className={`btn ${activeTab === 'finance' ? 'btn-primary' : 'btn-secondary'}`} style={{ border: 'none', justifyContent: 'flex-start' }} onClick={() => { setActiveTab('finance'); setDrawerOpen(false); }}>
+                    <IndianRupee size={18} /> Finance
                   </button>
                 )}
+                <button className={`btn ${activeTab === 'reports' ? 'btn-primary' : 'btn-secondary'}`} style={{ border: 'none', justifyContent: 'flex-start' }} onClick={() => { setActiveTab('reports'); setDrawerOpen(false); }}>
+                  <BarChart3 size={18} /> Reports
+                </button>
+                <button className={`btn ${activeTab === 'calendar' ? 'btn-primary' : 'btn-secondary'}`} style={{ border: 'none', justifyContent: 'flex-start' }} onClick={() => { setActiveTab('calendar'); setDrawerOpen(false); }}>
+                  <Calendar size={18} /> Calendar
+                </button>
                 {hasPermission(user?.role, 'canManageUsers') && (
                   <button className={`btn ${activeTab === 'admin' ? 'btn-primary' : 'btn-secondary'}`} style={{ border: 'none', justifyContent: 'flex-start' }} onClick={() => { setActiveTab('admin'); setDrawerOpen(false); }}>
                     <Users size={18} /> User Management
                   </button>
                 )}
+                <button className={`btn ${activeTab === 'settings' ? 'btn-primary' : 'btn-secondary'}`} style={{ border: 'none', justifyContent: 'flex-start' }} onClick={() => { setActiveTab('settings'); setDrawerOpen(false); }}>
+                  <KeyRound size={18} /> Settings
+                </button>
               </nav>
             </div>
 
@@ -3107,75 +3120,119 @@ export default function Home() {
       )}
 
       {/* Sidebar Navigation */}
-      <aside className="sidebar" style={{ width: '220px', background: '#0D1017', borderRight: '1px solid rgba(255,255,255,0.08)', padding: '16px 12px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-        <div>
-          {/* Logo Header */}
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '20px', padding: '6px 0', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-            <img 
-              src="/logo.png" 
-              alt="AURA WORKSPACE" 
-              style={{ maxHeight: '42px', maxWidth: '180px', width: 'auto', height: 'auto', objectFit: 'contain' }} 
-            />
-          </div>
-
-          {/* Nav Items */}
-          <nav style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-            {[
+      {(() => {
+        const menuGroups = [
+          {
+            title: 'WORKSPACE',
+            items: [
               { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
               { id: 'projects', label: 'Projects', icon: FolderKanban },
-              { id: 'planner', label: 'Tasks', icon: CheckCircle2 },
+              { id: 'planner', label: 'Tasks', icon: CheckCircle2 }
+            ]
+          },
+          {
+            title: 'CRM',
+            items: [
               { id: 'clients', label: 'Clients', icon: Users },
-              { id: 'invoices', label: 'Invoices', icon: FileText, perm: 'canViewInvoices' },
               { id: 'quotations', label: 'Quotations', icon: FileSpreadsheet },
+              { id: 'invoices', label: 'Invoices', icon: FileText, perm: 'canViewInvoices' }
+            ]
+          },
+          {
+            title: 'FINANCE',
+            items: [
               { id: 'finance', label: 'Finance', icon: IndianRupee, perm: 'canViewRevenue' },
-              { id: 'calendar', label: 'Calendar', icon: Calendar },
               { id: 'reports', label: 'Reports', icon: BarChart3 },
-              { id: 'admin', label: 'Team', icon: Users, perm: 'canManageUsers' },
+              { id: 'calendar', label: 'Calendar', icon: Calendar }
+            ]
+          },
+          {
+            title: 'SYSTEM',
+            items: [
+              { id: 'admin', label: 'Users', icon: Users, perm: 'canManageUsers' },
               { id: 'settings', label: 'Settings', icon: KeyRound }
-            ].map(item => {
-              if (item.perm && !hasPermission(user?.role, item.perm)) return null;
-              const isActive = activeTab === item.id || (item.id === 'projects' && activeTab === 'projects') || (item.id === 'finance' && activeTab === 'revenue');
-              const IconComp = item.icon;
-              return (
-                <button 
-                  key={item.id}
-                  className="btn" 
-                  style={{ 
-                    border: 'none', 
-                    justify: 'flex-start', 
-                    borderRadius: '8px',
-                    padding: '8px 12px',
-                    fontSize: '0.82rem',
-                    fontWeight: isActive ? '700' : '500',
-                    background: isActive ? '#FF2E4D' : 'transparent',
-                    color: isActive ? '#FFFFFF' : '#9CA3AF',
-                    boxShadow: isActive ? '0 4px 12px rgba(255, 46, 77, 0.3)' : 'none',
-                    transition: 'all 0.15s ease'
-                  }}
-                  onClick={() => setActiveTab(item.id)}
-                >
-                  <IconComp size={16} style={{ color: isActive ? '#FFFFFF' : '#9CA3AF' }} /> 
-                  <span>{item.label}</span>
-                </button>
-              );
-            })}
-          </nav>
-        </div>
+            ]
+          }
+        ];
 
-        {/* User Profile Footer */}
-        <div style={{ borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: '12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer' }} onClick={() => setActiveTab('profile')}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', overflow: 'hidden' }}>
-            <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: '#FF2E4D', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '800', fontSize: '0.78rem', flexShrink: 0 }}>
-              {user?.name ? user.name.split(' ').map(n=>n[0]).join('').slice(0,2).toUpperCase() : 'CA'}
+        return (
+          <aside className={`sidebar ${sidebarCollapsed ? 'sidebar-collapsed' : ''}`} style={{ width: sidebarCollapsed ? '64px' : '220px', background: '#0D1017', borderRight: '1px solid rgba(255,255,255,0.08)', padding: sidebarCollapsed ? '16px 6px' : '16px 12px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', transition: 'width 0.2s ease-in-out' }}>
+            <div>
+              {/* Logo Header */}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px', padding: '6px 0', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+                {!sidebarCollapsed && (
+                  <img 
+                    src="/logo.png" 
+                    alt="AURA WORKSPACE" 
+                    style={{ maxHeight: '36px', maxWidth: '130px', width: 'auto', height: 'auto', objectFit: 'contain' }} 
+                  />
+                )}
+                {sidebarCollapsed && (
+                  <img 
+                    src="/logo.png" 
+                    alt="A" 
+                    style={{ maxHeight: '32px', maxWidth: '32px', borderRadius: '6px', objectFit: 'cover' }} 
+                  />
+                )}
+                <button 
+                  type="button" 
+                  className="btn btn-secondary" 
+                  style={{ minWidth: 'auto', padding: '4px 8px', height: '28px', background: 'transparent', border: 'none', color: '#9CA3AF' }}
+                  onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+                >
+                  ▌
+                </button>
+              </div>
+
+              {/* Grouped Nav Items */}
+              <nav style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                {menuGroups.map(group => {
+                  const visibleItems = group.items.filter(item => !item.perm || hasPermission(user?.role, item.perm));
+                  if (visibleItems.length === 0) return null;
+                  return (
+                    <div key={group.title} style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                      <span className="sidebar-group-title">{group.title}</span>
+                      {visibleItems.map(item => {
+                        const isActive = activeTab === item.id || (item.id === 'projects' && activeTab === 'projects') || (item.id === 'finance' && activeTab === 'revenue');
+                        const IconComp = item.icon;
+                        return (
+                          <button 
+                            key={item.id}
+                            className={`sidebar-nav-btn ${isActive ? 'active' : ''}`}
+                            onClick={() => setActiveTab(item.id)}
+                            title={sidebarCollapsed ? item.label : undefined}
+                          >
+                            <IconComp size={16} style={{ color: isActive ? '#FFFFFF' : '#9CA3AF' }} /> 
+                            <span>{item.label}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  );
+                })}
+              </nav>
             </div>
-            <div style={{ minWidth: 0 }}>
-              <p style={{ fontSize: '0.78rem', fontWeight: '700', color: '#FFFFFF', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user?.name || 'Chandru Admin'}</p>
-              <span style={{ fontSize: '0.65rem', color: '#9CA3AF', display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user?.role === 'Admin' || user?.role === 'Super Admin' ? 'Administrator' : 'Workspace User'}</span>
+
+            {/* User Profile Footer */}
+            <div style={{ borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }} onClick={() => setActiveTab('profile')}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', overflow: 'hidden', width: '100%', justifyContent: sidebarCollapsed ? 'center' : 'space-between' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', overflow: 'hidden' }}>
+                  <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'linear-gradient(135deg, #FF2E4D 0%, #E0203C 100%)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '800', fontSize: '0.78rem', flexShrink: 0, boxShadow: '0 0 10px rgba(255, 46, 77, 0.4)' }}>
+                    {user?.name ? user.name.split(' ').map(n=>n[0]).join('').slice(0,2).toUpperCase() : 'CA'}
+                  </div>
+                  {!sidebarCollapsed && (
+                    <div style={{ minWidth: 0 }}>
+                      <p style={{ fontSize: '0.78rem', fontWeight: '700', color: '#FFFFFF', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user?.name || 'Chandru Admin'}</p>
+                      <span style={{ fontSize: '0.65rem', color: '#9CA3AF', display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user?.role === 'Admin' || user?.role === 'Super Admin' ? 'Administrator' : 'Workspace User'}</span>
+                    </div>
+                  )}
+                </div>
+                {!sidebarCollapsed && <span style={{ color: '#9CA3AF', fontSize: '0.75rem', flexShrink: 0 }}>❯</span>}
+              </div>
             </div>
-          </div>
-          <span style={{ color: '#9CA3AF', fontSize: '0.75rem', flexShrink: 0 }}>❯</span>
-        </div>
-      </aside>
+          </aside>
+        );
+      })()}
 
       {/* Main Content Workspace Frame */}
       <main className="main-content" style={{ paddingBottom: '80px' }}>
@@ -3821,7 +3878,7 @@ export default function Home() {
 
                 {/* Subtabs */}
                 <div style={{ display: 'flex', gap: '8px', borderBottom: '1px solid var(--border-color)', marginBottom: '20px', paddingBottom: '2px', overflowX: 'auto' }}>
-                  {['Overview', `Projects (${clientProjects.length})`, `Quotations (${clientQuotes.length})`, `Invoices (${clientInvoices.length})`, 'Payments', 'Documents', `Meetings (${clientMeetings.length})`, 'Notes', 'Timeline'].map(t => (
+                  {['Overview', `Projects (${clientProjects.length})`, `Quotations (${clientQuotes.length})`, `Invoices (${clientInvoices.length})`, 'Payments', 'Documents', `Meetings (${clientMeetings.length})`, 'Notes', 'Timeline', 'Statement'].map(t => (
                     <button
                       key={t}
                       className="btn"
@@ -4353,6 +4410,118 @@ export default function Home() {
                       </div>
                     );
                   })()}
+
+                  {clientSubTab === 'Statement' && (() => {
+                    const matchedInvoices = invoices.filter(inv => inv.client_id === selectedClient.id);
+                    const totalInvoiced = matchedInvoices.reduce((s, i) => s + (i.grand_total || 0), 0);
+                    const totalReceived = matchedInvoices.filter(i => i.payment_status === 'Paid').reduce((s, i) => s + (i.grand_total || 0), 0);
+                    const outstanding = Math.max(0, totalInvoiced - totalReceived);
+                    
+                    return (
+                      <div>
+                        {/* Statement Header & Export buttons */}
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', borderBottom: '1px solid rgba(255,255,255,0.08)', paddingBottom: '12px' }}>
+                          <div>
+                            <h4 style={{ margin: 0, fontSize: '1rem', fontWeight: '800' }}>Statement of Account</h4>
+                            <p style={{ margin: '4px 0 0 0', fontSize: '0.78rem', color: 'var(--text-secondary)' }}>Period: 1 July 2026 to 31 July 2026</p>
+                          </div>
+                          <div style={{ display: 'flex', gap: '8px' }}>
+                            <button className="btn btn-secondary" style={{ padding: '4px 10px', fontSize: '0.75rem' }} onClick={() => window.print()}>
+                              🖨️ Print Statement
+                            </button>
+                            <button className="btn btn-secondary" style={{ padding: '4px 10px', fontSize: '0.75rem' }} onClick={() => {
+                              const csvContent = "data:text/csv;charset=utf-8,Date,Transaction,Reference,Debit (Invoiced),Credit (Paid),Running Balance\n" + matchedInvoices.map(i => `"${i.invoice_date || '2026-07-21'}","Invoice","${i.invoice_number}","${i.grand_total}","${i.payment_status === 'Paid' ? i.grand_total : 0}","${i.payment_status === 'Paid' ? 0 : i.grand_total}"`).join("\n");
+                              const encodedUri = encodeURI(csvContent);
+                              const link = document.createElement("a");
+                              link.setAttribute("href", encodedUri);
+                              link.setAttribute("download", `Statement_${selectedClient.name.replace(/ /g, "_")}.csv`);
+                              document.body.appendChild(link);
+                              link.click();
+                              document.body.removeChild(link);
+                              triggerToast("Client Statement exported to CSV");
+                            }}>
+                              📥 Export CSV / Excel
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Financial Ledger Overview */}
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px', marginBottom: '20px' }}>
+                          <div style={{ background: '#0D1017', padding: '14px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.06)' }}>
+                            <span style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', fontWeight: '800' }}>OPENING BALANCE</span>
+                            <div style={{ fontSize: '1.2rem', fontWeight: '900', color: '#FFFFFF', marginTop: '4px' }}>₹ 10,000</div>
+                          </div>
+                          <div style={{ background: '#0D1017', padding: '14px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.06)' }}>
+                            <span style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', fontWeight: '800' }}>TOTAL INVOICED</span>
+                            <div style={{ fontSize: '1.2rem', fontWeight: '900', color: '#FFFFFF', marginTop: '4px' }}>₹ {totalInvoiced.toLocaleString('en-IN')}</div>
+                          </div>
+                          <div style={{ background: '#0D1017', padding: '14px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.06)' }}>
+                            <span style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', fontWeight: '800' }}>TOTAL RECEIVED</span>
+                            <div style={{ fontSize: '1.2rem', fontWeight: '900', color: '#10B981', marginTop: '4px' }}>₹ {totalReceived.toLocaleString('en-IN')}</div>
+                          </div>
+                          <div style={{ background: '#0D1017', padding: '14px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.06)' }}>
+                            <span style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', fontWeight: '800' }}>OUTSTANDING BALANCE</span>
+                            <div style={{ fontSize: '1.2rem', fontWeight: '900', color: '#EF4444', marginTop: '4px' }}>₹ {(outstanding + 10000).toLocaleString('en-IN')}</div>
+                          </div>
+                        </div>
+
+                        {/* Statement Transactions Ledger */}
+                        <div style={{ overflowX: 'auto', marginBottom: '20px' }}>
+                          <table className="data-table">
+                            <thead>
+                              <tr>
+                                <th>Date</th>
+                                <th>Transaction Type</th>
+                                <th>Reference</th>
+                                <th>Debit (Invoiced)</th>
+                                <th>Credit (Paid)</th>
+                                <th>Outstanding Balance</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {matchedInvoices.length === 0 ? (
+                                <tr><td colSpan={6} style={{ textAlign: 'center', color: 'var(--text-secondary)', padding: '16px' }}>No ledger transactions for this period.</td></tr>
+                              ) : (
+                                matchedInvoices.map(inv => {
+                                  const isPaid = inv.payment_status === 'Paid';
+                                  return (
+                                    <tr key={inv.id}>
+                                      <td>{inv.invoice_date}</td>
+                                      <td><strong>Invoice</strong></td>
+                                      <td>{inv.invoice_number}</td>
+                                      <td>₹ {inv.grand_total.toLocaleString('en-IN')}</td>
+                                      <td style={{ color: '#10B981', fontWeight: '600' }}>₹ {(isPaid ? inv.grand_total : 0).toLocaleString('en-IN')}</td>
+                                      <td style={{ fontWeight: '700', color: isPaid ? '#10B981' : '#EF4444' }}>₹ {(isPaid ? 0 : inv.grand_total).toLocaleString('en-IN')}</td>
+                                    </tr>
+                                  );
+                                })
+                              )}
+                            </tbody>
+                          </table>
+                        </div>
+
+                        {/* Ageing Summary (30 / 60 / 90 days) */}
+                        <div style={{ background: '#0D1017', padding: '16px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.06)' }}>
+                          <h5 style={{ margin: '0 0 10px 0', fontSize: '0.85rem', fontWeight: '800', color: '#FFFFFF' }}>Aging Balance Summary</h5>
+                          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px', textAlign: 'center' }}>
+                            <div style={{ borderRight: '1px solid rgba(255,255,255,0.08)' }}>
+                              <div style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', fontWeight: '800' }}>0 - 30 DAYS</div>
+                              <div style={{ fontSize: '1.1rem', fontWeight: '900', color: '#FFFFFF', marginTop: '4px' }}>₹ {outstanding.toLocaleString('en-IN')}</div>
+                            </div>
+                            <div style={{ borderRight: '1px solid rgba(255,255,255,0.08)' }}>
+                              <div style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', fontWeight: '800' }}>31 - 60 DAYS</div>
+                              <div style={{ fontSize: '1.1rem', fontWeight: '900', color: '#F59E0B', marginTop: '4px' }}>₹ 10,000</div>
+                            </div>
+                            <div>
+                              <div style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', fontWeight: '800' }}>61 - 90+ DAYS</div>
+                              <div style={{ fontSize: '1.1rem', fontWeight: '900', color: '#EF4444', marginTop: '4px' }}>₹ 0</div>
+                            </div>
+                          </div>
+                        </div>
+
+                      </div>
+                    );
+                  })()}
                 </div>
               </div>
             );
@@ -4880,83 +5049,137 @@ export default function Home() {
             </div>
 
             {/* Calendar Grid View */}
-            <div className="card" style={{ padding: '20px', background: '#11151E', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '14px' }}>
+            <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap' }}>
               
-              {/* Month Header */}
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                <h3 style={{ fontSize: '1.1rem', fontWeight: '800', margin: 0, color: '#FFFFFF' }}>July 2026</h3>
-                <span style={{ fontSize: '0.78rem', color: '#9CA3AF' }}>Showing {calendarEvents.filter(e => (calendarFilter === 'All' || e.type === calendarFilter) && e.title.toLowerCase().includes(calendarSearch.toLowerCase())).length} scheduled items</span>
-              </div>
+              {/* Left Column (Desktop Only Mini Calendar) */}
+              <div className="desktop-only" style={{ width: '240px', flexShrink: 0 }}>
+                <div className="card" style={{ padding: '16px', background: '#11151E', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px' }}>
+                  <h4 style={{ fontSize: '0.85rem', fontWeight: '800', marginBottom: '12px', color: '#FFFFFF' }}>📅 Mini Calendar</h4>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '4px', textAlign: 'center', fontSize: '0.7rem', color: '#9CA3AF' }}>
+                    {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map(d => <div key={d} style={{ fontWeight: 'bold' }}>{d}</div>)}
+                    {Array.from({ length: 31 }, (_, i) => {
+                      const dayNum = i + 1;
+                      const dateStr = `2026-07-${dayNum < 10 ? '0' + dayNum : dayNum}`;
+                      const isToday = dateStr === new Date().toISOString().split('T')[0];
+                      return (
+                        <div 
+                          key={dayNum} 
+                          style={{ 
+                            padding: '4px', 
+                            borderRadius: '4px', 
+                            background: isToday ? '#FF2E4D' : 'transparent', 
+                            color: isToday ? 'white' : '#FFFFFF', 
+                            fontSize: '0.72rem', 
+                            fontWeight: isToday ? 'bold' : 'normal' 
+                          }}
+                        >
+                          {dayNum}
+                        </div>
+                      );
+                    })}
+                  </div>
 
-              {/* Month Grid Header */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '8px', marginBottom: '16px', textAlign: 'center' }}>
-                {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
-                  <div key={day} style={{ fontSize: '0.75rem', fontWeight: '800', color: '#FF2E4D', padding: '6px 0', textTransform: 'uppercase', letterSpacing: '0.8px' }}>{day}</div>
-                ))}
-              </div>
-
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '8px' }}>
-                {Array.from({ length: 31 }, (_, i) => {
-                  const dayNum = i + 1;
-                  const dateStr = `2026-07-${dayNum < 10 ? '0' + dayNum : dayNum}`;
-                  const dayEvents = calendarEvents.filter(e => e.date === dateStr && (calendarFilter === 'All' || e.type === calendarFilter) && e.title.toLowerCase().includes(calendarSearch.toLowerCase()));
-                  const isToday = dateStr === new Date().toISOString().split('T')[0];
-
-                  return (
-                    <div 
-                      key={dayNum} 
-                      style={{ 
-                        background: '#0D1017', 
-                        minHeight: '90px', 
-                        borderRadius: '10px', 
-                        padding: '8px', 
-                        border: isToday ? '1px solid #FF2E4D' : '1px solid rgba(255,255,255,0.06)',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        justify: 'space-between',
-                        cursor: 'pointer'
-                      }}
-                      onClick={() => {
-                        setCalendarSelectedDate(dateStr);
-                        setEditingCalendarEvent({ title: '', type: 'Projects', date: dateStr, time: '10:00 AM', color: '#3B82F6', details: '' });
-                        setShowCalendarEventModal(true);
-                      }}
-                    >
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <span style={{ fontSize: '0.8rem', fontWeight: '800', color: isToday ? '#FF2E4D' : '#FFFFFF' }}>{dayNum}</span>
-                        {dayEvents.length > 0 && <span style={{ fontSize: '0.65rem', background: '#FF2E4D20', color: '#FF2E4D', padding: '1px 5px', borderRadius: '4px', fontWeight: '800' }}>{dayEvents.length}</span>}
+                  <h4 style={{ fontSize: '0.85rem', fontWeight: '800', marginTop: '20px', marginBottom: '8px', color: '#FFFFFF' }}>📌 Upcoming Milestones</h4>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    {calendarEvents.slice(0, 3).map(ev => (
+                      <div key={ev.id} style={{ fontSize: '0.75rem', borderLeft: `3px solid ${ev.color}`, paddingLeft: '8px' }}>
+                        <div style={{ fontWeight: 'bold', color: '#FFFFFF' }}>{ev.title}</div>
+                        <div style={{ color: '#9CA3AF', fontSize: '0.68rem' }}>{ev.date} • {ev.time}</div>
                       </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
 
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginTop: '6px' }}>
-                        {dayEvents.slice(0, 2).map(ev => (
-                          <div 
-                            key={ev.id} 
-                            style={{ 
-                              background: ev.color + '20', 
-                              borderLeft: '3px solid ' + ev.color, 
-                              color: '#FFFFFF', 
-                              padding: '2px 4px', 
-                              borderRadius: '3px', 
-                              fontSize: '0.68rem', 
-                              fontWeight: '600',
-                              whiteSpace: 'nowrap',
-                              overflow: 'hidden',
-                              textOverflow: 'ellipsis'
-                            }}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setEditingCalendarEvent(ev);
-                              setShowCalendarEventModal(true);
-                            }}
-                          >
-                            {ev.title}
+              {/* Right Column (Main Grid) */}
+              <div style={{ flex: 1, minWidth: '300px' }}>
+                <div className="card" style={{ padding: '20px', background: '#11151E', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '14px' }}>
+                  
+                  {/* Month Header */}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                    <h3 style={{ fontSize: '1.1rem', fontWeight: '800', margin: 0, color: '#FFFFFF' }}>July 2026</h3>
+                    <span style={{ fontSize: '0.78rem', color: '#9CA3AF' }}>Showing {calendarEvents.filter(e => (calendarFilter === 'All' || e.type === calendarFilter) && e.title.toLowerCase().includes(calendarSearch.toLowerCase())).length} scheduled items</span>
+                  </div>
+
+                  {/* Month Grid Header (Sticky header) */}
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '8px', marginBottom: '16px', textAlign: 'center', position: 'sticky', top: 0, zIndex: 10, background: '#11151E' }}>
+                    {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
+                      <div key={day} style={{ fontSize: '0.75rem', fontWeight: '800', color: '#FF2E4D', padding: '6px 0', textTransform: 'uppercase', letterSpacing: '0.8px' }}>{day}</div>
+                    ))}
+                  </div>
+
+                  {/* Grid cells with equal widths and height reduced by 40-50% */}
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '8px' }}>
+                    {Array.from({ length: 31 }, (_, i) => {
+                      const dayNum = i + 1;
+                      const dateStr = `2026-07-${dayNum < 10 ? '0' + dayNum : dayNum}`;
+                      const dayEvents = calendarEvents.filter(e => e.date === dateStr && (calendarFilter === 'All' || e.type === calendarFilter) && e.title.toLowerCase().includes(calendarSearch.toLowerCase()));
+                      const isToday = dateStr === new Date().toISOString().split('T')[0];
+
+                      return (
+                        <div 
+                          key={dayNum} 
+                          style={{ 
+                            background: '#0D1017', 
+                            minHeight: '60px', 
+                            borderRadius: '10px', 
+                            padding: '6px 8px', 
+                            border: isToday ? '1px solid #FF2E4D' : '1px solid rgba(255,255,255,0.06)',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            justifyContent: 'space-between',
+                            cursor: 'pointer',
+                            position: 'relative'
+                          }}
+                          onClick={() => {
+                            setCalendarSelectedDate(dateStr);
+                            setEditingCalendarEvent({ title: '', type: 'Projects', date: dateStr, time: '10:00 AM', color: '#3B82F6', details: '' });
+                            setShowCalendarEventModal(true);
+                          }}
+                          title={dayEvents.map(e => `• [${e.type}] ${e.title} (${e.time})`).join('\n')}
+                        >
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <span style={{ fontSize: '0.8rem', fontWeight: '800', color: isToday ? '#FF2E4D' : '#FFFFFF' }}>{dayNum}</span>
+                            {dayEvents.length > 0 && <span style={{ fontSize: '0.65rem', background: '#FF2E4D20', color: '#FF2E4D', padding: '1px 5px', borderRadius: '4px', fontWeight: '800' }}>{dayEvents.length}</span>}
                           </div>
-                        ))}
-                        {dayEvents.length > 2 && <span style={{ fontSize: '0.62rem', color: '#9CA3AF' }}>+{dayEvents.length - 2} more</span>}
-                      </div>
-                    </div>
-                  );
-                })}
+
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', marginTop: '4px' }}>
+                            {dayEvents.slice(0, 1).map(ev => (
+                              <div 
+                                key={ev.id} 
+                                style={{ 
+                                  background: ev.color + '20', 
+                                  borderLeft: '3px solid ' + ev.color, 
+                                  color: '#FFFFFF', 
+                                  padding: '2px 4px', 
+                                  borderRadius: '3px', 
+                                  fontSize: '0.65rem', 
+                                  fontWeight: '600',
+                                  whiteSpace: 'nowrap',
+                                  overflow: 'hidden',
+                                  textOverflow: 'ellipsis'
+                                }}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setEditingCalendarEvent(ev);
+                                  setShowCalendarEventModal(true);
+                                }}
+                              >
+                                {ev.title}
+                              </div>
+                            ))}
+                            {dayEvents.length > 1 && (
+                              <span style={{ fontSize: '0.65rem', color: '#9CA3AF', fontWeight: '600' }}>
+                                +{dayEvents.length - 1} more
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                </div>
               </div>
 
             </div>
@@ -7133,7 +7356,24 @@ export default function Home() {
             </div>
           </div>
         </div>
-      )}
+      {/* Mobile Floating Action Button (FAB) */}
+      <div className="mobile-only mobile-fab-container">
+        <button 
+          type="button" 
+          className="mobile-fab-btn"
+          onClick={() => setMobileFabOpen(!mobileFabOpen)}
+        >
+          {mobileFabOpen ? '✕' : '＋'}
+        </button>
+        {mobileFabOpen && (
+          <div className="mobile-fab-menu">
+            <button className="mobile-fab-item" onClick={() => { setShowTaskModal(true); setMobileFabOpen(false); }}>✓ Task</button>
+            <button className="mobile-fab-item" onClick={() => { setShowClientModal(true); setMobileFabOpen(false); }}>👥 Client</button>
+            <button className="mobile-fab-item" onClick={() => { setActiveTab('quotations'); setMobileFabOpen(false); }}>📄 Quotation</button>
+            <button className="mobile-fab-item" onClick={() => { triggerNewInvoiceFlow(); setMobileFabOpen(false); }}>💰 Invoice</button>
+          </div>
+        )}
+      </div>
 
     </div>
   );
