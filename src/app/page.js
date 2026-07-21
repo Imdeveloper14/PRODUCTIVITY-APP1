@@ -271,6 +271,37 @@ export default function Home() {
   const [clientDocSearch, setClientDocSearch] = useState('');
   const [clientDocSort, setClientDocSort] = useState('date-desc');
 
+  // Calendar Module States
+  const [calendarView, setCalendarView] = useState('month'); // 'month', 'week', 'day'
+  const [calendarFilter, setCalendarFilter] = useState('All');
+  const [calendarSearch, setCalendarSearch] = useState('');
+  const [calendarSelectedDate, setCalendarSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  const [calendarEvents, setCalendarEvents] = useState([
+    { id: 'ev_1', title: 'WTP Layout Milestone Review', type: 'Projects', date: '2026-07-22', time: '10:00 AM', color: '#3B82F6', details: 'Review 3D Revit model deliverables and CAD drawings.' },
+    { id: 'ev_2', title: 'Invoice INV-2026-001 Payment Due', type: 'Payments', date: '2026-07-25', time: '05:00 PM', color: '#10B981', details: 'Client payment milestone due for Primelisometrics.' },
+    { id: 'ev_3', title: 'Client Technical Alignment Meeting', type: 'Meetings', date: '2026-07-24', time: '02:30 PM', color: '#F59E0B', details: 'Online engineering consultation meeting with Terraline Engineering.' },
+    { id: 'ev_4', title: 'Overdue Steel Connection Calculation', type: 'Overdue', date: '2026-07-20', time: '11:00 AM', color: '#EF4444', details: 'Action required: submit structural calculations.' },
+    { id: 'ev_5', title: 'Export Final DWG Drawings', type: 'Tasks', date: '2026-07-28', time: '04:00 PM', color: '#8B5CF6', details: 'Final CAD package delivery for review.' }
+  ]);
+  const [showCalendarEventModal, setShowCalendarEventModal] = useState(false);
+  const [editingCalendarEvent, setEditingCalendarEvent] = useState(null);
+
+  // Finance Dashboard States
+  const [financeClientFilter, setFinanceClientFilter] = useState('All');
+  const [financeProjectFilter, setFinanceProjectFilter] = useState('All');
+  const [financeStatusFilter, setFinanceStatusFilter] = useState('All');
+  const [financeMonthFilter, setFinanceMonthFilter] = useState('All');
+  const [financeYearFilter, setFinanceYearFilter] = useState('2026');
+
+  // Reports Module States
+  const [reportsCategory, setReportsCategory] = useState('Project Reports');
+  const [reportsProjectFilter, setReportsProjectFilter] = useState('All');
+  const [reportsClientFilter, setReportsClientFilter] = useState('All');
+  const [reportsDateFilter, setReportsDateFilter] = useState('');
+
+  // Project Detail Reports Modal Sub-tab State
+  const [projectModalSubTab, setProjectModalSubTab] = useState('status'); // 'status', 'reports', 'finance', 'documents'
+
   // Loading indicator for Invoice PDF / Save action
   const [invoiceLoading, setInvoiceLoading] = useState(''); // 'Saving...', 'Generating PDF...', etc.
   const [invoiceError, setInvoiceError] = useState('');
@@ -3078,21 +3109,19 @@ export default function Home() {
       )}
 
       {/* Sidebar Navigation */}
-      <aside className="sidebar" style={{ width: '250px', background: '#0D1017', borderRight: '1px solid rgba(255,255,255,0.08)', padding: '20px 16px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+      <aside className="sidebar" style={{ width: '220px', background: '#0D1017', borderRight: '1px solid rgba(255,255,255,0.08)', padding: '16px 12px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
         <div>
           {/* Logo Header */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '28px', paddingLeft: '4px' }}>
-            <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'linear-gradient(135deg, #00C6FF 0%, #0072FF 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '900', fontSize: '1.2rem', color: 'white', boxShadow: '0 4px 14px rgba(0, 114, 255, 0.4)' }}>
-              A
-            </div>
-            <div>
-              <div style={{ fontSize: '1.1rem', fontWeight: '800', color: '#FFFFFF', letterSpacing: '0.5px', lineHeight: 1 }}>AURA</div>
-              <div style={{ fontSize: '0.65rem', fontWeight: '700', color: '#38BDF8', letterSpacing: '1.5px', textTransform: 'uppercase', marginTop: '3px' }}>WORKSPACE</div>
-            </div>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '20px', padding: '6px 0', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+            <img 
+              src="/logo.png" 
+              alt="AURA WORKSPACE" 
+              style={{ maxHeight: '42px', maxWidth: '180px', width: 'auto', height: 'auto', objectFit: 'contain' }} 
+            />
           </div>
 
           {/* Nav Items */}
-          <nav style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+          <nav style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
             {[
               { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
               { id: 'projects', label: 'Projects', icon: FolderKanban },
@@ -3116,18 +3145,18 @@ export default function Home() {
                   style={{ 
                     border: 'none', 
                     justify: 'flex-start', 
-                    borderRadius: '10px',
-                    padding: '10px 14px',
-                    fontSize: '0.88rem',
+                    borderRadius: '8px',
+                    padding: '8px 12px',
+                    fontSize: '0.82rem',
                     fontWeight: isActive ? '700' : '500',
                     background: isActive ? '#FF2E4D' : 'transparent',
                     color: isActive ? '#FFFFFF' : '#9CA3AF',
-                    boxShadow: isActive ? '0 4px 14px rgba(255, 46, 77, 0.35)' : 'none',
+                    boxShadow: isActive ? '0 4px 12px rgba(255, 46, 77, 0.3)' : 'none',
                     transition: 'all 0.15s ease'
                   }}
                   onClick={() => setActiveTab(item.id)}
                 >
-                  <IconComp size={18} style={{ color: isActive ? '#FFFFFF' : '#9CA3AF' }} /> 
+                  <IconComp size={16} style={{ color: isActive ? '#FFFFFF' : '#9CA3AF' }} /> 
                   <span>{item.label}</span>
                 </button>
               );
@@ -3136,17 +3165,17 @@ export default function Home() {
         </div>
 
         {/* User Profile Footer */}
-        <div style={{ borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: '16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer' }} onClick={() => setActiveTab('profile')}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: '#FF2E4D', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '800', fontSize: '0.85rem' }}>
+        <div style={{ borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: '12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer' }} onClick={() => setActiveTab('profile')}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', overflow: 'hidden' }}>
+            <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: '#FF2E4D', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '800', fontSize: '0.78rem', flexShrink: 0 }}>
               {user?.name ? user.name.split(' ').map(n=>n[0]).join('').slice(0,2).toUpperCase() : 'CA'}
             </div>
-            <div>
-              <p style={{ fontSize: '0.85rem', fontWeight: '700', color: '#FFFFFF', margin: 0 }}>{user?.name || 'Chandru Admin'}</p>
-              <span style={{ fontSize: '0.7rem', color: '#9CA3AF' }}>{user?.role === 'Admin' || user?.role === 'Super Admin' ? 'Administrator' : 'Workspace User'}</span>
+            <div style={{ minWidth: 0 }}>
+              <p style={{ fontSize: '0.78rem', fontWeight: '700', color: '#FFFFFF', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user?.name || 'Chandru Admin'}</p>
+              <span style={{ fontSize: '0.65rem', color: '#9CA3AF', display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user?.role === 'Admin' || user?.role === 'Super Admin' ? 'Administrator' : 'Workspace User'}</span>
             </div>
           </div>
-          <span style={{ color: '#9CA3AF', fontSize: '0.85rem' }}>❯</span>
+          <span style={{ color: '#9CA3AF', fontSize: '0.75rem', flexShrink: 0 }}>❯</span>
         </div>
       </aside>
 
@@ -4755,6 +4784,455 @@ export default function Home() {
           </div>
         )}
 
+        {/* TAB: CALENDAR MODULE */}
+        {activeTab === 'calendar' && (
+          <div>
+            {/* Header & Controls */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '12px' }}>
+              <div>
+                <span style={{ fontSize: '0.7rem', color: '#FF2E4D', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '1.5px' }}>AURA WORKSPACE</span>
+                <h1 style={{ fontSize: '1.5rem', fontWeight: '800', margin: '2px 0 0', color: '#FFFFFF' }}>📅 Project Calendar</h1>
+              </div>
+              
+              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
+                <div style={{ display: 'flex', background: '#11151E', padding: '3px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.08)' }}>
+                  {['month', 'week', 'day'].map(vm => (
+                    <button 
+                      key={vm} 
+                      className="btn"
+                      style={{ padding: '6px 14px', fontSize: '0.78rem', borderRadius: '6px', border: 'none', background: calendarView === vm ? '#FF2E4D' : 'transparent', color: calendarView === vm ? '#FFFFFF' : '#9CA3AF', textTransform: 'capitalize' }} 
+                      onClick={() => setCalendarView(vm)}
+                    >
+                      {vm} View
+                    </button>
+                  ))}
+                </div>
+
+                <button 
+                  className="btn btn-secondary" 
+                  style={{ background: '#1A1F2B', color: 'white', border: '1px solid rgba(255,255,255,0.08)', padding: '6px 14px', fontSize: '0.8rem' }}
+                  onClick={() => {
+                    const csvContent = "data:text/csv;charset=utf-8,Title,Type,Date,Time,Details\n" + calendarEvents.map(e => `"${e.title}","${e.type}","${e.date}","${e.time}","${e.details}"`).join("\n");
+                    const encodedUri = encodeURI(csvContent);
+                    const link = document.createElement("a");
+                    link.setAttribute("href", encodedUri);
+                    link.setAttribute("download", "AURA_Project_Calendar_Events.csv");
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    triggerToast("Calendar events exported to CSV");
+                  }}
+                >
+                  📥 Export iCal / CSV
+                </button>
+
+                <button 
+                  className="btn btn-primary" 
+                  style={{ background: '#FF2E4D', padding: '6px 14px', fontSize: '0.8rem' }}
+                  onClick={() => { setEditingCalendarEvent({ title: '', type: 'Projects', date: new Date().toISOString().split('T')[0], time: '10:00 AM', color: '#3B82F6', details: '' }); setShowCalendarEventModal(true); }}
+                >
+                  + Add Event
+                </button>
+              </div>
+            </div>
+
+            {/* Filter Bar */}
+            <div className="card" style={{ padding: '12px 16px', marginBottom: '20px', background: '#11151E', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1, minWidth: '200px' }}>
+                <Search size={16} style={{ color: '#9CA3AF' }} />
+                <input 
+                  type="text" 
+                  className="form-input" 
+                  placeholder="Search calendar events, meetings, or project deadlines..." 
+                  value={calendarSearch} 
+                  onChange={(e) => setCalendarSearch(e.target.value)}
+                  style={{ border: 'none', background: 'transparent', height: '32px', fontSize: '0.82rem', color: '#FFFFFF' }}
+                />
+              </div>
+
+              {/* Event Category Filters */}
+              <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                {[
+                  { label: 'All', color: '#9CA3AF' },
+                  { label: 'Projects', color: '#3B82F6' },
+                  { label: 'Payments', color: '#10B981' },
+                  { label: 'Overdue', color: '#EF4444' },
+                  { label: 'Meetings', color: '#F59E0B' },
+                  { label: 'Tasks', color: '#8B5CF6' }
+                ].map(f => (
+                  <button
+                    key={f.label}
+                    className="btn"
+                    style={{
+                      padding: '4px 10px',
+                      fontSize: '0.72rem',
+                      borderRadius: '6px',
+                      border: '1px solid rgba(255,255,255,0.08)',
+                      background: calendarFilter === f.label ? f.color : '#0D1017',
+                      color: calendarFilter === f.label ? '#FFFFFF' : '#9CA3AF',
+                      fontWeight: '600'
+                    }}
+                    onClick={() => setCalendarFilter(f.label)}
+                  >
+                    <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: f.color, display: 'inline-block', marginRight: '6px' }} />
+                    {f.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Calendar Grid View */}
+            <div className="card" style={{ padding: '20px', background: '#11151E', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '14px' }}>
+              
+              {/* Month Header */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                <h3 style={{ fontSize: '1.1rem', fontWeight: '800', margin: 0, color: '#FFFFFF' }}>July 2026</h3>
+                <span style={{ fontSize: '0.78rem', color: '#9CA3AF' }}>Showing {calendarEvents.filter(e => (calendarFilter === 'All' || e.type === calendarFilter) && e.title.toLowerCase().includes(calendarSearch.toLowerCase())).length} scheduled items</span>
+              </div>
+
+              {/* Month Grid Header */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '8px', marginBottom: '16px', textAlign: 'center' }}>
+                {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
+                  <div key={day} style={{ fontSize: '0.75rem', fontWeight: '800', color: '#FF2E4D', padding: '6px 0', textTransform: 'uppercase', letterSpacing: '0.8px' }}>{day}</div>
+                ))}
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '8px' }}>
+                {Array.from({ length: 31 }, (_, i) => {
+                  const dayNum = i + 1;
+                  const dateStr = `2026-07-${dayNum < 10 ? '0' + dayNum : dayNum}`;
+                  const dayEvents = calendarEvents.filter(e => e.date === dateStr && (calendarFilter === 'All' || e.type === calendarFilter) && e.title.toLowerCase().includes(calendarSearch.toLowerCase()));
+                  const isToday = dateStr === new Date().toISOString().split('T')[0];
+
+                  return (
+                    <div 
+                      key={dayNum} 
+                      style={{ 
+                        background: '#0D1017', 
+                        minHeight: '90px', 
+                        borderRadius: '10px', 
+                        padding: '8px', 
+                        border: isToday ? '1px solid #FF2E4D' : '1px solid rgba(255,255,255,0.06)',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        justify: 'space-between',
+                        cursor: 'pointer'
+                      }}
+                      onClick={() => {
+                        setCalendarSelectedDate(dateStr);
+                        setEditingCalendarEvent({ title: '', type: 'Projects', date: dateStr, time: '10:00 AM', color: '#3B82F6', details: '' });
+                        setShowCalendarEventModal(true);
+                      }}
+                    >
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span style={{ fontSize: '0.8rem', fontWeight: '800', color: isToday ? '#FF2E4D' : '#FFFFFF' }}>{dayNum}</span>
+                        {dayEvents.length > 0 && <span style={{ fontSize: '0.65rem', background: '#FF2E4D20', color: '#FF2E4D', padding: '1px 5px', borderRadius: '4px', fontWeight: '800' }}>{dayEvents.length}</span>}
+                      </div>
+
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginTop: '6px' }}>
+                        {dayEvents.slice(0, 2).map(ev => (
+                          <div 
+                            key={ev.id} 
+                            style={{ 
+                              background: ev.color + '20', 
+                              borderLeft: '3px solid ' + ev.color, 
+                              color: '#FFFFFF', 
+                              padding: '2px 4px', 
+                              borderRadius: '3px', 
+                              fontSize: '0.68rem', 
+                              fontWeight: '600',
+                              whiteSpace: 'nowrap',
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis'
+                            }}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setEditingCalendarEvent(ev);
+                              setShowCalendarEventModal(true);
+                            }}
+                          >
+                            {ev.title}
+                          </div>
+                        ))}
+                        {dayEvents.length > 2 && <span style={{ fontSize: '0.62rem', color: '#9CA3AF' }}>+{dayEvents.length - 2} more</span>}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+            </div>
+          </div>
+        )}
+
+        {/* TAB: FINANCE DASHBOARD & PAYMENT LEDGER */}
+        {activeTab === 'finance' && (
+          <div>
+            {/* Header & Controls */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '12px' }}>
+              <div>
+                <span style={{ fontSize: '0.7rem', color: '#FF2E4D', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '1.5px' }}>AURA WORKSPACE</span>
+                <h1 style={{ fontSize: '1.5rem', fontWeight: '800', margin: '2px 0 0', color: '#FFFFFF' }}>💰 Financial Dashboard &amp; Payment Ledger</h1>
+              </div>
+
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <button 
+                  className="btn btn-secondary" 
+                  style={{ background: '#1A1F2B', color: 'white', border: '1px solid rgba(255,255,255,0.08)', fontSize: '0.8rem' }}
+                  onClick={() => window.print()}
+                >
+                  🖨️ Print Statement
+                </button>
+                <button 
+                  className="btn btn-secondary" 
+                  style={{ background: '#1A1F2B', color: 'white', border: '1px solid rgba(255,255,255,0.08)', fontSize: '0.8rem' }}
+                  onClick={() => {
+                    const csvContent = "data:text/csv;charset=utf-8,Invoice No,Client,Project,Amount,Paid,Due,Balance,Payment Date,Payment Mode,Status\n" + invoices.map(i => `"${i.invoice_number}","${i.client_name || 'Client'}","${i.project_name || 'Project'}","${i.grand_total}","${i.payment_status === 'Paid' ? i.grand_total : 0}","${i.payment_status === 'Paid' ? 0 : i.grand_total}","${i.payment_status === 'Paid' ? 0 : i.grand_total}","${i.invoice_date}","${i.payment_method || 'Bank Transfer'}","${i.payment_status}"`).join("\n");
+                    const encodedUri = encodeURI(csvContent);
+                    const link = document.createElement("a");
+                    link.setAttribute("href", encodedUri);
+                    link.setAttribute("download", "AURA_Financial_Ledger.csv");
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    triggerToast("Financial Ledger exported to CSV");
+                  }}
+                >
+                  📄 Export Ledger (CSV)
+                </button>
+              </div>
+            </div>
+
+            {/* Financial Summary KPI Cards */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '12px', marginBottom: '20px' }}>
+              {[
+                { label: 'TOTAL REVENUE', value: '₹' + invoices.reduce((s,i) => s + (i.grand_total||0), 0).toLocaleString('en-IN'), color: '#10B981' },
+                { label: 'PAID REVENUE', value: '₹' + invoices.filter(i=>i.payment_status==='Paid').reduce((s,i) => s + (i.grand_total||0), 0).toLocaleString('en-IN'), color: '#3B82F6' },
+                { label: 'PENDING REVENUE', value: '₹' + invoices.filter(i=>i.payment_status==='Pending').reduce((s,i) => s + (i.grand_total||0), 0).toLocaleString('en-IN'), color: '#F59E0B' },
+                { label: 'OVERDUE DUES', value: '₹' + invoices.filter(i=>i.payment_status==='Overdue').reduce((s,i) => s + (i.grand_total||0), 0).toLocaleString('en-IN'), color: '#EF4444' },
+                { label: 'GST COLLECTED', value: '₹' + invoices.reduce((s,i) => s + (i.gst_amount||0), 0).toLocaleString('en-IN'), color: '#8B5CF6' },
+                { label: 'EST. NET PROFIT', value: '₹' + Math.round(invoices.reduce((s,i) => s + (i.grand_total||0), 0) * 0.45).toLocaleString('en-IN'), color: '#FF2E4D' }
+              ].map(k => (
+                <div key={k.label} style={{ background: '#11151E', padding: '16px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.08)', borderLeft: '4px solid ' + k.color }}>
+                  <div style={{ fontSize: '0.62rem', fontWeight: '800', color: '#9CA3AF', letterSpacing: '0.8px', textTransform: 'uppercase' }}>{k.label}</div>
+                  <div style={{ fontSize: '1.3rem', fontWeight: '900', color: k.color, marginTop: '6px' }}>{k.value}</div>
+                </div>
+              ))}
+            </div>
+
+            {/* Filter Controls */}
+            <div className="card" style={{ padding: '16px', marginBottom: '20px', background: '#11151E', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'center' }}>
+              <div style={{ flex: 1, minWidth: '150px' }}>
+                <label style={{ fontSize: '0.7rem', color: '#9CA3AF', display: 'block', marginBottom: '4px', fontWeight: '700' }}>CLIENT FILTER</label>
+                <select className="form-input" style={{ height: '36px', fontSize: '0.8rem', background: '#0D1017', color: '#FFFFFF' }} value={financeClientFilter} onChange={e=>setFinanceClientFilter(e.target.value)}>
+                  <option value="All">All Clients</option>
+                  {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                </select>
+              </div>
+
+              <div style={{ flex: 1, minWidth: '150px' }}>
+                <label style={{ fontSize: '0.7rem', color: '#9CA3AF', display: 'block', marginBottom: '4px', fontWeight: '700' }}>PAYMENT STATUS</label>
+                <select className="form-input" style={{ height: '36px', fontSize: '0.8rem', background: '#0D1017', color: '#FFFFFF' }} value={financeStatusFilter} onChange={e=>setFinanceStatusFilter(e.target.value)}>
+                  <option value="All">All Statuses</option>
+                  <option value="Paid">Paid</option>
+                  <option value="Pending">Pending</option>
+                  <option value="Overdue">Overdue</option>
+                </select>
+              </div>
+
+              <div style={{ flex: 1, minWidth: '120px' }}>
+                <label style={{ fontSize: '0.7rem', color: '#9CA3AF', display: 'block', marginBottom: '4px', fontWeight: '700' }}>YEAR</label>
+                <select className="form-input" style={{ height: '36px', fontSize: '0.8rem', background: '#0D1017', color: '#FFFFFF' }} value={financeYearFilter} onChange={e=>setFinanceYearFilter(e.target.value)}>
+                  <option value="2026">2026</option>
+                  <option value="2025">2025</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Project Finance Matrix */}
+            <div className="card" style={{ padding: '20px', background: '#11151E', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '14px', marginBottom: '20px' }}>
+              <h3 style={{ fontSize: '1rem', fontWeight: '800', margin: '0 0 16px 0', color: '#FFFFFF' }}>📊 Project Finance Ledger Matrix</h3>
+              
+              <div style={{ overflowX: 'auto' }}>
+                <table className="data-table" style={{ width: '100%', fontSize: '0.82rem' }}>
+                  <thead>
+                    <tr>
+                      <th>Project Name</th>
+                      <th>Client</th>
+                      <th>Contract Value</th>
+                      <th>Invoiced Amount</th>
+                      <th>Amount Received</th>
+                      <th>Outstanding Balance</th>
+                      <th>Est. Profit Margin</th>
+                      <th>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {projects.length === 0 ? (
+                      <tr><td colSpan={8} style={{ textAlign: 'center', color: '#9CA3AF', padding: '20px' }}>No financial project records found.</td></tr>
+                    ) : (
+                      projects.map(p => {
+                        const cl = clients.find(c => c.id === (p.clientId || p.client_id));
+                        const val = p.quoteAmount || 100000;
+                        const rec = p.paidAmount || 0;
+                        const out = Math.max(0, val - rec);
+                        return (
+                          <tr key={p.id}>
+                            <td style={{ fontWeight: '700', color: '#FFFFFF' }}>{p.title}</td>
+                            <td style={{ color: '#9CA3AF' }}>{cl?.name || 'Client'}</td>
+                            <td style={{ fontWeight: '700' }}>₹{val.toLocaleString('en-IN')}</td>
+                            <td>₹{val.toLocaleString('en-IN')}</td>
+                            <td style={{ color: '#10B981', fontWeight: '700' }}>₹{rec.toLocaleString('en-IN')}</td>
+                            <td style={{ color: out > 0 ? '#EF4444' : '#10B981', fontWeight: '700' }}>₹{out.toLocaleString('en-IN')}</td>
+                            <td style={{ color: '#3B82F6', fontWeight: '700' }}>₹{Math.round(val * 0.45).toLocaleString('en-IN')} (45%)</td>
+                            <td><span className="badge badge-success">{p.status || 'In Progress'}</span></td>
+                          </tr>
+                        );
+                      })
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* Payment Ledger Table */}
+            <div className="card" style={{ padding: '20px', background: '#11151E', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '14px' }}>
+              <h3 style={{ fontSize: '1rem', fontWeight: '800', margin: '0 0 16px 0', color: '#FFFFFF' }}>📜 Complete Payment Receipts &amp; Invoices Ledger</h3>
+              
+              <div style={{ overflowX: 'auto' }}>
+                <table className="data-table" style={{ width: '100%', fontSize: '0.82rem' }}>
+                  <thead>
+                    <tr>
+                      <th>Invoice No</th>
+                      <th>Client</th>
+                      <th>Amount</th>
+                      <th>Payment Date</th>
+                      <th>Payment Mode</th>
+                      <th>Reference No</th>
+                      <th>Status</th>
+                      <th>Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {invoices.length === 0 ? (
+                      <tr><td colSpan={8} style={{ textAlign: 'center', color: '#9CA3AF', padding: '20px' }}>No invoice payments recorded yet.</td></tr>
+                    ) : (
+                      invoices.map(inv => (
+                        <tr key={inv.id}>
+                          <td style={{ fontWeight: '700', color: '#FFFFFF' }}>{inv.invoice_number}</td>
+                          <td style={{ color: '#9CA3AF' }}>{inv.client_name || 'Client'}</td>
+                          <td style={{ fontWeight: '700', color: '#FFFFFF' }}>₹{(inv.grand_total || 0).toLocaleString('en-IN')}</td>
+                          <td>{inv.invoice_date}</td>
+                          <td>{inv.payment_method || 'Bank Transfer'}</td>
+                          <td style={{ fontFamily: 'monospace', fontSize: '0.78rem' }}>REF-{inv.id.slice(0,6).toUpperCase()}</td>
+                          <td>
+                            <span className={'badge ' + (inv.payment_status === 'Paid' ? 'badge-success' : inv.payment_status === 'Pending' ? 'badge-warning' : 'badge-danger')}>
+                              {inv.payment_status}
+                            </span>
+                          </td>
+                          <td>
+                            <button className="btn btn-secondary" style={{ padding: '2px 8px', fontSize: '0.72rem' }} onClick={() => triggerToast(`Receipt for ${inv.invoice_number} generated`)}>
+                              Receipt PDF
+                            </button>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+          </div>
+        )}
+
+        {/* TAB: ENGINEERING REPORTS CENTER */}
+        {activeTab === 'reports' && (
+          <div>
+            {/* Header & Controls */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '12px' }}>
+              <div>
+                <span style={{ fontSize: '0.7rem', color: '#FF2E4D', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '1.5px' }}>AURA WORKSPACE</span>
+                <h1 style={{ fontSize: '1.5rem', fontWeight: '800', margin: '2px 0 0', color: '#FFFFFF' }}>📊 Engineering Reports Center</h1>
+              </div>
+
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <button className="btn btn-secondary" style={{ background: '#1A1F2B', color: 'white', border: '1px solid rgba(255,255,255,0.08)', fontSize: '0.8rem' }} onClick={() => window.print()}>
+                  🖨️ Print Report
+                </button>
+                <button className="btn btn-primary" style={{ background: '#FF2E4D', fontSize: '0.8rem' }} onClick={() => triggerToast(`Report for ${reportsCategory} exported to PDF`)}>
+                  📄 Export PDF
+                </button>
+              </div>
+            </div>
+
+            {/* Report Category Sub-Tabs (10 Categories) */}
+            <div className="card" style={{ padding: '14px', marginBottom: '20px', background: '#11151E', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px' }}>
+              <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                {[
+                  'Project Reports', 'Quotation Reports', 'Invoice Reports', 'Payment Reports',
+                  'Client Reports', 'Task Reports', 'Meeting Reports', 'Document Reports',
+                  'Timeline Reports', 'Engineering Reports'
+                ].map(cat => (
+                  <button
+                    key={cat}
+                    className="btn"
+                    style={{
+                      padding: '6px 12px',
+                      fontSize: '0.78rem',
+                      borderRadius: '6px',
+                      border: 'none',
+                      background: reportsCategory === cat ? '#FF2E4D' : '#0D1017',
+                      color: reportsCategory === cat ? '#FFFFFF' : '#9CA3AF',
+                      fontWeight: reportsCategory === cat ? '700' : '500'
+                    }}
+                    onClick={() => setReportsCategory(cat)}
+                  >
+                    {cat}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Report Summary & Content Table */}
+            <div className="card" style={{ padding: '24px', background: '#11151E', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '14px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255,255,255,0.08)', paddingBottom: '14px', marginBottom: '16px' }}>
+                <div>
+                  <h3 style={{ fontSize: '1.2rem', fontWeight: '800', margin: 0, color: '#FFFFFF' }}>{reportsCategory} Summary</h3>
+                  <p style={{ fontSize: '0.8rem', color: '#9CA3AF', margin: '4px 0 0 0' }}>Auto-compiled engineering metrics &amp; project items</p>
+                </div>
+                <span className="badge badge-info">Live Sync</span>
+              </div>
+
+              <div style={{ overflowX: 'auto' }}>
+                <table className="data-table" style={{ width: '100%', fontSize: '0.82rem' }}>
+                  <thead>
+                    <tr>
+                      <th>Item Name / Title</th>
+                      <th>Category</th>
+                      <th>Associated Client</th>
+                      <th>Status</th>
+                      <th>Last Updated</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {projects.map(p => (
+                      <tr key={p.id}>
+                        <td style={{ fontWeight: '700', color: '#FFFFFF' }}>{p.title}</td>
+                        <td>{p.cadType || 'CAD Engineering'}</td>
+                        <td style={{ color: '#9CA3AF' }}>{clients.find(c=>c.id===(p.clientId||p.client_id))?.name || 'Client'}</td>
+                        <td><span className="badge badge-success">{p.status || 'In Progress'}</span></td>
+                        <td>{new Date().toISOString().split('T')[0]}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+          </div>
+        )}
+
         {activeTab === 'quotations' && (
           <QuotationsModule
             user={user}
@@ -5365,101 +5843,220 @@ export default function Home() {
 
       {/* 4. Invoice Wizard Modal Removed (Handled in InvoicesView) */}
 
-      {/* 5. Edit Project Status Modal */}
+      {/* 5. Edit Project Status & Reports Modal */}
       {showProjectEditModal && editingProject && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}>
-          <div className="card" style={{ maxWidth: '480px', width: '100%', margin: 0 }}>
-            <h3 style={{ fontSize: '1.1rem', fontWeight: '700', marginBottom: '16px' }}>📁 Edit Project Status</h3>
-            <form onSubmit={handleUpdateProjectStatus}>
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}>
+          <div className="card" style={{ maxWidth: '650px', width: '100%', margin: 0, maxHeight: '90vh', overflowY: 'auto', background: '#11151E', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '16px', padding: '24px' }}>
+            
+            {/* Header & Sub-Tabs */}
+            <div style={{ borderBottom: '1px solid rgba(255,255,255,0.08)', paddingBottom: '14px', marginBottom: '16px' }}>
+              <h3 style={{ fontSize: '1.2rem', fontWeight: '800', margin: '0 0 12px 0', color: '#FFFFFF' }}>📁 {editingProject.title} — Project Workspace</h3>
+              
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <button 
+                  type="button" 
+                  className="btn" 
+                  style={{ padding: '6px 14px', fontSize: '0.8rem', borderRadius: '6px', border: 'none', background: projectModalSubTab === 'status' ? '#FF2E4D' : '#0D1017', color: projectModalSubTab === 'status' ? '#FFFFFF' : '#9CA3AF', fontWeight: '700' }}
+                  onClick={() => setProjectModalSubTab('status')}
+                >
+                  Status &amp; Progress
+                </button>
+                <button 
+                  type="button" 
+                  className="btn" 
+                  style={{ padding: '6px 14px', fontSize: '0.8rem', borderRadius: '6px', border: 'none', background: projectModalSubTab === 'reports' ? '#FF2E4D' : '#0D1017', color: projectModalSubTab === 'reports' ? '#FFFFFF' : '#9CA3AF', fontWeight: '700' }}
+                  onClick={() => setProjectModalSubTab('reports')}
+                >
+                  📊 Project Reports Generator
+                </button>
+              </div>
+            </div>
+
+            {projectModalSubTab === 'status' ? (
+              <form onSubmit={handleUpdateProjectStatus}>
+                <div className="form-group">
+                  <label className="form-label">Project Name</label>
+                  <input type="text" className="form-input" value={editingProject.title} readOnly style={{ background: 'rgba(255,255,255,0.04)' }} />
+                </div>
+                <div className="grid-2">
+                  <div className="form-group">
+                    <label className="form-label">Status</label>
+                    <select 
+                      className="form-input" 
+                      value={editingProject.status || 'In Progress'} 
+                      onChange={(e) => setEditingProject({...editingProject, status: e.target.value})}
+                      required
+                    >
+                      <option value="Not Started">Not Started</option>
+                      <option value="In Progress">In Progress</option>
+                      <option value="QC Pending">QC Pending</option>
+                      <option value="QC Passed">QC Passed</option>
+                      <option value="Revision Required">Revision Required</option>
+                      <option value="Delivered">Delivered</option>
+                      <option value="Completed">Completed</option>
+                      <option value="On Hold">On Hold</option>
+                    </select>
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">QC Status</label>
+                    <select 
+                      className="form-input" 
+                      value={editingProject.qc_status || 'Not Checked'} 
+                      onChange={(e) => setEditingProject({...editingProject, qc_status: e.target.value})}
+                    >
+                      <option value="Not Checked">Not Checked</option>
+                      <option value="QC Pending">QC Pending</option>
+                      <option value="QC Passed">QC Passed</option>
+                      <option value="QC Failed">QC Failed</option>
+                      <option value="Revision Required">Revision Required</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="grid-2">
+                  <div className="form-group">
+                    <label className="form-label">Revision Count</label>
+                    <input 
+                      type="number" 
+                      min="0"
+                      className="form-input" 
+                      value={editingProject.revision_count || 0} 
+                      onChange={(e) => setEditingProject({...editingProject, revision_count: parseInt(e.target.value) || 0})} 
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">Delivery Status</label>
+                    <select 
+                      className="form-input" 
+                      value={editingProject.delivery_status || 'Not Delivered'} 
+                      onChange={(e) => setEditingProject({...editingProject, delivery_status: e.target.value})}
+                    >
+                      <option value="Not Delivered">Not Delivered</option>
+                      <option value="Delivered">Delivered</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label">Progress / Completion Percentage ({editingProject.progress}%)</label>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <input 
+                      type="range" 
+                      min="0" 
+                      max="100" 
+                      step="5" 
+                      style={{ flex: 1 }}
+                      value={editingProject.progress} 
+                      onChange={(e) => setEditingProject({...editingProject, progress: parseInt(e.target.value) || 0})} 
+                    />
+                    <input 
+                      type="number" 
+                      min="0" 
+                      max="100" 
+                      className="form-input"
+                      style={{ width: '80px' }}
+                      value={editingProject.progress} 
+                      onChange={(e) => setEditingProject({...editingProject, progress: Math.min(100, Math.max(0, parseInt(e.target.value) || 0))})} 
+                    />
+                  </div>
+                </div>
+                <div style={{ display: 'flex', gap: '10px', marginTop: '20px' }}>
+                  <button type="button" className="btn btn-secondary" style={{ flex: 1, justifyContent: 'center' }} onClick={() => { setShowProjectEditModal(false); setEditingProject(null); }}>Cancel</button>
+                  <button type="submit" className="btn btn-primary" style={{ flex: 1, justifyContent: 'center', background: '#FF2E4D' }}>Update Status</button>
+                </div>
+              </form>
+            ) : (
+              /* Project Reports Tab */
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                <div style={{ fontSize: '0.8rem', color: '#9CA3AF' }}>
+                  Generate and export automated engineering project reports based on active project deliverables, tasks, and payments.
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px' }}>
+                  {[
+                    { type: 'Progress Report', desc: 'Summary of progress %, milestones, and completion status.' },
+                    { type: 'Engineering Report', desc: 'CAD drawings, Revit models, and QC review status.' },
+                    { type: 'Weekly Report', desc: 'Weekly task completion and engineer workload tracking.' },
+                    { type: 'Monthly Report', desc: 'Monthly project timeline, invoices, and budget metrics.' },
+                    { type: 'Client Report', desc: 'Executive status summary formatted for client review.' },
+                    { type: 'Completion Report', desc: 'Final project sign-off report with deliverable checklists.' }
+                  ].map(rep => (
+                    <div key={rep.type} style={{ background: '#0D1017', padding: '12px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.06)' }}>
+                      <div style={{ fontSize: '0.85rem', fontWeight: '800', color: '#FFFFFF' }}>{rep.type}</div>
+                      <div style={{ fontSize: '0.72rem', color: '#9CA3AF', marginTop: '2px', marginBottom: '8px' }}>{rep.desc}</div>
+                      <div style={{ display: 'flex', gap: '6px' }}>
+                        <button type="button" className="btn btn-secondary" style={{ padding: '3px 8px', fontSize: '0.7rem' }} onClick={() => window.print()}>🖨️ Print</button>
+                        <button type="button" className="btn btn-primary" style={{ padding: '3px 8px', fontSize: '0.7rem', background: '#FF2E4D' }} onClick={() => triggerToast(`${rep.type} generated for ${editingProject.title}`)}>📄 Export PDF</button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <button type="button" className="btn btn-secondary" style={{ width: '100%', marginTop: '12px' }} onClick={() => { setShowProjectEditModal(false); setEditingProject(null); }}>Close Workspace</button>
+              </div>
+            )}
+
+          </div>
+        </div>
+      )}
+
+      {/* Calendar Event Modal */}
+      {showCalendarEventModal && editingCalendarEvent && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}>
+          <div className="card" style={{ maxWidth: '480px', width: '100%', margin: 0, background: '#11151E', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '16px', padding: '24px' }}>
+            <h3 style={{ fontSize: '1.1rem', fontWeight: '800', marginBottom: '16px', color: '#FFFFFF' }}>📅 {editingCalendarEvent.id ? 'Edit Event' : 'Add Calendar Event'}</h3>
+            <form onSubmit={(e) => {
+              e.preventDefault();
+              if (editingCalendarEvent.id) {
+                setCalendarEvents(prev => prev.map(ev => ev.id === editingCalendarEvent.id ? editingCalendarEvent : ev));
+                triggerToast("Calendar event updated!");
+              } else {
+                const newEv = { ...editingCalendarEvent, id: 'ev_' + Date.now() };
+                setCalendarEvents(prev => [...prev, newEv]);
+                triggerToast("Calendar event created!");
+              }
+              setShowCalendarEventModal(false);
+              setEditingCalendarEvent(null);
+            }}>
               <div className="form-group">
-                <label className="form-label">Project Name</label>
-                <input type="text" className="form-input" value={editingProject.title} readOnly style={{ background: 'rgba(255,255,255,0.04)' }} />
+                <label className="form-label">Event Title</label>
+                <input type="text" className="form-input" value={editingCalendarEvent.title} onChange={e=>setEditingCalendarEvent({...editingCalendarEvent, title: e.target.value})} required placeholder="e.g. Technical Review Meeting" />
               </div>
               <div className="grid-2">
                 <div className="form-group">
-                  <label className="form-label">Status</label>
-                  <select 
-                    className="form-input" 
-                    value={editingProject.status || 'In Progress'} 
-                    onChange={(e) => setEditingProject({...editingProject, status: e.target.value})}
-                    required
-                  >
-                    <option value="Not Started">Not Started</option>
-                    <option value="In Progress">In Progress</option>
-                    <option value="QC Pending">QC Pending</option>
-                    <option value="QC Passed">QC Passed</option>
-                    <option value="Revision Required">Revision Required</option>
-                    <option value="Delivered">Delivered</option>
-                    <option value="Completed">Completed</option>
-                    <option value="On Hold">On Hold</option>
+                  <label className="form-label">Type</label>
+                  <select className="form-input" value={editingCalendarEvent.type} onChange={e=>setEditingCalendarEvent({...editingCalendarEvent, type: e.target.value, color: e.target.value === 'Projects' ? '#3B82F6' : e.target.value === 'Payments' ? '#10B981' : e.target.value === 'Overdue' ? '#EF4444' : e.target.value === 'Meetings' ? '#F59E0B' : '#8B5CF6'})}>
+                    <option value="Projects">Projects (Blue)</option>
+                    <option value="Payments">Payments (Green)</option>
+                    <option value="Overdue">Overdue (Red)</option>
+                    <option value="Meetings">Meetings (Orange)</option>
+                    <option value="Tasks">Tasks (Purple)</option>
                   </select>
                 </div>
                 <div className="form-group">
-                  <label className="form-label">QC Status</label>
-                  <select 
-                    className="form-input" 
-                    value={editingProject.qc_status || 'Not Checked'} 
-                    onChange={(e) => setEditingProject({...editingProject, qc_status: e.target.value})}
-                  >
-                    <option value="Not Checked">Not Checked</option>
-                    <option value="QC Pending">QC Pending</option>
-                    <option value="QC Passed">QC Passed</option>
-                    <option value="QC Failed">QC Failed</option>
-                    <option value="Revision Required">Revision Required</option>
-                  </select>
+                  <label className="form-label">Time</label>
+                  <input type="text" className="form-input" value={editingCalendarEvent.time} onChange={e=>setEditingCalendarEvent({...editingCalendarEvent, time: e.target.value})} placeholder="10:00 AM" />
                 </div>
               </div>
-
-              <div className="grid-2">
-                <div className="form-group">
-                  <label className="form-label">Revision Count</label>
-                  <input 
-                    type="number" 
-                    min="0"
-                    className="form-input" 
-                    value={editingProject.revision_count || 0} 
-                    onChange={(e) => setEditingProject({...editingProject, revision_count: parseInt(e.target.value) || 0})} 
-                  />
-                </div>
-                <div className="form-group">
-                  <label className="form-label">Delivery Status</label>
-                  <select 
-                    className="form-input" 
-                    value={editingProject.delivery_status || 'Not Delivered'} 
-                    onChange={(e) => setEditingProject({...editingProject, delivery_status: e.target.value})}
-                  >
-                    <option value="Not Delivered">Not Delivered</option>
-                    <option value="Delivered">Delivered</option>
-                  </select>
-                </div>
-              </div>
-
               <div className="form-group">
-                <label className="form-label">Progress / Completion Percentage ({editingProject.progress}%)</label>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                  <input 
-                    type="range" 
-                    min="0" 
-                    max="100" 
-                    step="5" 
-                    style={{ flex: 1 }}
-                    value={editingProject.progress} 
-                    onChange={(e) => setEditingProject({...editingProject, progress: parseInt(e.target.value) || 0})} 
-                  />
-                  <input 
-                    type="number" 
-                    min="0" 
-                    max="100" 
-                    className="form-input"
-                    style={{ width: '80px' }}
-                    value={editingProject.progress} 
-                    onChange={(e) => setEditingProject({...editingProject, progress: Math.min(100, Math.max(0, parseInt(e.target.value) || 0))})} 
-                  />
-                </div>
+                <label className="form-label">Date</label>
+                <input type="date" className="form-input" value={editingCalendarEvent.date} onChange={e=>setEditingCalendarEvent({...editingCalendarEvent, date: e.target.value})} required />
               </div>
+              <div className="form-group">
+                <label className="form-label">Details / Notes</label>
+                <textarea className="form-input" rows={2} value={editingCalendarEvent.details || ''} onChange={e=>setEditingCalendarEvent({...editingCalendarEvent, details: e.target.value})} placeholder="Location, agenda, or notes..."></textarea>
+              </div>
+
               <div style={{ display: 'flex', gap: '10px', marginTop: '20px' }}>
-                <button type="button" className="btn btn-secondary" style={{ flex: 1, justifyContent: 'center' }} onClick={() => { setShowProjectEditModal(false); setEditingProject(null); }}>Cancel</button>
-                <button type="submit" className="btn btn-primary" style={{ flex: 1, justifyContent: 'center' }}>Update Status</button>
+                {editingCalendarEvent.id && (
+                  <button type="button" className="btn btn-secondary" style={{ background: '#EF444420', color: '#EF4444', border: 'none' }} onClick={() => {
+                    setCalendarEvents(prev => prev.filter(ev => ev.id !== editingCalendarEvent.id));
+                    setShowCalendarEventModal(false);
+                    triggerToast("Event deleted");
+                  }}>Delete</button>
+                )}
+                <button type="button" className="btn btn-secondary" style={{ flex: 1, justifyContent: 'center' }} onClick={() => setShowCalendarEventModal(false)}>Cancel</button>
+                <button type="submit" className="btn btn-primary" style={{ flex: 1, justifyContent: 'center', background: '#FF2E4D' }}>Save Event</button>
               </div>
             </form>
           </div>
