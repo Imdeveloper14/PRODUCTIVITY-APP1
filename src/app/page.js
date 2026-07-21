@@ -7335,6 +7335,7 @@ export default function Home() {
             <button className="mobile-fab-item" onClick={() => { triggerNewInvoiceFlow(); setMobileFabOpen(false); }}>💰 Invoice</button>
           </div>
         )}
+      </div>
       {/* Mobile Bottom Navigation Bar */}
       <div className="mobile-only mobile-bottom-nav">
         <button className={`mobile-bottom-btn ${activeTab === 'dashboard' ? 'active' : ''}`} onClick={() => setActiveTab('dashboard')}>
