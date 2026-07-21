@@ -5373,84 +5373,45 @@ export default function Home() {
             {/* Header & Controls */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '12px' }}>
               <div>
-                <span style={{ fontSize: '0.7rem', color: '#FF2E4D', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '1.5px' }}>AURA WORKSPACE</span>
+                <span style={{ fontSize: '0.7rem', color: '#FF365E', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '1.5px' }}>AURA WORKSPACE</span>
                 <h1 style={{ fontSize: '1.5rem', fontWeight: '800', margin: '2px 0 0', color: '#FFFFFF' }}>📊 Engineering Reports Center</h1>
               </div>
-
-              <div style={{ display: 'flex', gap: '8px' }}>
-                <button className="btn btn-secondary" style={{ background: '#1A1F2B', color: 'white', border: '1px solid rgba(255,255,255,0.08)', fontSize: '0.8rem' }} onClick={() => window.print()}>
-                  🖨️ Print Report
-                </button>
-                <button className="btn btn-primary" style={{ background: '#FF2E4D', fontSize: '0.8rem' }} onClick={() => triggerToast(`Report for ${reportsCategory} exported to PDF`)}>
-                  📄 Export PDF
-                </button>
-              </div>
             </div>
 
-            {/* Report Category Sub-Tabs (10 Categories) */}
-            <div className="card" style={{ padding: '14px', marginBottom: '20px', background: '#11151E', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px' }}>
-              <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-                {[
-                  'Project Reports', 'Quotation Reports', 'Invoice Reports', 'Payment Reports',
-                  'Client Reports', 'Task Reports', 'Meeting Reports', 'Document Reports',
-                  'Timeline Reports', 'Engineering Reports'
-                ].map(cat => (
-                  <button
-                    key={cat}
-                    className="btn"
-                    style={{
-                      padding: '6px 12px',
-                      fontSize: '0.78rem',
-                      borderRadius: '6px',
-                      border: 'none',
-                      background: reportsCategory === cat ? '#FF2E4D' : '#0D1017',
-                      color: reportsCategory === cat ? '#FFFFFF' : '#9CA3AF',
-                      fontWeight: reportsCategory === cat ? '700' : '500'
-                    }}
-                    onClick={() => setReportsCategory(cat)}
-                  >
-                    {cat}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Report Summary & Content Table */}
-            <div className="card" style={{ padding: '24px', background: '#11151E', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '14px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255,255,255,0.08)', paddingBottom: '14px', marginBottom: '16px' }}>
-                <div>
-                  <h3 style={{ fontSize: '1.2rem', fontWeight: '800', margin: 0, color: '#FFFFFF' }}>{reportsCategory} Summary</h3>
-                  <p style={{ fontSize: '0.8rem', color: '#9CA3AF', margin: '4px 0 0 0' }}>Auto-compiled engineering metrics &amp; project items</p>
+            {/* Grid Report Cards */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px' }}>
+              {[
+                { title: 'Project Reports', desc: 'Auto-compiled engineering metrics & project progress logs.', icon: '📁' },
+                { title: 'Quotation Reports', desc: 'Proposal conversions, approved quotes and contract value logs.', icon: '✉️' },
+                { title: 'Invoice Reports', desc: 'Financial invoices billing summaries and GST collection metrics.', icon: '📄' },
+                { title: 'Payment Reports', desc: 'Completed payment ledger records and pending receipts summaries.', icon: '💰' },
+                { title: 'Client Reports', desc: 'Active CRM directories mapping and corporate details listings.', icon: '👥' },
+                { title: 'Task Reports', desc: 'Milestones completion percentage and engineer workloads.', icon: '✓' }
+              ].map(rep => (
+                <div key={rep.title} className="card" style={{ padding: '20px', background: '#151922', border: '1px solid #232A35', borderRadius: '14px', minHeight: '180px', justifyContent: 'space-between' }}>
+                  <div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                      <span style={{ fontSize: '1.5rem' }}>{rep.icon}</span>
+                      <span className="badge badge-info" style={{ fontSize: '0.65rem' }}>Automated</span>
+                    </div>
+                    <h3 style={{ fontSize: '1.05rem', fontWeight: '700', color: '#FFFFFF', margin: '0 0 6px 0' }}>{rep.title}</h3>
+                    <p style={{ fontSize: '0.78rem', color: '#9CA3AF', margin: 0, lineHeight: '1.4' }}>{rep.desc}</p>
+                  </div>
+                  
+                  <div style={{ display: 'flex', gap: '8px', marginTop: '16px' }}>
+                    <button className="btn btn-secondary" style={{ flex: 1, padding: '6px 12px', fontSize: '0.75rem' }} onClick={() => triggerToast(`Viewing ${rep.title}`)}>
+                      View
+                    </button>
+                    <button className="btn btn-secondary" style={{ padding: '6px 12px', fontSize: '0.75rem' }} onClick={() => window.print()}>
+                      🖨️ Print
+                    </button>
+                    <button className="btn btn-primary" style={{ background: '#FF365E', padding: '6px 12px', fontSize: '0.75rem', border: 'none' }} onClick={() => triggerToast(`${rep.title} exported to PDF`)}>
+                      PDF
+                    </button>
+                  </div>
                 </div>
-                <span className="badge badge-info">Live Sync</span>
-              </div>
-
-              <div style={{ overflowX: 'auto' }}>
-                <table className="data-table" style={{ width: '100%', fontSize: '0.82rem' }}>
-                  <thead>
-                    <tr>
-                      <th>Item Name / Title</th>
-                      <th>Category</th>
-                      <th>Associated Client</th>
-                      <th>Status</th>
-                      <th>Last Updated</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {projects.map(p => (
-                      <tr key={p.id}>
-                        <td style={{ fontWeight: '700', color: '#FFFFFF' }}>{p.title}</td>
-                        <td>{p.cadType || 'CAD Engineering'}</td>
-                        <td style={{ color: '#9CA3AF' }}>{clients.find(c=>c.id===(p.clientId||p.client_id))?.name || 'Client'}</td>
-                        <td><span className="badge badge-success">{p.status || 'In Progress'}</span></td>
-                        <td>{new Date().toISOString().split('T')[0]}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+              ))}
             </div>
-
           </div>
         )}
 
@@ -7374,6 +7335,28 @@ export default function Home() {
             <button className="mobile-fab-item" onClick={() => { triggerNewInvoiceFlow(); setMobileFabOpen(false); }}>💰 Invoice</button>
           </div>
         )}
+      {/* Mobile Bottom Navigation Bar */}
+      <div className="mobile-only mobile-bottom-nav">
+        <button className={`mobile-bottom-btn ${activeTab === 'dashboard' ? 'active' : ''}`} onClick={() => setActiveTab('dashboard')}>
+          <LayoutDashboard size={20} />
+          <span>Dashboard</span>
+        </button>
+        <button className={`mobile-bottom-btn ${activeTab === 'projects' ? 'active' : ''}`} onClick={() => setActiveTab('projects')}>
+          <FolderKanban size={20} />
+          <span>Projects</span>
+        </button>
+        <button className={`mobile-bottom-btn ${activeTab === 'clients' ? 'active' : ''}`} onClick={() => setActiveTab('clients')}>
+          <Users size={20} />
+          <span>Clients</span>
+        </button>
+        <button className={`mobile-bottom-btn ${activeTab === 'calendar' ? 'active' : ''}`} onClick={() => setActiveTab('calendar')}>
+          <Calendar size={20} />
+          <span>Calendar</span>
+        </button>
+        <button className="mobile-bottom-btn" onClick={() => setDrawerOpen(true)}>
+          <span style={{ fontSize: '1.2rem', lineHeight: 1 }}>☰</span>
+          <span>More</span>
+        </button>
       </div>
 
     </div>
