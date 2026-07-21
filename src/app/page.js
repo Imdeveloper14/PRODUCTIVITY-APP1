@@ -450,10 +450,33 @@ export default function Home() {
 
     const syncSession = async () => {
       try {
+        if (!supabase) return;
+
+        // 1. Check native browser Supabase Auth session
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        const { data: { user: authUser }, error: userError } = await supabase.auth.getUser();
+
+        if (session && authUser) {
+          const meta = authUser.user_metadata || {};
+          const restoredUser = {
+            id: authUser.id,
+            email: authUser.email,
+            name: meta.first_name ? `${meta.first_name} ${meta.last_name || ''}`.trim() : (authUser.email ? authUser.email.split('@')[0] : 'User'),
+            username: meta.username || (authUser.email ? authUser.email.split('@')[0] : 'user'),
+            role: meta.role || (authUser.email === 'chandrunavalarch@gmail.com' ? 'Super Admin' : 'Engineer'),
+            status: meta.status || 'Approved'
+          };
+          setUser(restoredUser);
+          saveState("aura_user_v7", restoredUser);
+          fetchAllUserData(restoredUser.id, restoredUser.role);
+          return;
+        }
+
+        // 2. Cookie / API route Session fallback
         const res = await fetch('/api/auth/session', { credentials: 'include' });
         const data = await res.json();
         if (data?.authenticated && data?.user) {
-          if (supabase && data?.session?.access_token && data?.session?.refresh_token) {
+          if (data?.session?.access_token && data?.session?.refresh_token) {
             await supabase.auth.setSession({
               access_token: data.session.access_token,
               refresh_token: data.session.refresh_token
@@ -486,7 +509,15 @@ export default function Home() {
 
     syncSession();
     if (!supabase) return;
-    // Custom JWT Auth handles session locally, no onAuthStateChange listener needed.
+
+    // Listen to native Supabase Auth state changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      console.log("Supabase Auth Event:", event, session?.user?.id);
+    });
+
+    return () => {
+      subscription?.unsubscribe();
+    };
   }, []);
 
 
@@ -695,6 +726,39 @@ export default function Home() {
 
       setAuthLoading(true);
       try {
+        let targetEmail = authEmail.trim().toLowerCase();
+        if (!targetEmail.includes('@')) {
+          if (targetEmail === 'chandru') {
+            targetEmail = 'chandrunavalarch@gmail.com';
+          } else {
+            targetEmail = `${targetEmail}@auraworkspace.local`;
+          }
+        }
+
+        // 1. Execute Native Supabase Auth signInWithPassword directly on browser client
+        let authUser = null;
+        let authSession = null;
+
+        if (supabase) {
+          try {
+            const { data: authData, error: nativeAuthError } = await supabase.auth.signInWithPassword({
+              email: targetEmail,
+              password: authPassword
+            });
+
+            if (!nativeAuthError && authData?.user && authData?.session) {
+              authUser = authData.user;
+              authSession = authData.session;
+              console.log("NATIVE SUPABASE AUTH SUCCESS:", authUser.id);
+            } else if (nativeAuthError) {
+              console.warn("NATIVE SUPABASE AUTH NOTICE:", nativeAuthError.message);
+            }
+          } catch (nativeErr) {
+            console.warn("NATIVE SUPABASE AUTH EXCEPTION:", nativeErr);
+          }
+        }
+
+        // 2. Call backend login endpoint for server session cookies & profile metadata
         const res = await fetch('/api/auth/login', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -706,17 +770,18 @@ export default function Home() {
 
         const data = await res.json();
         if (!res.ok || data.error) {
-          alert(`Login Error: ${data.error}`);
+          alert(`Login Error: ${data.error || 'Authentication failed'}`);
         } else if (data?.success && data?.user) {
-          if (supabase && data?.session?.access_token && data?.session?.refresh_token) {
+          // If native auth didn't set session yet, set tokens explicitly on client
+          if (supabase && !authSession && data?.session?.access_token && data?.session?.refresh_token) {
             await supabase.auth.setSession({
               access_token: data.session.access_token,
               refresh_token: data.session.refresh_token
             });
           }
           const loggedUser = {
-            id: data.user.id,
-            email: data.user.email,
+            id: authUser?.id || data.user.id,
+            email: authUser?.email || data.user.email,
             name: `${data.user.first_name} ${data.user.last_name}`,
             username: data.user.username,
             role: data.user.role,
@@ -724,7 +789,7 @@ export default function Home() {
           };
           setUser(loggedUser);
           saveState("aura_user_v7", loggedUser);
-          fetchAllUserData(data.user.id, data.user.role);
+          fetchAllUserData(loggedUser.id, loggedUser.role);
           triggerToast("Logged in successfully!");
           // Clear credentials form
           setAuthEmail('');
