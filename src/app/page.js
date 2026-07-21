@@ -272,8 +272,6 @@ export default function Home() {
   const [clientDocSort, setClientDocSort] = useState('date-desc');
 
   // Calendar Module States
-  const [calendarView, setCalendarView] = useState('month'); // 'month', 'week', 'day'
-  const [calendarFilter, setCalendarFilter] = useState('All');
   const [calendarSearch, setCalendarSearch] = useState('');
   const [calendarSelectedDate, setCalendarSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [calendarEvents, setCalendarEvents] = useState([
