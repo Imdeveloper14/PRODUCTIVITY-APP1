@@ -58,7 +58,11 @@ export default function InvoicesView({
     sgst_rate: 9,
     sgst_amount: 0,
     igst_rate: 0,
-    igst_amount: 0
+    igst_amount: 0,
+    prepared_by_name: user?.name || 'Ashok Kumar',
+    prepared_by_designation: user?.role || 'Lead Marine Designer',
+    approved_by_name: 'Chandru Admin',
+    approved_by_designation: 'Managing Director'
   });
 
   // AI Assistant Chat Log on Invoices Tab
@@ -725,6 +729,29 @@ export default function InvoicesView({
                   <div className="form-group" style={{ margin: 0 }}>
                     <label className="form-label" style={{ fontSize: '0.75rem' }}>Special Billing Notes</label>
                     <textarea className="form-input" value={invoiceForm.notes} onChange={(e) => handleFieldChange({ notes: e.target.value })} rows="2" style={{ resize: 'none' }} />
+                  </div>
+
+                  {/* Signatures Configuration */}
+                  <div style={{ background: 'rgba(255,255,255,0.02)', padding: '12px', borderRadius: '8px', border: '1px dashed rgba(255,255,255,0.1)' }}>
+                    <h5 style={{ fontSize: '0.75rem', textTransform: 'uppercase', color: 'var(--accent)', fontWeight: 'bold', margin: '0 0 8px 0' }}>Signatures & Authorization</h5>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px' }}>
+                      <div className="form-group" style={{ margin: 0 }}>
+                        <label className="form-label" style={{ fontSize: '0.7rem' }}>Prepared By Name</label>
+                        <input type="text" className="form-input" value={invoiceForm.prepared_by_name} onChange={(e) => handleFieldChange({ prepared_by_name: e.target.value })} placeholder="e.g. Ashok Kumar" />
+                      </div>
+                      <div className="form-group" style={{ margin: 0 }}>
+                        <label className="form-label" style={{ fontSize: '0.7rem' }}>Prepared By Title</label>
+                        <input type="text" className="form-input" value={invoiceForm.prepared_by_designation} onChange={(e) => handleFieldChange({ prepared_by_designation: e.target.value })} placeholder="e.g. Lead Marine Designer" />
+                      </div>
+                      <div className="form-group" style={{ margin: 0 }}>
+                        <label className="form-label" style={{ fontSize: '0.7rem' }}>Approved By Name</label>
+                        <input type="text" className="form-input" value={invoiceForm.approved_by_name} onChange={(e) => handleFieldChange({ approved_by_name: e.target.value })} placeholder="e.g. Chandru Admin" />
+                      </div>
+                      <div className="form-group" style={{ margin: 0 }}>
+                        <label className="form-label" style={{ fontSize: '0.7rem' }}>Approved By Title</label>
+                        <input type="text" className="form-input" value={invoiceForm.approved_by_designation} onChange={(e) => handleFieldChange({ approved_by_designation: e.target.value })} placeholder="e.g. Managing Director" />
+                      </div>
+                    </div>
                   </div>
                 </div>
 

@@ -4,9 +4,9 @@ import { supabase } from '../../utils/supabase';
 import { verifySessionToken } from '../../utils/session';
 
 // Helper to authenticate user
-function authenticate(request) {
+async function authenticate(request) {
   try {
-    let token = request.cookies.get('aura_token')?.value;
+    let token = request.cookies.get('supabase_access_token')?.value || request.cookies.get('aura_token')?.value;
     if (!token) {
       const authHeader = request.headers.get('Authorization');
       if (authHeader && authHeader.startsWith('Bearer ')) {
@@ -14,7 +14,32 @@ function authenticate(request) {
       }
     }
     if (!token) return null;
-    return verifySessionToken(token);
+
+    if (supabase) {
+      try {
+        const { data: { user }, error } = await supabase.auth.getUser(token);
+        if (user && !error) {
+          const meta = user.user_metadata || {};
+          const isSuperAdmin = user.email === 'chandrunavalarch@gmail.com' || meta.role === 'Super Admin' || meta.role === 'SuperAdmin';
+          return {
+            id: user.id,
+            username: meta.username || (user.email ? user.email.split('@')[0] : 'user'),
+            email: user.email,
+            role: isSuperAdmin ? 'Super Admin' : (meta.role || 'Engineer'),
+            first_name: meta.first_name || 'User',
+            last_name: meta.last_name || ''
+          };
+        }
+      } catch (err) {
+        console.warn("Supabase auth verification notice:", err?.message);
+      }
+    }
+
+    try {
+      return verifySessionToken(token);
+    } catch (err) {
+      return null;
+    }
   } catch (err) {
     return null;
   }
@@ -22,7 +47,7 @@ function authenticate(request) {
 
 export async function GET(request) {
   try {
-    const user = authenticate(request);
+    const user = await authenticate(request);
     if (!user) {
       return NextResponse.json({ error: "Unauthorized access." }, { status: 401 });
     }
@@ -118,7 +143,7 @@ export async function GET(request) {
 
 export async function POST(request) {
   try {
-    const user = authenticate(request);
+    const user = await authenticate(request);
     if (!user) {
       return NextResponse.json({ error: "Unauthorized access." }, { status: 401 });
     }

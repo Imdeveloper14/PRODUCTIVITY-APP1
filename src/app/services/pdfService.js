@@ -297,11 +297,10 @@ export const generateAndDownloadPDF = async ({
     doc.line(labelX, currentY + 2, valueX, currentY + 2);
 
     // ----------------------------------------------------------------------
-    // 5. PAYMENT INFORMATION & RIGHT-ALIGNED QR CODE
+    // 5. PAYMENT INFORMATION (Clean Text Only - No QR Scan Block)
     // ----------------------------------------------------------------------
     let paymentY = doc.lastAutoTable.finalY + 8;
     
-    // Left Box: Payment Details
     doc.setFontSize(8.5);
     doc.setFont("helvetica", "bold");
     doc.setTextColor(15, 23, 42);
@@ -310,49 +309,15 @@ export const generateAndDownloadPDF = async ({
     doc.setFontSize(8);
     doc.setFont("helvetica", "normal");
     doc.setTextColor(71, 85, 105);
-    doc.text("Bank: HDFC Bank Corporate Primary", 14, paymentY + 5);
-    doc.text("Account Name: Primelisometrics Consultancy Pvt Ltd", 14, paymentY + 9);
-    doc.text("Account Number: 501009988776655", 14, paymentY + 13);
-    doc.text("IFSC Code: HDFC0001234", 14, paymentY + 17);
-    doc.text("UPI ID: primelisometrics@hdfcbank", 14, paymentY + 21);
-
-    // Right-Aligned QR Code Box (Without Overlapping)
-    const qrX = 148;
-    const qrY = paymentY - 2;
-    doc.setDrawColor(226, 232, 240);
-    doc.setFillColor(255, 255, 255);
-    doc.rect(qrX, qrY, 48, 28, 'FD');
-
-    // Clean Simulated QR Matrix
-    doc.setFillColor(15, 23, 42);
-    doc.rect(qrX + 3, qrY + 3, 6, 6, 'F');
-    doc.rect(qrX + 17, qrY + 3, 6, 6, 'F');
-    doc.rect(qrX + 3, qrY + 17, 6, 6, 'F');
-    // Inner white centers
-    doc.setFillColor(255, 255, 255);
-    doc.rect(qrX + 4.5, qrY + 4.5, 3, 3, 'F');
-    doc.rect(qrX + 18.5, qrY + 4.5, 3, 3, 'F');
-    doc.rect(qrX + 4.5, qrY + 18.5, 3, 3, 'F');
-    // QR micro pattern
-    doc.setFillColor(15, 23, 42);
-    doc.rect(qrX + 12, qrY + 10, 4, 4, 'F');
-    doc.rect(qrX + 18, qrY + 15, 4, 4, 'F');
-
-    // QR Label (Right side of QR box)
-    doc.setFontSize(7);
-    doc.setFont("helvetica", "bold");
-    doc.setTextColor(15, 23, 42);
-    doc.text("Scan to Pay", qrX + 26, qrY + 8);
-    doc.setFont("helvetica", "normal");
-    doc.setTextColor(100, 116, 139);
-    doc.text("Supports GPay,", qrX + 26, qrY + 13);
-    doc.text("PhonePe, BHIM", qrX + 26, qrY + 17);
-    doc.text("& UPI Apps", qrX + 26, qrY + 21);
+    doc.text("Bank Name: HDFC Bank Corporate Primary", 14, paymentY + 5);
+    doc.text("Account Number: 501009988776655", 14, paymentY + 9);
+    doc.text("IFSC Code: HDFC0001234", 14, paymentY + 13);
+    doc.text("UPI ID: primelisometrics@hdfcbank", 14, paymentY + 17);
 
     // ----------------------------------------------------------------------
     // 6. NOTES & TERMS
     // ----------------------------------------------------------------------
-    let notesY = Math.max(paymentY + 30, currentY + 10);
+    let notesY = Math.max(paymentY + 24, currentY + 10);
     if (notesY > 235) {
       doc.addPage();
       notesY = 25;
@@ -390,7 +355,7 @@ export const generateAndDownloadPDF = async ({
     }
 
     // ----------------------------------------------------------------------
-    // 7. FOOTER & SIGNATURE VERIFICATION
+    // 7. FOOTER & EDITABLE SIGNATURE VERIFICATION
     // ----------------------------------------------------------------------
     let footerY = Math.max(notesY + 10, 245);
     if (footerY > 260) {
@@ -403,6 +368,12 @@ export const generateAndDownloadPDF = async ({
     doc.line(14, footerY, pageWidth - 14, footerY);
     footerY += 6;
 
+    const prepName = inv.prepared_by_name || user?.name || 'Ashok Kumar';
+    const prepDesignation = inv.prepared_by_designation || 'Lead Marine Designer';
+
+    const appName = inv.approved_by_name || 'Chandru Admin';
+    const appDesignation = inv.approved_by_designation || 'Managing Director';
+
     // Prepared By Block
     doc.setFontSize(7.5);
     doc.setFont("helvetica", "bold");
@@ -410,8 +381,8 @@ export const generateAndDownloadPDF = async ({
     doc.text("PREPARED BY", 14, footerY);
     doc.setFont("helvetica", "normal");
     doc.setTextColor(71, 85, 105);
-    doc.text("Ashok Kumar", 14, footerY + 4);
-    doc.text("Lead Marine Designer", 14, footerY + 7.5);
+    doc.text(prepName, 14, footerY + 4);
+    doc.text(prepDesignation, 14, footerY + 7.5);
 
     // Approved By Block
     doc.setFont("helvetica", "bold");
@@ -419,8 +390,8 @@ export const generateAndDownloadPDF = async ({
     doc.text("APPROVED BY", 85, footerY);
     doc.setFont("helvetica", "normal");
     doc.setTextColor(71, 85, 105);
-    doc.text("Chandru Admin", 85, footerY + 4);
-    doc.text("Managing Director", 85, footerY + 7.5);
+    doc.text(appName, 85, footerY + 4);
+    doc.text(appDesignation, 85, footerY + 7.5);
 
     // Client Signature Line
     doc.setFont("helvetica", "bold");
