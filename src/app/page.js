@@ -7356,6 +7356,7 @@ export default function Home() {
             </div>
           </div>
         </div>
+      )}
       {/* Mobile Floating Action Button (FAB) */}
       <div className="mobile-only mobile-fab-container">
         <button 
