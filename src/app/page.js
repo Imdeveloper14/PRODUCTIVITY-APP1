@@ -3741,27 +3741,106 @@ export default function Home() {
 
                   {clientSubTab === 'Meetings' && (
                     <div>
-                      <h4 style={{ margin: '0 0 12px 0', fontSize: '0.95rem' }}>Client Interaction Logs</h4>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                        <h4 style={{ margin: 0, fontSize: '0.95rem' }}>Client Interaction Logs &amp; Meetings</h4>
+                        <button 
+                          className="btn btn-secondary" 
+                          style={{ padding: '4px 10px', fontSize: '0.75rem' }}
+                          onClick={() => {
+                            const title = prompt("Enter meeting title / topic:");
+                            if (!title) return;
+                            const date = prompt("Enter meeting date (e.g. YYYY-MM-DD):", new Date().toISOString().split('T')[0]);
+                            const time = prompt("Enter meeting time (e.g. 10:00 AM):", "10:00 AM");
+                            const newM = {
+                              id: 'm_' + Date.now(),
+                              client_id: selectedClient.id,
+                              client_name: selectedClient.name,
+                              title,
+                              date: date || new Date().toISOString().split('T')[0],
+                              time: time || '10:00 AM'
+                            };
+                            setMeetings(prev => [...prev, newM]);
+                            if (supabase) {
+                              supabase.from('client_meetings').insert([{
+                                id: newM.id,
+                                client_id: selectedClient.id,
+                                title: newM.title,
+                                date: newM.date,
+                                time: newM.time
+                              }]).catch(e => console.warn("Supabase meeting insert error:", e));
+                            }
+                            triggerToast("Meeting logged successfully.");
+                          }}
+                        >
+                          ➕ Add Meeting
+                        </button>
+                      </div>
+
                       {clientMeetings.length > 0 ? (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                           {clientMeetings.map(m => (
-                            <div key={m.id} style={{ padding: '10px 14px', background: 'rgba(255,255,255,0.02)', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
-                              <strong>{m.title || 'Technical Meeting'}</strong><br />
-                              <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Date: {m.date} | Time: {m.time || 'N/A'}</span>
+                            <div key={m.id} style={{ padding: '10px 14px', background: 'rgba(255,255,255,0.02)', borderRadius: '8px', border: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                              <div>
+                                <strong>{m.title || 'Technical Meeting'}</strong><br />
+                                <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Date: {m.date} | Time: {m.time || 'N/A'}</span>
+                              </div>
+                              <div style={{ display: 'flex', gap: '6px' }}>
+                                <button
+                                  className="btn btn-secondary"
+                                  style={{ padding: '2px 8px', fontSize: '0.7rem' }}
+                                  onClick={() => {
+                                    const updatedTitle = prompt("Update meeting title:", m.title);
+                                    if (updatedTitle === null) return;
+                                    const updatedDate = prompt("Update meeting date:", m.date);
+                                    setMeetings(prev => prev.map(item => item.id === m.id ? { ...item, title: updatedTitle || item.title, date: updatedDate || item.date } : item));
+                                    triggerToast("Meeting updated.");
+                                  }}
+                                >
+                                  ✏ Edit
+                                </button>
+                                <button
+                                  className="btn btn-secondary"
+                                  style={{ padding: '2px 8px', fontSize: '0.7rem', color: 'var(--color-danger)' }}
+                                  onClick={() => {
+                                    if (!confirm("Delete this meeting log? Client profile will remain intact.")) return;
+                                    setMeetings(prev => prev.filter(item => item.id !== m.id));
+                                    if (supabase) supabase.from('client_meetings').delete().eq('id', m.id).catch(e => console.warn(e));
+                                    triggerToast("Meeting deleted.");
+                                  }}
+                                >
+                                  🗑 Delete
+                                </button>
+                              </div>
                             </div>
                           ))}
                         </div>
                       ) : (
-                        <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>No meetings mapped.</p>
+                        <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>No meetings mapped. Click "+ Add Meeting" above to record one.</p>
                       )}
                     </div>
                   )}
 
                   {clientSubTab === 'Notes' && (
                     <div>
-                      <h4 style={{ margin: '0 0 10px 0', fontSize: '0.95rem' }}>Quick Client Notes</h4>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                        <h4 style={{ margin: 0, fontSize: '0.95rem' }}>Quick Client Notes</h4>
+                        <button 
+                          className="btn btn-secondary" 
+                          style={{ padding: '4px 10px', fontSize: '0.75rem' }}
+                          onClick={() => {
+                            const newNoteText = prompt("Enter new client note / instruction:");
+                            if (!newNoteText) return;
+                            const existing = selectedClient.notes || '';
+                            const updated = existing ? `${existing}\n- ${newNoteText} (${new Date().toLocaleDateString()})` : `- ${newNoteText} (${new Date().toLocaleDateString()})`;
+                            setClients(prev => prev.map(c => c.id === selectedClient.id ? { ...c, notes: updated } : c));
+                            triggerToast("Note added.");
+                          }}
+                        >
+                          ➕ Add Note
+                        </button>
+                      </div>
                       <textarea
-                        style={{ width: '100%', minHeight: '120px', padding: '12px', background: 'rgba(0,0,0,0.2)', border: '1px solid var(--border-color)', borderRadius: '8px', color: 'var(--text-primary)', resize: 'none', fontSize: '0.85rem' }}
+                        style={{ width: '100%', minHeight: '140px', padding: '12px', background: 'rgba(0,0,0,0.2)', border: '1px solid var(--border-color)', borderRadius: '8px', color: 'var(--text-primary)', resize: 'vertical', fontSize: '0.85rem' }}
                         placeholder="Write client-specific instructions, billing references or timeline updates..."
                         value={selectedClient.notes || ''}
                         onChange={(e) => {
@@ -3769,19 +3848,32 @@ export default function Home() {
                           setClients(prev => prev.map(c => c.id === selectedClient.id ? { ...c, notes: updatedNotes } : c));
                         }}
                       />
+                      <div style={{ display: 'flex', gap: '8px', marginTop: '8px', justifyContent: 'flex-end' }}>
+                        <button
+                          className="btn btn-secondary"
+                          style={{ padding: '4px 10px', fontSize: '0.75rem', color: 'var(--color-danger)' }}
+                          onClick={() => {
+                            if (!confirm("Clear client notes? Client record will remain intact.")) return;
+                            setClients(prev => prev.map(c => c.id === selectedClient.id ? { ...c, notes: '' } : c));
+                            triggerToast("Notes cleared.");
+                          }}
+                        >
+                          🗑 Clear Notes
+                        </button>
+                      </div>
                     </div>
                   )}
 
                   {clientSubTab === 'Payments' && (
                     <div>
-                      <h4 style={{ margin: '0 0 12px 0', fontSize: '0.95rem' }}>Client Invoice Ledger & Receipts</h4>
+                      <h4 style={{ margin: '0 0 12px 0', fontSize: '0.95rem' }}>Client Invoice Ledger &amp; Receipts</h4>
                       <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>No client payment receipts logged in this period.</p>
                     </div>
                   )}
 
                   {clientSubTab === 'Documents' && (
                     <div>
-                      <h4 style={{ margin: '0 0 12px 0', fontSize: '0.95rem' }}>Client Documents & Service Agreement Files</h4>
+                      <h4 style={{ margin: '0 0 12px 0', fontSize: '0.95rem' }}>Client Documents &amp; Service Agreement Files</h4>
                       <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>No uploaded contracts or signed master agreements found.</p>
                     </div>
                   )}
@@ -3795,13 +3887,64 @@ export default function Home() {
 
                     return (
                       <div>
-                        <h4 style={{ margin: '0 0 12px 0', fontSize: '0.95rem' }}>Client Interaction &amp; System Event Timeline</h4>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                          <h4 style={{ margin: 0, fontSize: '0.95rem' }}>Client Interaction &amp; System Event Timeline</h4>
+                          <button 
+                            className="btn btn-secondary" 
+                            style={{ padding: '4px 10px', fontSize: '0.75rem' }}
+                            onClick={() => {
+                              const actionTitle = prompt("Enter timeline event title / action:");
+                              if (!actionTitle) return;
+                              const details = prompt("Enter event details / description:");
+                              const newEvt = {
+                                id: 'act_' + Date.now(),
+                                client_id: selectedClient.id,
+                                action: actionTitle,
+                                details: details || 'Manual timeline log entry.',
+                                created_at: new Date().toISOString()
+                              };
+                              setActivities(prev => [newEvt, ...prev]);
+                              triggerToast("Timeline event logged.");
+                            }}
+                          >
+                            ➕ Add Timeline Event
+                          </button>
+                        </div>
+
                         {clientTimelineEvents.length > 0 ? (
                           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                             {clientTimelineEvents.map((evt, idx) => (
-                              <div key={evt.id || idx} style={{ borderLeft: '3px solid var(--accent)', paddingLeft: '12px', fontSize: '0.8rem', background: 'rgba(255,255,255,0.02)', padding: '8px 12px', borderRadius: '0 6px 6px 0' }}>
-                                <strong>{evt.action || evt.title || 'System Activity'}</strong> - <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>{evt.created_at || evt.timestamp ? new Date(evt.created_at || evt.timestamp).toLocaleString() : 'Recent'}</span><br />
-                                <span style={{ color: 'var(--text-secondary)' }}>{evt.details || evt.description || 'Activity recorded.'}</span>
+                              <div key={evt.id || idx} style={{ borderLeft: '3px solid var(--accent)', paddingLeft: '12px', fontSize: '0.8rem', background: 'rgba(255,255,255,0.02)', padding: '8px 12px', borderRadius: '0 6px 6px 0', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                                <div>
+                                  <strong>{evt.action || evt.title || 'System Activity'}</strong> - <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>{evt.created_at || evt.timestamp ? new Date(evt.created_at || evt.timestamp).toLocaleString() : 'Recent'}</span><br />
+                                  <span style={{ color: 'var(--text-secondary)' }}>{evt.details || evt.description || 'Activity recorded.'}</span>
+                                </div>
+                                <div style={{ display: 'flex', gap: '4px' }}>
+                                  <button
+                                    className="btn btn-secondary"
+                                    style={{ padding: '2px 6px', fontSize: '0.65rem' }}
+                                    onClick={() => {
+                                      const updatedAction = prompt("Edit event title:", evt.action || evt.title);
+                                      if (updatedAction === null) return;
+                                      const updatedDetails = prompt("Edit details:", evt.details || evt.description);
+                                      setActivities(prev => prev.map(item => item === evt || item.id === evt.id ? { ...item, action: updatedAction || item.action, details: updatedDetails || item.details } : item));
+                                      triggerToast("Timeline event updated.");
+                                    }}
+                                  >
+                                    ✏ Edit
+                                  </button>
+                                  <button
+                                    className="btn btn-secondary"
+                                    style={{ padding: '2px 6px', fontSize: '0.65rem', color: 'var(--color-danger)' }}
+                                    onClick={() => {
+                                      if (!confirm("Delete this timeline event? Client profile will remain intact.")) return;
+                                      setActivities(prev => prev.filter(item => item !== evt && item.id !== evt.id));
+                                      triggerToast("Timeline event deleted.");
+                                    }}
+                                  >
+                                    🗑 Delete
+                                  </button>
+                                </div>
                               </div>
                             ))}
                           </div>

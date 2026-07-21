@@ -88,47 +88,51 @@ export const generateAndDownloadPDF = async ({
     const taxableAmount = Math.max(0, (inv.current_billing_amount || 0) - (inv.discount || 0));
 
     // ----------------------------------------------------------------------
-    // 1. HEADER & BRANDING (Clean Corporate Executive Bar)
+    // 1. HEADER & BRANDING (Printer-Friendly Low-Ink Design)
     // ----------------------------------------------------------------------
-    doc.setFillColor(15, 23, 42); // Deep Navy Primary
-    doc.rect(0, 0, pageWidth, 42, 'F');
-    
-    // Company Title & Subtitle (Left)
-    doc.setTextColor(255, 255, 255);
+    // Left: Company Logo Title & Address
+    doc.setTextColor(15, 23, 42); // Dark Navy / Black
     doc.setFont("helvetica", "bold");
     doc.setFontSize(18);
     doc.text("PRIMELISOMETRICS", 14, 15);
 
     doc.setFontSize(9);
     doc.setFont("helvetica", "normal");
-    doc.setTextColor(203, 213, 225); // Slate 300
-    doc.text("Marine Engineering Consultancy", 14, 21);
+    doc.setTextColor(71, 85, 105); // Slate Gray
+    doc.text("Marine Engineering Consultancy", 14, 20);
     doc.setFontSize(7.5);
-    doc.text("GSTIN: 29AAAAA1111A1Z1 | PAN: AAAAA1111A", 14, 26);
-    doc.text("Suite 404, Tech Park, Bangalore, KA, 560001, India", 14, 30);
-    doc.text("Email: support@primelisometrics.com | Ph: +91 99999 88888", 14, 34);
+    doc.text("GSTIN: 29AAAAA1111A1Z1 | PAN: AAAAA1111A", 14, 25);
+    doc.text("Suite 404, Tech Park, Bangalore, KA, 560001, India", 14, 29);
+    doc.text("Email: support@primelisometrics.com | Ph: +91 99999 88888", 14, 33);
 
-    // Invoice Header Title (Right)
-    doc.setTextColor(255, 255, 255);
-    doc.setFontSize(22);
+    // Right: Invoice Title & Metadata
+    doc.setTextColor(15, 23, 42);
+    doc.setFontSize(20);
     doc.setFont("helvetica", "bold");
-    doc.text("INVOICE", pageWidth - 14, 16, { align: 'right' });
+    doc.text("INVOICE", pageWidth - 14, 15, { align: 'right' });
 
-    doc.setFontSize(9);
+    doc.setFontSize(8.5);
     doc.setFont("helvetica", "normal");
-    doc.setTextColor(203, 213, 225);
-    doc.text(`Invoice No: ${baseInvNum}`, pageWidth - 14, 23, { align: 'right' });
-    doc.text(`Date: ${inv.invoice_date || new Date().toISOString().split('T')[0]}`, pageWidth - 14, 28, { align: 'right' });
-    doc.text(`Due Date: ${inv.due_date || 'Payment Upon Receipt'}`, pageWidth - 14, 33, { align: 'right' });
+    doc.setTextColor(71, 85, 105);
+    doc.text(`Invoice No: ${baseInvNum}`, pageWidth - 14, 21, { align: 'right' });
+    doc.text(`Date: ${inv.invoice_date || new Date().toISOString().split('T')[0]}`, pageWidth - 14, 25.5, { align: 'right' });
+    doc.text(`Due Date: ${inv.due_date || 'Payment Upon Receipt'}`, pageWidth - 14, 30, { align: 'right' });
 
-    // Status Pill
+    // Minimal Status Badge Outline
     const statusText = (inv.payment_status || 'Draft').toUpperCase();
-    doc.setFillColor(statusText === 'PAID' ? 34 : statusText === 'CLOSED' ? 71 : 217, statusText === 'PAID' ? 197 : statusText === 'CLOSED' ? 85 : 119, statusText === 'PAID' ? 94 : statusText === 'CLOSED' ? 105 : 6);
-    doc.rect(pageWidth - 42, 36, 28, 4.5, 'F');
-    doc.setTextColor(255, 255, 255);
+    doc.setDrawColor(148, 163, 184);
+    doc.setLineWidth(0.2);
+    doc.setFillColor(255, 255, 255);
+    doc.rect(pageWidth - 42, 33, 28, 4.5, 'FD');
+    doc.setTextColor(15, 23, 42);
     doc.setFontSize(6.5);
     doc.setFont("helvetica", "bold");
-    doc.text(statusText, pageWidth - 28, 39.2, { align: 'center' });
+    doc.text(statusText, pageWidth - 28, 36.2, { align: 'center' });
+
+    // Thin Bottom Border Line for Header
+    doc.setDrawColor(203, 213, 225);
+    doc.setLineWidth(0.4);
+    doc.line(14, 40, pageWidth - 14, 40);
 
     // ----------------------------------------------------------------------
     // 2. CLIENT DETAILS & INVOICE SUMMARY

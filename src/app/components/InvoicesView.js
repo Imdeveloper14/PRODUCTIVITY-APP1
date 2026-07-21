@@ -142,18 +142,35 @@ export default function InvoicesView({
     const currentYear = new Date().getFullYear();
     const prefix = `INV-${currentYear}-`;
     let maxNum = 0;
+
+    // Check active invoices
     invoices.forEach(inv => {
-      if (inv.invoice_number && inv.invoice_number.startsWith(prefix)) {
-        const parts = inv.invoice_number.split('-');
-        const num = parseInt(parts[parts.length - 1], 10);
-        if (!isNaN(num) && num > maxNum) maxNum = num;
-      } else if (inv.invoice_number && inv.invoice_number.includes('INV-')) {
+      if (inv.invoice_number && inv.invoice_number.includes('INV-')) {
         const parts = inv.invoice_number.split('-');
         const num = parseInt(parts[parts.length - 1], 10);
         if (!isNaN(num) && num > maxNum) maxNum = num;
       }
     });
-    return `${prefix}${String(maxNum + 1).padStart(4, '0')}`;
+
+    // Check local storage persistence (including deleted invoice history)
+    try {
+      const saved = JSON.parse(localStorage.getItem('aura_invoices_v7') || '[]');
+      saved.forEach(inv => {
+        if (inv.invoice_number && inv.invoice_number.includes('INV-')) {
+          const parts = inv.invoice_number.split('-');
+          const num = parseInt(parts[parts.length - 1], 10);
+          if (!isNaN(num) && num > maxNum) maxNum = num;
+        }
+      });
+    } catch (e) {}
+
+    // Check permanent historical counter sequence
+    const maxHistoryCounter = parseInt(localStorage.getItem(`aura_max_inv_seq_${currentYear}`) || '0', 10);
+    maxNum = Math.max(maxNum, maxHistoryCounter);
+
+    const nextSeq = maxNum + 1;
+    localStorage.setItem(`aura_max_inv_seq_${currentYear}`, String(nextSeq));
+    return `${prefix}${String(nextSeq).padStart(4, '0')}`;
   };
 
   const triggerNewInvoiceFlow = () => {
