@@ -92,7 +92,11 @@ export async function POST(request) {
     const response = NextResponse.json({
       success: true,
       user: profile,
-      session: { expiresAt: new Date(authData.session.expires_at * 1000).toISOString() }
+      session: {
+        access_token: authData.session.access_token,
+        refresh_token: authData.session.refresh_token,
+        expiresAt: new Date(authData.session.expires_at * 1000).toISOString()
+      }
     });
 
     const options = { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax', path: '/' };

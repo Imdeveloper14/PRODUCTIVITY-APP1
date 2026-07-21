@@ -1,10 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-import { createClient } from '@supabase/supabase-js';
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
-export const supabase = (supabaseUrl && supabaseAnonKey) ? createClient(supabaseUrl, supabaseAnonKey) : null;
+import { supabase } from './supabase';
 
 const DB_FILE = path.join(process.cwd(), 'db.json');
 const IS_VERCEL_RUNTIME = process.env.VERCEL === '1';

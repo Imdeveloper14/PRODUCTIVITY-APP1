@@ -3,6 +3,7 @@ import {
   Users, Search, ChevronLeft, ChevronRight, CheckCircle2
 } from 'lucide-react';
 import { supabase } from '../utils/supabase';
+import { isValidUUID } from '../utils/uuid';
 
 export default function ClientsView({
   clients = [],
@@ -51,6 +52,8 @@ export default function ClientsView({
     if (supabase) {
       try {
         const { data: { user: authUser } } = await supabase.auth.getUser();
+        const { data: { session } } = await supabase.auth.getSession();
+        const activeUserId = authUser?.id || (isValidUUID(user?.id) ? user.id : null);
         
         const record = {
           name: newClient.name,
@@ -59,8 +62,18 @@ export default function ClientsView({
           company: newClient.company || '',
           notes: newClient.notes || '',
           project_history: 'None yet',
-          user_id: authUser?.id || user?.id || null
+          agreement_documents: Array.isArray(uploadedAgreementFiles) ? uploadedAgreementFiles : [],
+          ...(activeUserId ? { user_id: activeUserId } : {})
         };
+
+        console.log("=== SUPABASE AUTH DIAGNOSTICS BEFORE CLIENT INSERT ===");
+        console.log("1. Authenticated User UUID:", authUser?.id || "NONE (UNAUTHENTICATED)");
+        console.log("2. User Email:", authUser?.email || "NONE");
+        console.log("3. Session Active:", Boolean(session));
+        console.log("4. JWT Access Token Exists:", Boolean(session?.access_token));
+        console.log("5. Authorization Header Status:", session?.access_token ? `Bearer ${session.access_token.substring(0, 15)}...` : "MISSING (ANONYMOUS)");
+        console.log("6. INSERT Payload:", record);
+        console.log("=======================================================");
 
         const { data, error } = await supabase
           .from('clients')

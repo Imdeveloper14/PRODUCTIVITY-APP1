@@ -16,6 +16,8 @@ export async function GET() {
     .select('*')
     .limit(0);
 
+  const { data: { user } } = await supabase.auth.getUser();
+
   // 2. Try a test insert with minimal required fields
   const testRecord = {
     name: '__test_diagnostic__',
@@ -23,7 +25,9 @@ export async function GET() {
     email: '',
     company: '',
     notes: '',
-    project_history: 'None yet'
+    project_history: 'None yet',
+    agreement_documents: [],
+    ...(user?.id ? { user_id: user.id } : {})
   };
 
   const { data: insertData, error: insertError } = await supabase

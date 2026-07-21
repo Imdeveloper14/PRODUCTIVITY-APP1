@@ -37,7 +37,15 @@ export async function GET(request) {
       return NextResponse.json({ success: false, authenticated: false, error: 'Account is not active.' }, { status: 403 });
     }
 
-    return NextResponse.json({ success: true, authenticated: true, user: profile });
+    return NextResponse.json({
+      success: true,
+      authenticated: true,
+      user: profile,
+      session: {
+        access_token: accessToken,
+        refresh_token: refreshToken
+      }
+    });
   } catch (error) {
     console.error({ stage: 'session-lookup', error: error?.message });
     return NextResponse.json({ success: false, authenticated: false, error: 'Authentication service unavailable.' }, { status: 500 });

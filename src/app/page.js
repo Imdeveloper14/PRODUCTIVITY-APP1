@@ -9,17 +9,12 @@ import {
 import { jsPDF } from 'jspdf';
 import 'jspdf-autotable';
 import * as XLSX from 'xlsx';
-import { createClient } from '@supabase/supabase-js';
 import { hasPermission } from './utils/permissions';
+import { isValidUUID } from './utils/uuid';
+import { supabase } from './utils/supabase';
 import QuotationsModule from './components/QuotationsModule';
 import InvoicesView from './components/InvoicesView';
 import DatabaseHealthCheck from './components/DatabaseHealthCheck';
-
-
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || '';
-const supabase = (supabaseUrl && supabaseAnonKey) ? createClient(supabaseUrl, supabaseAnonKey) : null;
 
 
 // ==========================================================================
@@ -458,6 +453,12 @@ export default function Home() {
         const res = await fetch('/api/auth/session', { credentials: 'include' });
         const data = await res.json();
         if (data?.authenticated && data?.user) {
+          if (supabase && data?.session?.access_token && data?.session?.refresh_token) {
+            await supabase.auth.setSession({
+              access_token: data.session.access_token,
+              refresh_token: data.session.refresh_token
+            });
+          }
           const restoredUser = {
             id: data.user.id,
             email: data.user.email,
@@ -707,6 +708,12 @@ export default function Home() {
         if (!res.ok || data.error) {
           alert(`Login Error: ${data.error}`);
         } else if (data?.success && data?.user) {
+          if (supabase && data?.session?.access_token && data?.session?.refresh_token) {
+            await supabase.auth.setSession({
+              access_token: data.session.access_token,
+              refresh_token: data.session.refresh_token
+            });
+          }
           const loggedUser = {
             id: data.user.id,
             email: data.user.email,
@@ -857,6 +864,8 @@ export default function Home() {
 
     try {
       const { data: { user: authUser } } = await supabase.auth.getUser();
+      const { data: { session } } = await supabase.auth.getSession();
+      const activeUserId = authUser?.id || (isValidUUID(user?.id) ? user.id : null);
 
       const record = {
         name: newClient.name,
@@ -865,8 +874,18 @@ export default function Home() {
         company: newClient.company || '',
         notes: newClient.notes || '',
         project_history: 'None yet',
-        user_id: authUser?.id || user?.id || null
+        agreement_documents: Array.isArray(uploadedAgreementFiles) ? uploadedAgreementFiles : [],
+        ...(activeUserId ? { user_id: activeUserId } : {})
       };
+
+      console.log("=== SUPABASE AUTH DIAGNOSTICS BEFORE CLIENT INSERT ===");
+      console.log("1. Authenticated User UUID:", authUser?.id || "NONE (UNAUTHENTICATED)");
+      console.log("2. User Email:", authUser?.email || "NONE");
+      console.log("3. Session Active:", Boolean(session));
+      console.log("4. JWT Access Token Exists:", Boolean(session?.access_token));
+      console.log("5. Authorization Header Status:", session?.access_token ? `Bearer ${session.access_token.substring(0, 15)}...` : "MISSING (ANONYMOUS)");
+      console.log("6. INSERT Payload:", record);
+      console.log("=======================================================");
 
       const { data, error } = await supabase
         .from('clients')

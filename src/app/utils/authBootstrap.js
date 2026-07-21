@@ -1,10 +1,6 @@
 import bcrypt from 'bcryptjs';
-import { createClient } from '@supabase/supabase-js';
+import { supabase } from './supabase';
 import { getLocalDb, saveLocalDb, isSupabaseTableAvailable } from './dbFallback';
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
-export const supabase = (supabaseUrl && supabaseAnonKey) ? createClient(supabaseUrl, supabaseAnonKey) : null;
 
 export const PERMANENT_ADMIN_EMAIL = (process.env.AURA_ADMIN_EMAIL || 'chandrunavalarch@gmail.com').trim().toLowerCase();
 export const PERMANENT_ADMIN_USERNAME = (process.env.AURA_ADMIN_USERNAME || 'chandru').trim();
