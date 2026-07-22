@@ -1,49 +1,49 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
 
 :root {
-  /* Blueprint Monochrome Grayscale Palette */
-  --bg-main: #0A0A0A;
-  --bg-sidebar: #050505;
-  --bg-card: #121212;
-  --bg-secondary: #1C1C1C;
-  --border-color: #2D2D2D;
-  --text-primary: #FFFFFF;
-  --text-secondary: #A3A3A3;
-  --text-muted: #525252;
+  /* Modern Enterprise Light Palette (Notion / Stripe / Linear style) */
+  --bg-main: #F7F8FA;
+  --bg-sidebar: #FFFFFF;
+  --bg-card: #FFFFFF;
+  --bg-secondary: #F3F4F6;
+  --border-color: #E5E7EB;
+  --text-primary: #111827;
+  --text-secondary: #374151;
+  --text-muted: #6B7280;
   
-  --accent: #FFFFFF;          /* Pure White Accent */
-  --accent-light: rgba(255, 255, 255, 0.08);
-  --accent-hover: #E5E5E5;
-  --accent-indigo: #D4D4D4;     /* Medium Gray */
-  --accent-purple: #737373;     /* Darker Gray */
+  --accent: #E11D48;          /* Aura Red Primary Accent */
+  --accent-light: rgba(225, 29, 72, 0.08);
+  --accent-hover: #BE123C;
+  --accent-indigo: #2563EB;     /* Secondary Accent Blue */
+  --accent-purple: #8B5CF6;
   
-  --color-success: #A3A3A3;
-  --color-warning: #737373;
-  --color-danger: #404040;
-  --color-info: #D4D4D4;
+  --color-success: #10B981;
+  --color-warning: #F59E0B;
+  --color-danger: #EF4444;
+  --color-info: #2563EB;
   
   --border-radius-lg: 12px;
-  --border-radius-md: 10px;
-  --border-radius-sm: 8px;
-  --shadow-card: 0 4px 20px rgba(0, 0, 0, 0.8);
-  --shadow-hover: 0 8px 24px rgba(255, 255, 255, 0.02);
+  --border-radius-md: 8px;
+  --border-radius-sm: 6px;
+  --shadow-card: 0 1px 3px 0 rgba(0, 0, 0, 0.06), 0 1px 2px 0 rgba(0, 0, 0, 0.03);
+  --shadow-hover: 0 4px 12px 0 rgba(0, 0, 0, 0.08);
 }
 
-/* Dark Mode overrides (forced identical dark variables) */
-html.dark {
-  --bg-main: #0A0A0A;
-  --bg-sidebar: #050505;
-  --bg-card: #121212;
-  --bg-secondary: #1C1C1C;
-  --border-color: #2D2D2D;
-  --text-primary: #FFFFFF;
-  --text-secondary: #A3A3A3;
-  --text-muted: #525252;
+/* Light Theme forced variables */
+html, html.dark {
+  --bg-main: #F7F8FA;
+  --bg-sidebar: #FFFFFF;
+  --bg-card: #FFFFFF;
+  --bg-secondary: #F3F4F6;
+  --border-color: #E5E7EB;
+  --text-primary: #111827;
+  --text-secondary: #374151;
+  --text-muted: #6B7280;
   
-  --accent: #FFFFFF;
-  --accent-light: rgba(255, 255, 255, 0.08);
-  --shadow-card: 0 4px 20px rgba(0, 0, 0, 0.8);
-  --shadow-hover: 0 8px 24px rgba(255, 255, 255, 0.02);
+  --accent: #E11D48;
+  --accent-light: rgba(225, 29, 72, 0.08);
+  --shadow-card: 0 1px 3px 0 rgba(0, 0, 0, 0.06), 0 1px 2px 0 rgba(0, 0, 0, 0.03);
+  --shadow-hover: 0 4px 12px 0 rgba(0, 0, 0, 0.08);
 }
 
 body {
@@ -162,33 +162,37 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .btn-primary {
-  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-hover) 100%);
-  color: #F5F5F5;
-  box-shadow: 0 4px 12px rgba(215, 38, 61, 0.25);
+  background: #E11D48;
+  color: #FFFFFF;
+  border: 1px solid #BE123C;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 }
 
 .btn-primary:hover {
-  box-shadow: 0 6px 18px rgba(215, 38, 61, 0.4);
+  background: #BE123C;
 }
 
 .btn-secondary {
-  background-color: rgba(255, 255, 255, 0.03);
-  border-color: var(--border-color);
-  color: var(--text-primary);
+  background-color: #FFFFFF;
+  border-color: #D1D5DB;
+  color: #374151;
 }
 
 .btn-secondary:hover {
-  background-color: rgba(255, 255, 255, 0.07);
-  border-color: rgba(255, 255, 255, 0.15);
+  background-color: #F9FAFB;
+  border-color: #9CA3AF;
+  color: #111827;
 }
 
 .btn-danger {
-  background-color: var(--color-danger);
-  color: white;
+  background-color: #FFFFFF;
+  border: 1px solid #FCA5A5;
+  color: #DC2626;
 }
 
 .btn-danger:hover {
-  opacity: 0.9;
+  background-color: #FEF2F2;
+  border-color: #EF4444;
 }
 
 /* Inputs & Forms */
@@ -210,49 +214,59 @@ h1, h2, h3, h4, h5, h6 {
 
 .form-input {
   width: 100%;
-  padding: 10px 16px;
+  padding: 10px 14px;
   border-radius: var(--border-radius-md);
-  border: 1px solid var(--border-color);
-  background: rgba(0, 0, 0, 0.2);
-  color: var(--text-primary);
+  border: 1px solid #D1D5DB;
+  background: #FFFFFF;
+  color: #111827;
   font-size: 0.9rem;
   outline: none;
-  transition: all 0.2s;
-  min-height: 42px;
+  transition: all 0.15s ease;
+  min-height: 40px;
 }
 
 .form-input:focus {
-  border-color: var(--accent);
-  box-shadow: 0 0 0 2px rgba(215, 38, 61, 0.15);
-  background: rgba(0, 0, 0, 0.3);
+  border-color: #E11D48;
+  box-shadow: 0 0 0 3px rgba(225, 29, 72, 0.15);
+  background: #FFFFFF;
 }
 
-/* Premium Notion/Linear-like tables */
+/* Premium Enterprise tables */
 .data-table {
   width: 100%;
   border-collapse: separate;
   border-spacing: 0;
   margin-top: 16px;
+  background: #FFFFFF;
+  border: 1px solid #E5E7EB;
+  border-radius: 8px;
+  overflow: hidden;
 }
 
 .data-table th, .data-table td {
-  padding: 14px 20px;
+  padding: 12px 16px;
   text-align: left;
-  border-bottom: 1px solid var(--border-color);
+  border-bottom: 1px solid #E5E7EB;
 }
 
 .data-table th {
   font-size: 0.75rem;
-  font-weight: 600;
+  font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  color: var(--text-secondary);
-  background-color: rgba(255, 255, 255, 0.02);
-  border-top: 1px solid var(--border-color);
+  color: #4B5563;
+  background-color: #F9FAFB;
+  border-bottom: 1px solid #E5E7EB;
+  position: sticky;
+  top: 0;
+}
+
+.data-table tr:nth-child(even) {
+  background-color: #F9FAFB;
 }
 
 .data-table tr:hover td {
-  background-color: rgba(255, 255, 255, 0.02);
+  background-color: #F3F4F6;
 }
 
 /* Badge styles */
@@ -459,7 +473,7 @@ h1, h2, h3, h4, h5, h6 {
 .sidebar-group-title {
   font-size: 0.65rem;
   font-weight: 800;
-  color: var(--text-muted);
+  color: #6B7280;
   letter-spacing: 1.2px;
   text-transform: uppercase;
   margin: 16px 0 8px 12px;
@@ -477,8 +491,8 @@ h1, h2, h3, h4, h5, h6 {
   gap: 12px;
   border: none;
   background: transparent;
-  color: var(--text-secondary);
-  font-size: 0.82rem;
+  color: #374151;
+  font-size: 0.85rem;
   font-weight: 600;
   padding: 8px 12px;
   border-radius: 8px;
@@ -490,15 +504,15 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .sidebar-nav-btn:hover {
-  background: rgba(255, 255, 255, 0.03);
-  color: var(--text-primary);
+  background: #F3F4F6;
+  color: #111827;
 }
 
 .sidebar-nav-btn.active {
-  background: rgba(255, 46, 77, 0.06);
-  color: var(--text-primary);
+  background: #FFF1F2;
+  color: #E11D48;
   font-weight: 700;
-  border-left: 4px solid var(--accent);
+  border-left: 3px solid #E11D48;
   border-top-left-radius: 0;
   border-bottom-left-radius: 0;
 }
