@@ -3565,14 +3565,14 @@ export default function Home() {
                     </p>
                   </div>
                   <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-                    <button className="btn btn-primary" style={{ background: 'var(--accent)', height: '42px', padding: '0 20px', borderRadius: '10px', fontWeight: '700', fontSize: '0.88rem', border: 'none' }} onClick={() => setShowTaskModal(true)}>+ Add Task</button>
+                    <button className="btn btn-primary" style={{ background: '#FFFFFF', color: '#000000', height: '42px', padding: '0 20px', borderRadius: '10px', fontWeight: '800', fontSize: '0.88rem', border: 'none' }} onClick={() => setShowTaskModal(true)}>+ Add Task</button>
                     {hasPermission(user?.role, 'canManageUsers') && (
-                      <button className="btn btn-secondary" style={{ background: '#1A1F2B', height: '42px', padding: '0 20px', borderRadius: '10px', fontWeight: '600', fontSize: '0.88rem', border: '1px solid rgba(255,255,255,0.08)', color: '#FFFFFF' }} onClick={() => setShowClientModal(true)}>+ Add Client</button>
+                      <button className="btn btn-secondary" style={{ background: '#121212', height: '42px', padding: '0 20px', borderRadius: '10px', fontWeight: '600', fontSize: '0.88rem', border: '1px solid #404040', color: '#FFFFFF' }} onClick={() => setShowClientModal(true)}>+ Add Client</button>
                     )}
                     {hasPermission(user?.role, 'canViewInvoices') && (
-                      <button className="btn btn-secondary" style={{ background: '#1A1F2B', height: '42px', padding: '0 20px', borderRadius: '10px', fontWeight: '600', fontSize: '0.88rem', border: '1px solid rgba(255,255,255,0.08)', color: '#FFFFFF' }} onClick={triggerNewInvoiceFlow}>+ Create Invoice</button>
+                      <button className="btn btn-secondary" style={{ background: '#121212', height: '42px', padding: '0 20px', borderRadius: '10px', fontWeight: '600', fontSize: '0.88rem', border: '1px solid #404040', color: '#FFFFFF' }} onClick={triggerNewInvoiceFlow}>+ Create Invoice</button>
                     )}
-                    <button className="btn btn-secondary" style={{ background: '#1A1F2B', height: '42px', padding: '0 20px', borderRadius: '10px', fontWeight: '600', fontSize: '0.88rem', border: '1px solid rgba(255,255,255,0.08)', color: '#FFFFFF' }} onClick={() => setActiveTab('quotations')}>Quotations</button>
+                    <button className="btn btn-secondary" style={{ background: '#121212', height: '42px', padding: '0 20px', borderRadius: '10px', fontWeight: '600', fontSize: '0.88rem', border: '1px solid #404040', color: '#FFFFFF' }} onClick={() => setActiveTab('quotations')}>Quotations</button>
                   </div>
                 </div>
               </div>
@@ -3583,13 +3583,13 @@ export default function Home() {
                 <div id="dash-section-overview" style={{ display: 'block', paddingTop: '16px' }}>
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '14px' }}>
                     {[
-                      { label: 'ACTIVE PROJECTS', value: activeProjects.length, color: '#FF2E4D', icon: '📁', action: 'projects', link: 'View active projects →' },
-                      { label: 'ARCHIVED PROJECTS', value: archivedProjects.length, color: '#F59E0B', icon: '📂', action: 'settings', link: 'View archived projects →' },
-                      { label: 'DELETED PROJECTS', value: deletedProjects.length, color: '#EF4444', icon: '🗑', action: 'settings', link: 'View deleted projects →' },
-                      { label: 'PENDING TASKS', value: pendingTasks.length, color: '#10B981', icon: '✓', action: 'planner', link: 'View all tasks →' },
-                      { label: 'TOTAL CLIENTS', value: clients.length, color: '#3B82F6', icon: '👥', action: 'clients', link: 'View all clients →' },
-                      { label: 'TOTAL INVOICES', value: invoices.length, color: '#8B5CF6', icon: '📄', action: 'invoices', link: 'View all invoices →' },
-                      { label: 'OVERDUE INVOICES', value: overdueInvoices.length, color: overdueInvoices.length > 0 ? '#EF4444' : '#6B7280', icon: '⏱', action: 'invoices', link: 'View all overdue →' },
+                      { label: 'ACTIVE PROJECTS', value: activeProjects.length, icon: '📁', action: 'projects', link: 'View active projects →' },
+                      { label: 'ARCHIVED PROJECTS', value: archivedProjects.length, icon: '📂', action: 'settings', link: 'View archived projects →' },
+                      { label: 'DELETED PROJECTS', value: deletedProjects.length, icon: '🗑', action: 'settings', link: 'View deleted projects →' },
+                      { label: 'PENDING TASKS', value: pendingTasks.length, icon: '✓', action: 'planner', link: 'View all tasks →' },
+                      { label: 'TOTAL CLIENTS', value: clients.length, icon: '👥', action: 'clients', link: 'View all clients →' },
+                      { label: 'TOTAL INVOICES', value: invoices.length, icon: '📄', action: 'invoices', link: 'View all invoices →' },
+                      { label: 'OVERDUE INVOICES', value: overdueInvoices.length, icon: '⏱', action: 'invoices', link: 'View all overdue →' },
                     ].map(kpi => (
                       <div 
                         key={kpi.label} 
@@ -3597,8 +3597,7 @@ export default function Home() {
                           background: '#0D1017', 
                           borderRadius: '12px', 
                           padding: '16px', 
-                          border: '1px solid rgba(255,255,255,0.08)', 
-                          borderLeft: '4px solid ' + kpi.color,
+                          border: '1px solid #404040', 
                           display: 'flex',
                           flexDirection: 'column',
                           justify: 'space-between',
@@ -3606,15 +3605,15 @@ export default function Home() {
                         }}
                       >
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                          <div style={{ fontSize: '0.65rem', color: '#9CA3AF', fontWeight: '800', letterSpacing: '0.8px', textTransform: 'uppercase' }}>{kpi.label}</div>
-                          <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: kpi.color + '20', color: kpi.color, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.85rem' }}>{kpi.icon}</div>
+                          <div style={{ fontSize: '0.65rem', color: '#A3A3A3', fontWeight: '800', letterSpacing: '0.8px', textTransform: 'uppercase' }}>{kpi.label}</div>
+                          <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: 'rgba(255, 255, 255, 0.08)', color: '#FFFFFF', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.85rem' }}>{kpi.icon}</div>
                         </div>
-                        <div style={{ fontSize: '2.2rem', fontWeight: '900', color: kpi.color, margin: '8px 0' }}>{kpi.value}</div>
+                        <div style={{ fontSize: '2.2rem', fontWeight: '900', color: '#FFFFFF', margin: '8px 0' }}>{kpi.value}</div>
                         <div 
-                          style={{ fontSize: '0.72rem', color: '#9CA3AF', cursor: 'pointer', fontWeight: '600', transition: 'color 0.15s' }} 
+                          style={{ fontSize: '0.72rem', color: '#A3A3A3', cursor: 'pointer', fontWeight: '600', transition: 'color 0.15s' }} 
                           onClick={() => setActiveTab(kpi.action)}
                           onMouseEnter={(e) => e.currentTarget.style.color = '#FFFFFF'}
-                          onMouseLeave={(e) => e.currentTarget.style.color = '#9CA3AF'}
+                          onMouseLeave={(e) => e.currentTarget.style.color = '#A3A3A3'}
                         >
                           {kpi.link}
                         </div>
@@ -3659,19 +3658,19 @@ export default function Home() {
                               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                                   <span style={{ fontWeight: '800', fontSize: '1rem', color: '#FFFFFF' }}>{p.title}</span>
-                                  <span style={{ fontSize: '0.62rem', padding: '2px 8px', background: 'rgba(14, 165, 233, 0.15)', color: 'var(--accent)', borderRadius: '4px', fontWeight: '800', border: '1px solid rgba(14, 165, 233, 0.3)' }}>{typeTag}</span>
-                                  <span style={{ fontSize: '0.62rem', padding: '2px 8px', background: 'rgba(255, 255, 255, 0.05)', color: 'var(--text-secondary)', borderRadius: '4px', fontWeight: '600' }}>{specializedTag}</span>
+                                  <span style={{ fontSize: '0.62rem', padding: '2px 8px', background: '#1A1A1A', color: '#FFFFFF', borderRadius: '4px', fontWeight: '800', border: '1px solid #404040' }}>{typeTag}</span>
+                                  <span style={{ fontSize: '0.62rem', padding: '2px 8px', background: '#121212', color: '#A3A3A3', borderRadius: '4px', fontWeight: '600', border: '1px solid #262626' }}>{specializedTag}</span>
                                 </div>
-                                <span style={{ fontSize: '0.75rem', color: '#9CA3AF' }}>Client: {client?.name || client?.company || 'Primalisometric Partner'} &bull; CAD Tool: {p.cadType || 'AutoCAD / Revit'}</span>
+                                <span style={{ fontSize: '0.75rem', color: '#A3A3A3' }}>Client: {client?.name || client?.company || 'Primalisometric Partner'} &bull; CAD Tool: {p.cadType || 'AutoCAD / Revit'}</span>
                               </div>
                               <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                                <span style={{ fontSize: '0.78rem', color: daysLeft > 0 ? '#9CA3AF' : '#EF4444', background: daysLeft > 0 ? 'none' : 'rgba(239, 68, 68, 0.15)', padding: daysLeft > 0 ? 0 : '2px 6px', borderRadius: '4px' }}>{daysLeft > 0 ? `${daysLeft}d left` : 'Overdue'}</span>
+                                <span style={{ fontSize: '0.78rem', color: daysLeft > 0 ? '#A3A3A3' : '#FFFFFF', background: daysLeft > 0 ? 'none' : '#262626', padding: daysLeft > 0 ? 0 : '2px 6px', borderRadius: '4px', border: daysLeft > 0 ? 'none' : '1px solid #525252' }}>{daysLeft > 0 ? `${daysLeft}d left` : 'Overdue'}</span>
                                 <span style={{ fontSize: '0.85rem', fontWeight: '800', color: '#FFFFFF' }}>{p.progress || 0}%</span>
-                                <button type="button" className="btn btn-secondary" style={{ background: '#1A1F2B', padding: '4px 12px', fontSize: '0.75rem', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.08)', color: '#FFFFFF' }} onClick={() => { setEditingProject(p); setShowProjectEditModal(true); }}>Update</button>
+                                <button type="button" className="btn btn-secondary" style={{ background: '#121212', padding: '4px 12px', fontSize: '0.75rem', borderRadius: '6px', border: '1px solid #404040', color: '#FFFFFF' }} onClick={() => { setEditingProject(p); setShowProjectEditModal(true); }}>Update</button>
                               </div>
                             </div>
-                            <div style={{ height: '6px', background: 'rgba(255,255,255,0.08)', borderRadius: '3px', overflow: 'hidden' }}>
-                              <div style={{ width: (p.progress || 0) + '%', height: '100%', background: 'var(--accent)', borderRadius: '3px' }} />
+                            <div style={{ height: '6px', background: 'rgba(255,255,255,0.1)', borderRadius: '3px', overflow: 'hidden' }}>
+                              <div style={{ width: (p.progress || 0) + '%', height: '100%', background: '#FFFFFF', borderRadius: '3px' }} />
                             </div>
                           </div>
                         );
@@ -3685,116 +3684,116 @@ export default function Home() {
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', marginBottom: '20px' }}>
                 
                 {/* 1. Tasks Overview (Donut Chart) */}
-                <div className="card" style={{ padding: '20px', background: '#11151E', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '14px', margin: 0 }}>
+                <div className="card" style={{ padding: '20px', background: '#11151E', border: '1px solid #404040', borderRadius: '14px', margin: 0 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px', fontWeight: '700', fontSize: '0.9rem' }}>
-                    <CheckCircle2 size={16} style={{ color: '#FF2E4D' }} />
+                    <CheckCircle2 size={16} style={{ color: '#FFFFFF' }} />
                     <span>Tasks Overview</span>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
                     <div style={{ width: '90px', height: '90px', position: 'relative' }}>
                       <svg viewBox="0 0 36 36" style={{ width: '100%', height: '100%', transform: 'rotate(-90deg)' }}>
-                        <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="3.8" />
-                        <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="#FF2E4D" strokeWidth="3.8" strokeDasharray="25, 100" />
+                        <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth="3.8" />
+                        <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="#FFFFFF" strokeWidth="3.8" strokeDasharray="25, 100" />
                       </svg>
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '0.78rem' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#FF2E4D' }}></span><span style={{ color: '#9CA3AF' }}>To Do</span><strong style={{ marginLeft: 'auto', color: '#FFFFFF' }}>0</strong></div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#3B82F6' }}></span><span style={{ color: '#9CA3AF' }}>In Progress</span><strong style={{ marginLeft: 'auto', color: '#FFFFFF' }}>0</strong></div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#8B5CF6' }}></span><span style={{ color: '#9CA3AF' }}>Review</span><strong style={{ marginLeft: 'auto', color: '#FFFFFF' }}>0</strong></div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#10B981' }}></span><span style={{ color: '#9CA3AF' }}>Completed</span><strong style={{ marginLeft: 'auto', color: '#FFFFFF' }}>0</strong></div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#FFFFFF' }}></span><span style={{ color: '#A3A3A3' }}>To Do</span><strong style={{ marginLeft: 'auto', color: '#FFFFFF' }}>0</strong></div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#A3A3A3' }}></span><span style={{ color: '#A3A3A3' }}>In Progress</span><strong style={{ marginLeft: 'auto', color: '#FFFFFF' }}>0</strong></div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#737373' }}></span><span style={{ color: '#A3A3A3' }}>Review</span><strong style={{ marginLeft: 'auto', color: '#FFFFFF' }}>0</strong></div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#404040' }}></span><span style={{ color: '#A3A3A3' }}>Completed</span><strong style={{ marginLeft: 'auto', color: '#FFFFFF' }}>0</strong></div>
                     </div>
                   </div>
                 </div>
 
                 {/* 2. Invoices Overview (Donut Chart) */}
-                <div className="card" style={{ padding: '20px', background: '#11151E', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '14px', margin: 0, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                <div className="card" style={{ padding: '20px', background: '#11151E', border: '1px solid #404040', borderRadius: '14px', margin: 0, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
                   <div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px', fontWeight: '700', fontSize: '0.9rem' }}>
-                      <FileText size={16} style={{ color: '#10B981' }} />
+                      <FileText size={16} style={{ color: '#FFFFFF' }} />
                       <span>Invoices Overview</span>
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
                       <div style={{ width: '90px', height: '90px', position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                         <svg viewBox="0 0 36 36" style={{ width: '100%', height: '100%', position: 'absolute', transform: 'rotate(-90deg)' }}>
-                          <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="3.8" />
-                          <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="#10B981" strokeWidth="3.8" strokeDasharray="100, 100" />
+                          <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth="3.8" />
+                          <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="#FFFFFF" strokeWidth="3.8" strokeDasharray="100, 100" />
                         </svg>
                         <div style={{ textAlign: 'center', lineHeight: 1 }}>
                           <div style={{ fontSize: '1rem', fontWeight: '900', color: '#FFFFFF' }}>{invoices.length}</div>
-                          <div style={{ fontSize: '0.6rem', color: '#9CA3AF' }}>Total</div>
+                          <div style={{ fontSize: '0.6rem', color: '#A3A3A3' }}>Total</div>
                         </div>
                       </div>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '0.78rem', flex: 1 }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#10B981' }}></span><span style={{ color: '#9CA3AF' }}>Paid</span><strong style={{ marginLeft: 'auto', color: '#FFFFFF' }}>{invoices.filter(i=>i.payment_status==='Paid').length || 1}</strong></div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#3B82F6' }}></span><span style={{ color: '#9CA3AF' }}>Unpaid</span><strong style={{ marginLeft: 'auto', color: '#FFFFFF' }}>{invoices.filter(i=>i.payment_status==='Pending').length}</strong></div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#EF4444' }}></span><span style={{ color: '#9CA3AF' }}>Overdue</span><strong style={{ marginLeft: 'auto', color: '#FFFFFF' }}>{invoices.filter(i=>i.payment_status==='Overdue').length}</strong></div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#FFFFFF' }}></span><span style={{ color: '#A3A3A3' }}>Paid</span><strong style={{ marginLeft: 'auto', color: '#FFFFFF' }}>{invoices.filter(i=>i.payment_status==='Paid').length || 1}</strong></div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#A3A3A3' }}></span><span style={{ color: '#A3A3A3' }}>Unpaid</span><strong style={{ marginLeft: 'auto', color: '#FFFFFF' }}>{invoices.filter(i=>i.payment_status==='Pending').length}</strong></div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#525252' }}></span><span style={{ color: '#A3A3A3' }}>Overdue</span><strong style={{ marginLeft: 'auto', color: '#FFFFFF' }}>{invoices.filter(i=>i.payment_status==='Overdue').length}</strong></div>
                       </div>
                     </div>
                   </div>
-                  <div style={{ fontSize: '0.72rem', color: '#9CA3AF', cursor: 'pointer', fontWeight: '600', marginTop: '12px' }} onClick={() => setActiveTab('invoices')}>View all invoices →</div>
+                  <div style={{ fontSize: '0.72rem', color: '#A3A3A3', cursor: 'pointer', fontWeight: '600', marginTop: '12px' }} onClick={() => setActiveTab('invoices')}>View all invoices →</div>
                 </div>
 
                 {/* 3. Recent Clients Widget */}
-                <div className="card" style={{ padding: '20px', background: '#11151E', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '14px', margin: 0, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                <div className="card" style={{ padding: '20px', background: '#11151E', border: '1px solid #404040', borderRadius: '14px', margin: 0, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
                   <div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px', fontWeight: '700', fontSize: '0.9rem' }}>
-                      <Users size={16} style={{ color: '#3B82F6' }} />
+                      <Users size={16} style={{ color: '#FFFFFF' }} />
                       <span>Recent Clients</span>
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                       {[
-                        { name: 'TERRALINE ENGINEERING', initials: 'TE', color: '#10B981' },
-                        { name: 'IMDEVELOPER TECHNOLOGIES', initials: 'IT', color: '#3B82F6' },
-                        { name: 'PRIMELISOMETRICS CONSULTANCY', initials: 'PC', color: '#8B5CF6' }
+                        { name: 'TERRALINE ENGINEERING', initials: 'TE' },
+                        { name: 'IMDEVELOPER TECHNOLOGIES', initials: 'IT' },
+                        { name: 'PRIMELISOMETRICS CONSULTANCY', initials: 'PC' }
                       ].map(c => (
                         <div key={c.name} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                          <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: c.color, color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.7rem', fontWeight: '800' }}>{c.initials}</div>
+                          <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: '#262626', border: '1px solid #404040', color: '#FFFFFF', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.7rem', fontWeight: '800' }}>{c.initials}</div>
                           <span style={{ fontSize: '0.72rem', fontWeight: '700', color: '#FFFFFF', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{c.name}</span>
                         </div>
                       ))}
                     </div>
                   </div>
-                  <div style={{ fontSize: '0.72rem', color: '#9CA3AF', cursor: 'pointer', fontWeight: '600', marginTop: '12px' }} onClick={() => setActiveTab('clients')}>View all clients →</div>
+                  <div style={{ fontSize: '0.72rem', color: '#A3A3A3', cursor: 'pointer', fontWeight: '600', marginTop: '12px' }} onClick={() => setActiveTab('clients')}>View all clients →</div>
                 </div>
 
                 {/* 4. Upcoming Tasks Widget */}
-                <div className="card" style={{ padding: '20px', background: '#11151E', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '14px', margin: 0, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                <div className="card" style={{ padding: '20px', background: '#11151E', border: '1px solid #404040', borderRadius: '14px', margin: 0, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
                   <div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px', fontWeight: '700', fontSize: '0.9rem' }}>
-                      <Calendar size={16} style={{ color: '#8B5CF6' }} />
+                      <Calendar size={16} style={{ color: '#FFFFFF' }} />
                       <span>Upcoming Tasks</span>
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '16px 0', textAlign: 'center' }}>
                       <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: 'rgba(255,255,255,0.04)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '8px' }}>
-                        <CheckCircle2 size={22} style={{ color: '#6B7280' }} />
+                        <CheckCircle2 size={22} style={{ color: '#A3A3A3' }} />
                       </div>
                       <div style={{ fontSize: '0.8rem', fontWeight: '700', color: '#FFFFFF' }}>No upcoming tasks</div>
-                      <div style={{ fontSize: '0.7rem', color: '#9CA3AF' }}>You're all caught up!</div>
+                      <div style={{ fontSize: '0.7rem', color: '#A3A3A3' }}>You're all caught up!</div>
                     </div>
                   </div>
-                  <div style={{ fontSize: '0.72rem', color: '#9CA3AF', cursor: 'pointer', fontWeight: '600', marginTop: '12px' }} onClick={() => setActiveTab('planner')}>View all tasks →</div>
+                  <div style={{ fontSize: '0.72rem', color: '#A3A3A3', cursor: 'pointer', fontWeight: '600', marginTop: '12px' }} onClick={() => setActiveTab('planner')}>View all tasks →</div>
                 </div>
 
               </div>
 
               {/* SECTION 4 — Workspace AI Assistant Widget */}
-              <div className="card" style={{ marginBottom: '20px', padding: '20px', background: '#11151E', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '14px' }}>
+              <div className="card" style={{ marginBottom: '20px', padding: '20px', background: '#11151E', border: '1px solid #404040', borderRadius: '14px' }}>
                 <SectionHeader id="ai-assistant" title="Workspace AI Assistant" icon="🧠" defaultOpen={true} />
                 <div id="dash-section-ai-assistant" style={{ display: 'block', paddingTop: '16px' }}>
-                  <div style={{ display: 'flex', flexDirection: 'column', height: '240px', background: '#0D1017', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.08)', overflow: 'hidden' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', height: '240px', background: '#0D1017', borderRadius: '10px', border: '1px solid #404040', overflow: 'hidden' }}>
                     <div style={{ flex: 1, padding: '12px 16px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '8px' }}>
                       {aiDashChat.map((msg, idx) => (
-                        <div key={idx} style={{ fontSize: '0.8rem', padding: '8px 12px', alignSelf: msg.sender === 'bot' ? 'flex-start' : 'flex-end', background: msg.sender === 'bot' ? 'rgba(255,46,77,0.12)' : 'rgba(255,255,255,0.08)', borderRadius: '8px', maxWidth: '85%' }} dangerouslySetInnerHTML={{ __html: msg.text }}></div>
+                        <div key={idx} style={{ fontSize: '0.8rem', padding: '8px 12px', alignSelf: msg.sender === 'bot' ? 'flex-start' : 'flex-end', background: msg.sender === 'bot' ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.12)', border: '1px solid #404040', borderRadius: '8px', maxWidth: '85%', color: '#FFFFFF' }} dangerouslySetInnerHTML={{ __html: msg.text }}></div>
                       ))}
                     </div>
-                    <div style={{ padding: '10px 12px', borderTop: '1px solid rgba(255,255,255,0.08)', display: 'flex', flexWrap: 'wrap', gap: '6px', background: '#11151E' }}>
-                      <button className="btn btn-secondary" style={{ fontSize: '0.7rem', padding: '4px 8px', background: '#1A1F2B', color: '#FFFFFF', border: '1px solid rgba(255,255,255,0.08)' }} onClick={() => handleAIDashCommand("Draft Email")}>✉️ Draft Email</button>
-                      <button className="btn btn-secondary" style={{ fontSize: '0.7rem', padding: '4px 8px', background: '#1A1F2B', color: '#FFFFFF', border: '1px solid rgba(255,255,255,0.08)' }} onClick={() => handleAIDashCommand("Payment Reminder")}>🔔 Payment Reminder</button>
-                      <button className="btn btn-secondary" style={{ fontSize: '0.7rem', padding: '4px 8px', background: '#1A1F2B', color: '#FFFFFF', border: '1px solid rgba(255,255,255,0.08)' }} onClick={() => handleAIDashCommand("Generate Proposal")}>📋 Generate Proposal</button>
-                      <button className="btn btn-secondary" style={{ fontSize: '0.7rem', padding: '4px 8px', background: '#1A1F2B', color: '#FFFFFF', border: '1px solid rgba(255,255,255,0.08)' }} onClick={() => handleAIDashCommand("Summarize Client")}>📊 Summarize Client</button>
-                      <button className="btn btn-secondary" style={{ fontSize: '0.7rem', padding: '4px 8px', background: '#1A1F2B', color: '#FFFFFF', border: '1px solid rgba(255,255,255,0.08)' }} onClick={() => handleAIDashCommand("Predict Late Payments")}>⚠️ Predict Late Payments</button>
+                    <div style={{ padding: '10px 12px', borderTop: '1px solid #404040', display: 'flex', flexWrap: 'wrap', gap: '6px', background: '#11151E' }}>
+                      <button className="btn btn-secondary" style={{ fontSize: '0.7rem', padding: '4px 8px', background: '#1C1C1C', color: '#FFFFFF', border: '1px solid #404040' }} onClick={() => handleAIDashCommand("Draft Email")}>✉️ Draft Email</button>
+                      <button className="btn btn-secondary" style={{ fontSize: '0.7rem', padding: '4px 8px', background: '#1C1C1C', color: '#FFFFFF', border: '1px solid #404040' }} onClick={() => handleAIDashCommand("Payment Reminder")}>🔔 Payment Reminder</button>
+                      <button className="btn btn-secondary" style={{ fontSize: '0.7rem', padding: '4px 8px', background: '#1C1C1C', color: '#FFFFFF', border: '1px solid #404040' }} onClick={() => handleAIDashCommand("Generate Proposal")}>📋 Generate Proposal</button>
+                      <button className="btn btn-secondary" style={{ fontSize: '0.7rem', padding: '4px 8px', background: '#1C1C1C', color: '#FFFFFF', border: '1px solid #404040' }} onClick={() => handleAIDashCommand("Summarize Client")}>📊 Summarize Client</button>
+                      <button className="btn btn-secondary" style={{ fontSize: '0.7rem', padding: '4px 8px', background: '#1C1C1C', color: '#FFFFFF', border: '1px solid #404040' }} onClick={() => handleAIDashCommand("Predict Late Payments")}>⚠️ Predict Late Payments</button>
                     </div>
-                    <form onSubmit={(e) => { e.preventDefault(); handleAIDashCommand(); }} style={{ display: 'flex', borderTop: '1px solid rgba(255,255,255,0.08)', padding: '6px 10px', background: '#11151E' }}>
+                    <form onSubmit={(e) => { e.preventDefault(); handleAIDashCommand(); }} style={{ display: 'flex', borderTop: '1px solid #404040', padding: '6px 10px', background: '#11151E' }}>
                       <input 
                         type="text" 
                         className="form-input" 
@@ -3803,7 +3802,7 @@ export default function Home() {
                         onChange={(e) => setAiDashInput(e.target.value)} 
                         style={{ height: '36px', fontSize: '0.8rem', flex: 1, border: 'none', background: 'transparent', color: '#FFFFFF' }} 
                       />
-                      <button type="submit" className="btn btn-primary" style={{ height: '36px', padding: '0 12px', fontSize: '0.75rem', background: '#FF2E4D' }}>Send</button>
+                      <button type="submit" className="btn btn-primary" style={{ height: '36px', padding: '0 16px', fontSize: '0.75rem', background: '#FFFFFF', color: '#000000', fontWeight: '800', border: 'none' }}>Send</button>
                     </form>
                   </div>
                 </div>
@@ -5587,16 +5586,16 @@ export default function Home() {
             {/* Financial Summary KPI Cards */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '12px', marginBottom: '20px' }}>
               {[
-                { label: 'TOTAL REVENUE', value: '₹' + invoices.reduce((s,i) => s + (i.grand_total||0), 0).toLocaleString('en-IN'), color: '#10B981' },
-                { label: 'PAID REVENUE', value: '₹' + invoices.filter(i=>i.payment_status==='Paid').reduce((s,i) => s + (i.grand_total||0), 0).toLocaleString('en-IN'), color: '#3B82F6' },
-                { label: 'PENDING REVENUE', value: '₹' + invoices.filter(i=>i.payment_status==='Pending').reduce((s,i) => s + (i.grand_total||0), 0).toLocaleString('en-IN'), color: '#F59E0B' },
-                { label: 'OVERDUE DUES', value: '₹' + invoices.filter(i=>i.payment_status==='Overdue').reduce((s,i) => s + (i.grand_total||0), 0).toLocaleString('en-IN'), color: '#EF4444' },
-                { label: 'GST COLLECTED', value: '₹' + invoices.reduce((s,i) => s + (i.gst_amount||0), 0).toLocaleString('en-IN'), color: '#8B5CF6' },
-                { label: 'EST. NET PROFIT', value: '₹' + Math.round(invoices.reduce((s,i) => s + (i.grand_total||0), 0) * 0.45).toLocaleString('en-IN'), color: '#FF2E4D' }
+                { label: 'TOTAL REVENUE', value: '₹' + invoices.reduce((s,i) => s + (i.grand_total||0), 0).toLocaleString('en-IN') },
+                { label: 'PAID REVENUE', value: '₹' + invoices.filter(i=>i.payment_status==='Paid').reduce((s,i) => s + (i.grand_total||0), 0).toLocaleString('en-IN') },
+                { label: 'PENDING REVENUE', value: '₹' + invoices.filter(i=>i.payment_status==='Pending').reduce((s,i) => s + (i.grand_total||0), 0).toLocaleString('en-IN') },
+                { label: 'OVERDUE DUES', value: '₹' + invoices.filter(i=>i.payment_status==='Overdue').reduce((s,i) => s + (i.grand_total||0), 0).toLocaleString('en-IN') },
+                { label: 'GST COLLECTED', value: '₹' + invoices.reduce((s,i) => s + (i.gst_amount||0), 0).toLocaleString('en-IN') },
+                { label: 'EST. NET PROFIT', value: '₹' + Math.round(invoices.reduce((s,i) => s + (i.grand_total||0), 0) * 0.45).toLocaleString('en-IN') }
               ].map(k => (
-                <div key={k.label} style={{ background: '#11151E', padding: '16px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.08)', borderLeft: '4px solid ' + k.color }}>
-                  <div style={{ fontSize: '0.62rem', fontWeight: '800', color: '#9CA3AF', letterSpacing: '0.8px', textTransform: 'uppercase' }}>{k.label}</div>
-                  <div style={{ fontSize: '1.3rem', fontWeight: '900', color: k.color, marginTop: '6px' }}>{k.value}</div>
+                <div key={k.label} style={{ background: '#11151E', padding: '16px', borderRadius: '12px', border: '1px solid #404040' }}>
+                  <div style={{ fontSize: '0.62rem', fontWeight: '800', color: '#A3A3A3', letterSpacing: '0.8px', textTransform: 'uppercase' }}>{k.label}</div>
+                  <div style={{ fontSize: '1.3rem', fontWeight: '900', color: '#FFFFFF', marginTop: '6px' }}>{k.value}</div>
                 </div>
               ))}
             </div>
@@ -7856,31 +7855,31 @@ export default function Home() {
       {/* Delete Project Confirmation Modal */}
       {projectToDeleteId && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10000, padding: '20px' }}>
-          <div style={{ background: '#151922', border: '1px solid #232A35', borderRadius: '12px', padding: '24px', maxWidth: '440px', width: '100%', boxShadow: '0 10px 25px rgba(0,0,0,0.5)' }}>
-            <h2 style={{ fontSize: '1.25rem', fontWeight: '800', color: '#EF4444', margin: '0 0 12px 0', display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <div style={{ background: '#121212', border: '1px solid #404040', borderRadius: '12px', padding: '24px', maxWidth: '440px', width: '100%', boxShadow: '0 10px 25px rgba(0,0,0,0.8)' }}>
+            <h2 style={{ fontSize: '1.25rem', fontWeight: '800', color: '#FFFFFF', margin: '0 0 12px 0', display: 'flex', alignItems: 'center', gap: '8px' }}>
               ⚠️ Delete Project
             </h2>
-            <p style={{ fontSize: '0.85rem', color: '#F1F5F9', fontWeight: '600', margin: '0 0 16px 0' }}>
+            <p style={{ fontSize: '0.85rem', color: '#FFFFFF', fontWeight: '600', margin: '0 0 16px 0' }}>
               This action cannot be undone.
             </p>
-            <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', margin: '0 0 16px 0' }}>
+            <p style={{ fontSize: '0.82rem', color: '#A3A3A3', margin: '0 0 16px 0' }}>
               The following will remain for audit purposes:
             </p>
-            <div style={{ fontSize: '0.8rem', color: '#10B981', display: 'flex', flexDirection: 'column', gap: '6px', margin: '0 0 20px 0', paddingLeft: '8px' }}>
+            <div style={{ fontSize: '0.8rem', color: '#FFFFFF', display: 'flex', flexDirection: 'column', gap: '6px', margin: '0 0 20px 0', paddingLeft: '8px' }}>
               <div>✓ Quotations</div>
               <div>✓ Invoices</div>
               <div>✓ Payment Ledger</div>
               <div>✓ Reports</div>
               <div>✓ Timeline</div>
             </div>
-            <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', margin: '0 0 20px 0', borderTop: '1px solid #232A35', paddingTop: '12px' }}>
+            <p style={{ fontSize: '0.82rem', color: '#525252', margin: '0 0 20px 0', borderTop: '1px solid #2D2D2D', paddingTop: '12px' }}>
               Only the project workspace will be removed.
             </p>
             <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
               <button 
                 type="button" 
                 className="btn btn-secondary" 
-                style={{ padding: '8px 16px', fontSize: '0.85rem' }} 
+                style={{ padding: '8px 16px', fontSize: '0.85rem', background: 'transparent', border: '1px solid #404040', color: '#FFFFFF' }} 
                 onClick={() => setProjectToDeleteId(null)}
               >
                 Cancel
@@ -7888,7 +7887,7 @@ export default function Home() {
               <button 
                 type="button" 
                 className="btn btn-danger" 
-                style={{ padding: '8px 16px', fontSize: '0.85rem', background: '#EF4444', border: 'none', color: 'white' }} 
+                style={{ padding: '8px 16px', fontSize: '0.85rem', background: '#1C1C1C', border: '1px solid #525252', color: '#FFFFFF', fontWeight: '700' }} 
                 onClick={() => {
                   handleSoftDeleteProject(projectToDeleteId);
                   setProjectToDeleteId(null);
