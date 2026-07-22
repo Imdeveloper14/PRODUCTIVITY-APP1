@@ -3410,7 +3410,7 @@ export default function Home() {
         ];
 
         return (
-          <aside className={`sidebar ${sidebarCollapsed ? 'sidebar-collapsed' : ''}`} style={{ width: sidebarCollapsed ? '64px' : '220px', background: '#FFFFFF', borderRight: '1px solid #E5E7EB', padding: sidebarCollapsed ? '16px 6px' : '16px 12px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', transition: 'width 0.2s ease-in-out' }}>
+          <aside className={`sidebar ${sidebarCollapsed ? 'sidebar-collapsed' : ''}`} style={{ width: sidebarCollapsed ? '64px' : '255px', background: '#FFFFFF', borderRight: '1px solid #E5E7EB', padding: sidebarCollapsed ? '16px 6px' : '20px 14px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', transition: 'width 0.2s ease-in-out' }}>
             <div>
               {/* Logo Header */}
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px', padding: '6px 0', borderBottom: '1px solid #E5E7EB' }}>
@@ -3654,33 +3654,81 @@ export default function Home() {
                         }
 
                         return (
-                          <div key={p.id} style={{ background: '#FFFFFF', padding: '16px', borderRadius: '10px', border: '1px solid #E5E7EB', boxShadow: '0 1px 2px rgba(0,0,0,0.03)' }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px', flexWrap: 'wrap', gap: '12px' }}>
-                              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                                  <span style={{ fontWeight: '800', fontSize: '1rem', color: '#111827' }}>{p.title}</span>
-                                  <span style={{ fontSize: '0.65rem', padding: '2px 8px', background: '#FFF1F2', color: '#E11D48', borderRadius: '4px', fontWeight: '800', border: '1px solid #FECDD3' }}>{typeTag}</span>
-                                  <span style={{ fontSize: '0.65rem', padding: '2px 8px', background: '#F3F4F6', color: '#374151', borderRadius: '4px', fontWeight: '600', border: '1px solid #E5E7EB' }}>{specializedTag}</span>
-                                </div>
-                                <div style={{ fontSize: '0.78rem', color: '#6B7280', display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
-                                  <span>Client: <strong style={{ color: '#111827' }}>{client?.name || client?.company || 'Primelisometrics'}</strong></span>
-                                  <span>Deadline: <strong style={{ color: '#111827' }}>{p.deadline || 'TBD'}</strong></span>
-                                  <span>Tool: <strong style={{ color: '#111827' }}>{p.cadType || 'AutoCAD 3D'}</strong></span>
-                                </div>
-                                <div style={{ display: 'flex', gap: '16px', marginTop: '4px', fontSize: '0.75rem', borderTop: '1px solid #F3F4F6', paddingTop: '6px' }}>
-                                  <span>Budget: <strong style={{ color: '#111827' }}>₹{(p.quoteAmount || 0).toLocaleString('en-IN')}</strong></span>
-                                  <span>Paid: <strong style={{ color: '#10B981' }}>₹{(p.paidAmount || 0).toLocaleString('en-IN')}</strong></span>
-                                  <span>Outstanding: <strong style={{ color: outstanding > 0 ? '#EF4444' : '#6B7280' }}>₹{outstanding.toLocaleString('en-IN')}</strong></span>
-                                </div>
+                          <div key={p.id} style={{ background: '#FFFFFF', padding: '14px 18px', borderRadius: '12px', border: '1px solid #E5E7EB', boxShadow: '0 1px 3px rgba(0,0,0,0.05)', display: 'grid', gridTemplateColumns: '2fr 1.5fr 1fr', gap: '16px', alignItems: 'center' }}>
+                            {/* Column 1: Title, Tags & Details */}
+                            <div>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', marginBottom: '4px' }}>
+                                <h3 style={{ fontSize: '1.15rem', fontWeight: '800', margin: 0, color: '#111827' }}>{p.title}</h3>
+                                <span style={{ fontSize: '0.65rem', padding: '2px 8px', background: '#FFF1F2', color: '#E11D48', borderRadius: '4px', fontWeight: '800', border: '1px solid #FECDD3' }}>{typeTag}</span>
+                                <span style={{ fontSize: '0.65rem', padding: '2px 8px', background: '#F3F4F6', color: '#374151', borderRadius: '4px', fontWeight: '600', border: '1px solid #E5E7EB' }}>{specializedTag}</span>
                               </div>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                                <span style={{ fontSize: '0.78rem', color: daysLeft > 0 ? '#6B7280' : '#EF4444', background: daysLeft > 0 ? '#F3F4F6' : '#FEE2E2', padding: '2px 8px', borderRadius: '4px', border: daysLeft > 0 ? '1px solid #E5E7EB' : '1px solid #FCA5A5', fontWeight: '600' }}>{daysLeft > 0 ? `${daysLeft}d left` : 'Overdue'}</span>
-                                <span style={{ fontSize: '0.85rem', fontWeight: '800', color: '#111827' }}>{p.progress || 0}%</span>
-                                <button type="button" className="btn btn-secondary" style={{ background: '#FFFFFF', padding: '4px 12px', fontSize: '0.75rem', borderRadius: '6px', border: '1px solid #D1D5DB', color: '#374151' }} onClick={() => { setEditingProject(p); setShowProjectEditModal(true); }}>Update ▼</button>
+                              <div style={{ fontSize: '0.78rem', color: '#6B7280', display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+                                <span>Client: <strong style={{ color: '#111827', fontWeight: '600' }}>{client?.name || client?.company || 'Primelisometrics'}</strong></span>
+                                <span>Deadline: <strong style={{ color: '#111827', fontWeight: '600' }}>{p.deadline || 'TBD'}</strong></span>
+                                <span>Tool: <strong style={{ color: '#111827', fontWeight: '600' }}>{p.cadType || 'AutoCAD 3D'}</strong></span>
                               </div>
                             </div>
-                            <div style={{ height: '6px', background: '#E5E7EB', borderRadius: '3px', overflow: 'hidden' }}>
-                              <div style={{ width: (p.progress || 0) + '%', height: '100%', background: '#E11D48', borderRadius: '3px' }} />
+
+                            {/* Column 2: Financials & Milestones */}
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', background: '#F9FAFB', padding: '8px 12px', borderRadius: '8px', border: '1px solid #E5E7EB' }}>
+                              <div>
+                                <div style={{ fontSize: '0.68rem', color: '#6B7280', fontWeight: '500' }}>Contract</div>
+                                <div style={{ fontSize: '0.85rem', fontWeight: '700', color: '#111827' }}>₹{(p.quoteAmount || 0).toLocaleString('en-IN')}</div>
+                              </div>
+                              <div>
+                                <div style={{ fontSize: '0.68rem', color: '#6B7280', fontWeight: '500' }}>Paid</div>
+                                <div style={{ fontSize: '0.85rem', fontWeight: '700', color: '#10B981' }}>₹{(p.paidAmount || 0).toLocaleString('en-IN')}</div>
+                              </div>
+                              <div>
+                                <div style={{ fontSize: '0.68rem', color: '#6B7280', fontWeight: '500' }}>Outstanding</div>
+                                <div style={{ fontSize: '0.85rem', fontWeight: '700', color: outstanding > 0 ? '#EF4444' : '#6B7280' }}>₹{outstanding.toLocaleString('en-IN')}</div>
+                              </div>
+                            </div>
+
+                            {/* Column 3: Progress & Action Menu */}
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '12px' }}>
+                              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '4px', minWidth: '90px' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem' }}>
+                                  <span style={{ color: '#6B7280', fontSize: '0.7rem' }}>Progress</span>
+                                  <strong style={{ color: '#111827' }}>{p.progress || 0}%</strong>
+                                </div>
+                                <div style={{ height: '6px', background: '#E5E7EB', borderRadius: '3px', overflow: 'hidden' }}>
+                                  <div style={{ width: (p.progress || 0) + '%', height: '100%', background: '#E11D48', borderRadius: '3px' }} />
+                                </div>
+                              </div>
+
+                              <div style={{ position: 'relative' }}>
+                                <button 
+                                  type="button" 
+                                  className="btn btn-secondary" 
+                                  style={{ padding: '0', width: '32px', height: '32px', borderRadius: '50%', border: '1px solid #D1D5DB', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1rem', background: '#FFFFFF' }} 
+                                  onClick={() => setActiveProjectMenuId(activeProjectMenuId === p.id ? null : p.id)}
+                                >
+                                  ⋮
+                                </button>
+
+                                {activeProjectMenuId === p.id && (
+                                  <div style={{ position: 'absolute', right: 0, top: '36px', background: '#FFFFFF', border: '1px solid #E5E7EB', borderRadius: '8px', zIndex: 1000, minWidth: '220px', boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)', padding: '6px 0', textAlign: 'left' }}>
+                                    <button style={{ width: '100%', padding: '8px 14px', background: 'none', border: 'none', color: '#111827', fontSize: '0.82rem', cursor: 'pointer', textAlign: 'left', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: '500' }} onClick={() => { if (client) { setSelectedClient(client); setClientSubTab('Projects'); setSelectedProject(p); } setActiveProjectMenuId(null); }}>
+                                      <span>👁</span> View Project
+                                    </button>
+                                    <button style={{ width: '100%', padding: '8px 14px', background: 'none', border: 'none', color: '#111827', fontSize: '0.82rem', cursor: 'pointer', textAlign: 'left', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: '500' }} onClick={() => { setEditingProject(p); setShowProjectEditModal(true); setActiveProjectMenuId(null); }}>
+                                      <span>✏</span> Edit Project
+                                    </button>
+                                    <button style={{ width: '100%', padding: '8px 14px', background: 'none', border: 'none', color: '#111827', fontSize: '0.82rem', cursor: 'pointer', textAlign: 'left', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: '500' }} onClick={() => { setEditingProject(p); setShowProjectEditModal(true); setActiveProjectMenuId(null); }}>
+                                      <span>📈</span> Update Progress
+                                    </button>
+                                    <hr style={{ border: 'none', borderTop: '1px solid #E5E7EB', margin: '4px 0' }} />
+                                    <button style={{ width: '100%', padding: '8px 14px', background: 'none', border: 'none', color: '#374151', fontSize: '0.82rem', cursor: 'pointer', textAlign: 'left', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: '500' }} onClick={() => { handleArchiveProject(p.id); setActiveProjectMenuId(null); }}>
+                                      <span>📦</span> Archive Project
+                                    </button>
+                                    <hr style={{ border: 'none', borderTop: '1px solid #E5E7EB', margin: '4px 0' }} />
+                                    <button style={{ width: '100%', padding: '8px 14px', background: 'none', border: 'none', color: '#E11D48', fontSize: '0.82rem', cursor: 'pointer', textAlign: 'left', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: '600' }} onClick={() => { setProjectToDeleteId(p.id); setActiveProjectMenuId(null); }}>
+                                      <span>🗑</span> Delete Project
+                                    </button>
+                                  </div>
+                                )}
+                              </div>
                             </div>
                           </div>
                         );
@@ -4940,20 +4988,30 @@ export default function Home() {
                                     <button 
                                       type="button" 
                                       className="btn btn-secondary" 
-                                      style={{ padding: '4px 8px', fontSize: '1rem', minHeight: 'unset', display: 'flex', alignItems: 'center', justifyContent: 'center', width: '32px', height: '32px', borderRadius: '50%' }} 
+                                      style={{ padding: '4px 8px', fontSize: '1rem', minHeight: 'unset', display: 'flex', alignItems: 'center', justifyContent: 'center', width: '32px', height: '32px', borderRadius: '50%', background: '#FFFFFF', border: '1px solid #D1D5DB' }} 
                                       onClick={() => setActiveProjectMenuId(activeProjectMenuId === p.id ? null : p.id)}
                                     >
                                       ⋮
                                     </button>
                                     {activeProjectMenuId === p.id && (
-                                      <div style={{ position: 'absolute', right: 0, top: '34px', background: '#151922', border: '1px solid #232A35', borderRadius: '8px', zIndex: 100, minWidth: '150px', boxShadow: '0 4px 12px rgba(0,0,0,0.5)', padding: '4px 0', textAlign: 'left' }}>
-                                        <button style={{ width: '100%', padding: '8px 12px', background: 'none', border: 'none', color: '#FFFFFF', fontSize: '0.75rem', cursor: 'pointer', textAlign: 'left' }} onClick={() => { if (client) { setSelectedClient(client); setClientSubTab('Projects'); setSelectedProject(p); } setActiveProjectMenuId(null); }}>Open Project</button>
-                                        <button style={{ width: '100%', padding: '8px 12px', background: 'none', border: 'none', color: '#FFFFFF', fontSize: '0.75rem', cursor: 'pointer', textAlign: 'left' }} onClick={() => { setEditingProject(p); setShowProjectEditModal(true); setActiveProjectMenuId(null); }}>Edit Project</button>
-                                        <button style={{ width: '100%', padding: '8px 12px', background: 'none', border: 'none', color: '#FFFFFF', fontSize: '0.75rem', cursor: 'pointer', textAlign: 'left' }} onClick={() => { setEditingProject(p); setShowProjectEditModal(true); setActiveProjectMenuId(null); }}>Update Progress</button>
-                                        <hr style={{ border: 'none', borderTop: '1px solid #232A35', margin: '4px 0' }} />
-                                        <button style={{ width: '100%', padding: '8px 12px', background: 'none', border: 'none', color: '#F59E0B', fontSize: '0.75rem', cursor: 'pointer', textAlign: 'left' }} onClick={() => { handleArchiveProject(p.id); setActiveProjectMenuId(null); }}>Archive Project</button>
-                                        <hr style={{ border: 'none', borderTop: '1px solid #232A35', margin: '4px 0' }} />
-                                        <button style={{ width: '100%', padding: '8px 12px', background: 'none', border: 'none', color: '#EF4444', fontSize: '0.75rem', cursor: 'pointer', textAlign: 'left' }} onClick={() => { setProjectToDeleteId(p.id); setActiveProjectMenuId(null); }}>Delete Project</button>
+                                      <div style={{ position: 'absolute', right: 0, top: '36px', background: '#FFFFFF', border: '1px solid #E5E7EB', borderRadius: '8px', zIndex: 1000, minWidth: '220px', boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)', padding: '6px 0', textAlign: 'left' }}>
+                                        <button style={{ width: '100%', padding: '8px 14px', background: 'none', border: 'none', color: '#111827', fontSize: '0.82rem', cursor: 'pointer', textAlign: 'left', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: '500' }} onClick={() => { if (client) { setSelectedClient(client); setClientSubTab('Projects'); setSelectedProject(p); } setActiveProjectMenuId(null); }}>
+                                          <span>👁</span> View Project
+                                        </button>
+                                        <button style={{ width: '100%', padding: '8px 14px', background: 'none', border: 'none', color: '#111827', fontSize: '0.82rem', cursor: 'pointer', textAlign: 'left', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: '500' }} onClick={() => { setEditingProject(p); setShowProjectEditModal(true); setActiveProjectMenuId(null); }}>
+                                          <span>✏</span> Edit Project
+                                        </button>
+                                        <button style={{ width: '100%', padding: '8px 14px', background: 'none', border: 'none', color: '#111827', fontSize: '0.82rem', cursor: 'pointer', textAlign: 'left', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: '500' }} onClick={() => { setEditingProject(p); setShowProjectEditModal(true); setActiveProjectMenuId(null); }}>
+                                          <span>📈</span> Update Progress
+                                        </button>
+                                        <hr style={{ border: 'none', borderTop: '1px solid #E5E7EB', margin: '4px 0' }} />
+                                        <button style={{ width: '100%', padding: '8px 14px', background: 'none', border: 'none', color: '#374151', fontSize: '0.82rem', cursor: 'pointer', textAlign: 'left', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: '500' }} onClick={() => { handleArchiveProject(p.id); setActiveProjectMenuId(null); }}>
+                                          <span>📦</span> Archive Project
+                                        </button>
+                                        <hr style={{ border: 'none', borderTop: '1px solid #E5E7EB', margin: '4px 0' }} />
+                                        <button style={{ width: '100%', padding: '8px 14px', background: 'none', border: 'none', color: '#E11D48', fontSize: '0.82rem', cursor: 'pointer', textAlign: 'left', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: '600' }} onClick={() => { setProjectToDeleteId(p.id); setActiveProjectMenuId(null); }}>
+                                          <span>🗑</span> Delete Project
+                                        </button>
                                       </div>
                                     )}
                                   </div>
