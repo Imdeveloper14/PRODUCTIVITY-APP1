@@ -7963,6 +7963,7 @@ export default function Home() {
             💬 Aura AI
           </button>
         )}
+      </div>
       {/* React Portal Project Action Dropdown Menu */}
       {activeProjectMenuId && typeof document !== 'undefined' && createPortal(
         <div 
