@@ -200,6 +200,7 @@ export default function Home() {
   const [editingProject, setEditingProject] = useState(null);
   const [editingTask, setEditingTask] = useState(null);
   const [activeTaskMenuId, setActiveTaskMenuId] = useState(null);
+  const [activeProjectMenuId, setActiveProjectMenuId] = useState(null);
 
   // Interactive Calendar & Details panel states
   const [currentYear, setCurrentYear] = useState(2026);
@@ -1337,6 +1338,180 @@ export default function Home() {
     setShowProjectEditModal(false);
     setEditingProject(null);
     triggerToast("Project status updated successfully.");
+  };
+
+  const handleArchiveProject = async (projectId) => {
+    if (!window.confirm("Archive Project?\n\nThe project will disappear from active projects but all quotations, invoices, reports and documents will be preserved.")) return;
+    let savedToSupabase = false;
+    if (supabase && user?.id && !String(projectId).startsWith('p_')) {
+      try {
+        const { error } = await supabase
+          .from('projects')
+          .update({
+            status: 'archived',
+            archived_at: new Date().toISOString(),
+            archived_by: user.id
+          })
+          .eq('id', projectId);
+        if (!error) savedToSupabase = true;
+      } catch (err) {
+        console.error("Supabase archive project error:", err);
+      }
+    }
+    const updated = projects.map(p => p.id === projectId ? { ...p, status: 'archived', archived_at: new Date().toISOString(), archived_by: user?.id } : p);
+    setProjects(updated);
+    if (!savedToSupabase) {
+      saveState("aura_projects_v7", updated);
+    }
+    triggerToast("Project archived successfully.");
+  };
+
+  const handleRestoreProject = async (projectId) => {
+    let savedToSupabase = false;
+    if (supabase && user?.id && !String(projectId).startsWith('p_')) {
+      try {
+        const { error } = await supabase
+          .from('projects')
+          .update({
+            status: 'In Progress',
+            archived_at: null,
+            archived_by: null
+          })
+          .eq('id', projectId);
+        if (!error) savedToSupabase = true;
+      } catch (err) {
+        console.error("Supabase restore project error:", err);
+      }
+    }
+    const updated = projects.map(p => p.id === projectId ? { ...p, status: 'In Progress', archived_at: null, archived_by: null } : p);
+    setProjects(updated);
+    if (!savedToSupabase) {
+      saveState("aura_projects_v7", updated);
+    }
+    triggerToast("Project restored to active.");
+  };
+
+  const handleSoftDeleteProject = async (projectId) => {
+    if (!window.confirm("Delete Project?\n\nThis project will move to Trash.\n\nInvoices, quotations and history will be retained until permanently removed.")) return;
+    let savedToSupabase = false;
+    if (supabase && user?.id && !String(projectId).startsWith('p_')) {
+      try {
+        const { error } = await supabase
+          .from('projects')
+          .update({
+            deleted: true,
+            deleted_at: new Date().toISOString(),
+            deleted_by: user.id
+          })
+          .eq('id', projectId);
+        if (!error) savedToSupabase = true;
+      } catch (err) {
+        console.error("Supabase soft delete project error:", err);
+      }
+    }
+    const updated = projects.map(p => p.id === projectId ? { ...p, deleted: true, deleted_at: new Date().toISOString(), deleted_by: user?.id } : p);
+    setProjects(updated);
+    if (!savedToSupabase) {
+      saveState("aura_projects_v7", updated);
+    }
+    triggerToast("Project moved to Trash.");
+  };
+
+  const handleRestoreDeletedProject = async (projectId) => {
+    let savedToSupabase = false;
+    if (supabase && user?.id && !String(projectId).startsWith('p_')) {
+      try {
+        const { error } = await supabase
+          .from('projects')
+          .update({
+            deleted: false,
+            deleted_at: null,
+            deleted_by: null
+          })
+          .eq('id', projectId);
+        if (!error) savedToSupabase = true;
+      } catch (err) {
+        console.error("Supabase restore deleted project error:", err);
+      }
+    }
+    const updated = projects.map(p => p.id === projectId ? { ...p, deleted: false, deleted_at: null, deleted_by: null } : p);
+    setProjects(updated);
+    if (!savedToSupabase) {
+      saveState("aura_projects_v7", updated);
+    }
+    triggerToast("Project restored from Trash.");
+  };
+
+  const handlePermanentDeleteProject = async (projectId) => {
+    const confirmation = prompt("Permanent Delete Project?\n\nPlease type DELETE to confirm permanent removal:");
+    if (confirmation !== 'DELETE') {
+      alert("Permanent deletion cancelled.");
+      return;
+    }
+    let savedToSupabase = false;
+    if (supabase && user?.id && !String(projectId).startsWith('p_')) {
+      try {
+        const { error } = await supabase
+          .from('projects')
+          .delete()
+          .eq('id', projectId);
+        if (!error) savedToSupabase = true;
+      } catch (err) {
+        console.error("Supabase permanent delete project error:", err);
+      }
+    }
+    const updated = projects.filter(p => p.id !== projectId);
+    setProjects(updated);
+    if (!savedToSupabase) {
+      saveState("aura_projects_v7", updated);
+    }
+    triggerToast("Project permanently deleted.");
+  };
+
+  const handleDuplicateProject = async (project) => {
+    let savedToSupabase = false;
+    const duplicatedTitle = `Copy of ${project.title}`;
+    const newId = 'p_' + Date.now();
+    const record = {
+      title: duplicatedTitle,
+      client_id: project.clientId || project.client_id || null,
+      progress: 0,
+      status: 'In Progress',
+      deadline: project.deadline || null,
+      quote_amount: project.quoteAmount || project.quote_amount || 0,
+      paid_amount: 0,
+      cad_type: project.cadType || project.cad_type || 'Revit 3D',
+      file_notes: project.fileNotes || ''
+    };
+    if (supabase && user?.id) {
+      try {
+        const { data, error } = await supabase
+          .from('projects')
+          .insert([{ ...record, user_id: user.id }])
+          .select();
+        if (!error && data) {
+          savedToSupabase = true;
+          setProjects(prev => [...prev, { ...data[0], clientId: data[0].client_id, quoteAmount: data[0].quote_amount, paidAmount: data[0].paid_amount, cadType: data[0].cad_type, fileNotes: data[0].file_notes }]);
+        }
+      } catch (err) {
+        console.error("Supabase project duplicate error:", err);
+      }
+    }
+    if (!savedToSupabase) {
+      const added = {
+        ...project,
+        id: newId,
+        title: duplicatedTitle,
+        progress: 0,
+        status: 'In Progress',
+        paidAmount: 0,
+        balanceAmount: project.quoteAmount
+      };
+      const updated = [...projects, added];
+      setProjects(updated);
+      saveState("aura_projects_v7", updated);
+    }
+    triggerToast("Project duplicated successfully.");
   };
 
   const handleSoftDeleteClient = async (clientId) => {
@@ -2660,8 +2835,9 @@ export default function Home() {
 
   // Filtered Projects for creation
   const filteredProjects = projects
+    .filter(p => !p.deleted && p.status !== 'archived')
     .filter(p => {
-      const client = clients.find(c => c.id === p.clientId);
+      const client = clients.find(c => c.id === p.clientId || c.id === p.client_id);
       const clientName = client ? client.name : 'Unknown';
       const matchSearch = p.title.toLowerCase().includes(projectSearch.toLowerCase()) || clientName.toLowerCase().includes(projectSearch.toLowerCase());
       const matchFilter = projectFilterStatus === 'All' || p.status === projectFilterStatus;
@@ -4756,7 +4932,27 @@ export default function Home() {
                                 <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', gap: '4px', alignItems: 'flex-end' }}>
                                   <div style={{ fontWeight: '700', fontSize: '0.9rem' }}>&#8377;{(p.quoteAmount || 0).toLocaleString('en-IN')}</div>
                                   <span style={{ fontSize: '0.78rem', color: '#10B981' }}>Paid: &#8377;{(p.paidAmount || 0).toLocaleString('en-IN')}</span>
-                                  <button type="button" className="btn btn-secondary" style={{ padding: '3px 10px', fontSize: '0.75rem', minHeight: 'unset', marginTop: '4px' }} onClick={() => { setEditingProject(p); setShowProjectEditModal(true); }}>Update</button>
+                                  <div style={{ position: 'relative', marginTop: '4px' }}>
+                                    <button 
+                                      type="button" 
+                                      className="btn btn-secondary" 
+                                      style={{ padding: '4px 12px', fontSize: '0.75rem', minHeight: 'unset', display: 'flex', alignItems: 'center', gap: '4px' }} 
+                                      onClick={() => setActiveProjectMenuId(activeProjectMenuId === p.id ? null : p.id)}
+                                    >
+                                      Update ▼
+                                    </button>
+                                    {activeProjectMenuId === p.id && (
+                                      <div style={{ position: 'absolute', right: 0, top: '28px', background: '#151922', border: '1px solid #232A35', borderRadius: '8px', zIndex: 100, minWidth: '130px', boxShadow: '0 4px 12px rgba(0,0,0,0.5)', padding: '4px 0', textAlign: 'left' }}>
+                                        <button style={{ width: '100%', padding: '6px 12px', background: 'none', border: 'none', color: '#FFFFFF', fontSize: '0.75rem', cursor: 'pointer', textAlign: 'left' }} onClick={() => { if (client) { setSelectedClient(client); setClientSubTab('Projects'); setSelectedProject(p); } setActiveProjectMenuId(null); }}>Open Project</button>
+                                        <button style={{ width: '100%', padding: '6px 12px', background: 'none', border: 'none', color: '#FFFFFF', fontSize: '0.75rem', cursor: 'pointer', textAlign: 'left' }} onClick={() => { setEditingProject(p); setShowProjectEditModal(true); setActiveProjectMenuId(null); }}>Edit</button>
+                                        <button style={{ width: '100%', padding: '6px 12px', background: 'none', border: 'none', color: '#FFFFFF', fontSize: '0.75rem', cursor: 'pointer', textAlign: 'left' }} onClick={() => { handleDuplicateProject(p); setActiveProjectMenuId(null); }}>Duplicate</button>
+                                        <hr style={{ border: 'none', borderTop: '1px solid #232A35', margin: '4px 0' }} />
+                                        <button style={{ width: '100%', padding: '6px 12px', background: 'none', border: 'none', color: '#F59E0B', fontSize: '0.75rem', cursor: 'pointer', textAlign: 'left' }} onClick={() => { handleArchiveProject(p.id); setActiveProjectMenuId(null); }}>Archive</button>
+                                        <hr style={{ border: 'none', borderTop: '1px solid #232A35', margin: '4px 0' }} />
+                                        <button style={{ width: '100%', padding: '6px 12px', background: 'none', border: 'none', color: '#EF4444', fontSize: '0.75rem', cursor: 'pointer', textAlign: 'left' }} onClick={() => { handleSoftDeleteProject(p.id); setActiveProjectMenuId(null); }}>Delete</button>
+                                      </div>
+                                    )}
+                                  </div>
                                 </div>
                               </div>
                             );
@@ -4771,6 +4967,52 @@ export default function Home() {
                     No projects found. <button className="btn btn-primary" style={{ marginLeft: '12px', padding: '4px 12px', fontSize: '0.8rem' }} onClick={triggerNewProjectFlow}>+ New Project</button>
                   </div>
                 )}
+
+                {/* Archived Projects Section */}
+                {(() => {
+                  const archivedProjects = projects.filter(p => !p.deleted && p.status === 'archived');
+                  if (archivedProjects.length === 0) return null;
+                  return (
+                    <div className="card" style={{ padding: '0', overflow: 'hidden', marginTop: '16px' }}>
+                      <button
+                        type="button"
+                        onClick={() => toggleProjGroup('archived')}
+                        style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'none', border: 'none', cursor: 'pointer', padding: '14px 20px', color: 'var(--text-primary)', borderBottom: '1px solid var(--border-color)' }}
+                      >
+                        <span style={{ display: 'flex', alignItems: 'center', gap: '10px', fontWeight: '700', fontSize: '0.9rem' }}>
+                          <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--text-muted)', display: 'inline-block' }} />
+                          Archived Projects
+                          <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: '400' }}>({archivedProjects.length})</span>
+                        </span>
+                        <span id="proj-chevron-archived" style={{ fontSize: '0.7rem', color: 'var(--text-muted)', transition: 'transform 0.2s' }}>&#9660;</span>
+                      </button>
+                      <div id="proj-group-archived" style={{ display: 'block', padding: '12px' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                          {archivedProjects.map(p => {
+                            const client = clients.find(c => c.id === (p.clientId || p.client_id));
+                            return (
+                              <div key={p.id} className="card" style={{ margin: 0, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '12px', borderLeft: '3px solid var(--text-muted)', background: 'rgba(255,255,255,0.02)', opacity: 0.65 }}>
+                                <div style={{ flex: 1, minWidth: '200px' }}>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                    <h3 style={{ margin: '0 0 4px', fontSize: '0.95rem', color: 'var(--text-secondary)' }}>{p.title}</h3>
+                                    <span style={{ fontSize: '0.62rem', padding: '2px 6px', background: 'rgba(255, 255, 255, 0.08)', color: 'var(--text-secondary)', borderRadius: '4px', fontWeight: '700' }}>ARCHIVED</span>
+                                  </div>
+                                  <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+                                    {client ? client.name : 'Unknown Client'} &bull; Deadline: {p.deadline || 'TBD'}
+                                  </span>
+                                </div>
+                                <div style={{ textAlign: 'right', display: 'flex', gap: '8px', alignItems: 'center' }}>
+                                  <button type="button" className="btn btn-secondary" style={{ padding: '4px 10px', fontSize: '0.72rem', minHeight: 'unset' }} onClick={() => { if (client) { setSelectedClient(client); setClientSubTab('Projects'); setSelectedProject(p); } }}>View</button>
+                                  <button type="button" className="btn" style={{ padding: '4px 10px', fontSize: '0.72rem', minHeight: 'unset', background: 'var(--color-success)', color: 'white', border: 'none', borderRadius: '4px' }} onClick={() => handleRestoreProject(p.id)}>Restore</button>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })()}
               </div>
             </div>
           );
@@ -5911,6 +6153,66 @@ export default function Home() {
             >
               Log Out of Account
             </button>
+          </div>
+        )}
+
+        {activeTab === 'settings' && (
+          <div>
+            <div className="card" style={{ background: 'rgba(255,255,255,0.04)', marginBottom: '24px' }}>
+              <h1 style={{ fontSize: '1.6rem', fontWeight: '700', letterSpacing: '-0.5px', margin: 0, color: 'var(--text-primary)' }}>⚙️ System Settings</h1>
+              <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginTop: '4px' }}>
+                Manage workspaces, trash logs and preferences.
+              </p>
+            </div>
+
+            <div className="card" style={{ padding: '24px', marginBottom: '24px' }}>
+              <h3 style={{ fontSize: '1.1rem', fontWeight: '700', marginBottom: '16px', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span>🗑</span> Trash & Soft Deleted Items
+              </h3>
+              <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', marginBottom: '20px' }}>
+                The following projects have been soft-deleted and can be restored or permanently removed.
+              </p>
+
+              {projects.filter(p => p.deleted).length === 0 ? (
+                <div style={{ padding: '24px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
+                  No items in Trash.
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  {projects.filter(p => p.deleted).map(p => {
+                    const client = clients.find(c => c.id === (p.clientId || p.client_id));
+                    return (
+                      <div key={p.id} className="card" style={{ margin: 0, padding: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#11151E', border: '1px solid rgba(255,255,255,0.06)' }}>
+                        <div>
+                          <strong style={{ fontSize: '0.92rem', color: '#FFFFFF' }}>{p.title}</strong>
+                          <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', marginTop: '4px' }}>
+                            Client: {client ? client.name : 'Unknown Client'} &bull; Deleted on: {p.deleted_at ? new Date(p.deleted_at).toLocaleDateString() : 'Recent'}
+                          </div>
+                        </div>
+                        <div style={{ display: 'flex', gap: '10px' }}>
+                          <button 
+                            type="button" 
+                            className="btn btn-secondary" 
+                            style={{ padding: '6px 12px', fontSize: '0.75rem', color: 'var(--color-success)', borderColor: 'rgba(32, 201, 151, 0.3)' }}
+                            onClick={() => handleRestoreDeletedProject(p.id)}
+                          >
+                            ↩ Restore
+                          </button>
+                          <button 
+                            type="button" 
+                            className="btn btn-danger" 
+                            style={{ padding: '6px 12px', fontSize: '0.75rem', background: 'var(--color-danger)', border: 'none', color: 'white' }}
+                            onClick={() => handlePermanentDeleteProject(p.id)}
+                          >
+                            🗑 Delete Permanently
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
           </div>
         )}
 
