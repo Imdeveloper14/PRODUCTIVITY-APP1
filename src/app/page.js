@@ -3277,8 +3277,8 @@ export default function Home() {
           <span style={{ fontSize: '1.6rem', color: 'var(--text-primary)' }}>☰</span>
         </button>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <img src="/logo.png" alt="Primelisometrics" style={{ width: '32px', height: '32px', borderRadius: '8px', objectFit: 'contain' }} />
-          <span style={{ fontWeight: '750', fontSize: '1.05rem', color: 'var(--text-primary)', letterSpacing: '-0.3px' }}>AURA</span>
+          <img src="/logo.png" alt="Primalisometric" style={{ width: '32px', height: '32px', borderRadius: '8px', objectFit: 'contain' }} />
+          <span style={{ fontWeight: '750', fontSize: '0.9rem', color: 'var(--text-primary)', letterSpacing: '-0.3px' }}>PRIMALISOMETRIC</span>
         </div>
         <div
           style={{ width: '36px', height: '36px', borderRadius: '50%', background: 'var(--accent)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '700', fontSize: '0.9rem', cursor: 'pointer', boxShadow: 'var(--shadow-card)' }}
@@ -3287,7 +3287,7 @@ export default function Home() {
           {user?.name ? user.name[0].toUpperCase() : 'U'}
         </div>
       </div>
-
+ 
       {/* Mobile Sidebar Navigation Drawer Overlay */}
       {drawerOpen && (
         <div
@@ -3301,10 +3301,10 @@ export default function Home() {
             <div>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <img src="/logo.png" alt="Primelisometrics" style={{ width: '36px', height: '36px', borderRadius: '8px', objectFit: 'contain' }} />
+                  <img src="/logo.png" alt="Primalisometric" style={{ width: '36px', height: '36px', borderRadius: '8px', objectFit: 'contain' }} />
                   <div>
-                    <h2 style={{ fontSize: '0.95rem', fontWeight: '700', letterSpacing: '-0.3px', margin: 0, color: 'var(--text-primary)' }}>AURA Workspace</h2>
-                    <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Primelisometrics Consultancy</span>
+                    <h2 style={{ fontSize: '0.95rem', fontWeight: '700', letterSpacing: '-0.3px', margin: 0, color: 'var(--text-primary)' }}>PRIMALISOMETRIC</h2>
+                    <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Engineering Consultancy</span>
                   </div>
                 </div>
                 <button
@@ -3544,9 +3544,9 @@ export default function Home() {
                     <button className="btn btn-secondary" style={{ width: '40px', height: '40px', padding: 0, borderRadius: '50%', border: '1px solid rgba(255,255,255,0.08)', background: '#11151E' }} title="Notifications">
                       <Mail size={18} style={{ color: '#9CA3AF' }} />
                     </button>
-                    <span style={{ position: 'absolute', top: '-2px', right: '-2px', background: '#FF2E4D', color: 'white', borderRadius: '50%', width: '18px', height: '18px', fontSize: '0.65rem', fontWeight: '800', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>3</span>
+                    <span style={{ position: 'absolute', top: '-2px', right: '-2px', background: 'var(--accent)', color: 'white', borderRadius: '50%', width: '18px', height: '18px', fontSize: '0.65rem', fontWeight: '800', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>3</span>
                   </div>
-                  <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: '#FF2E4D', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '800', fontSize: '0.85rem', cursor: 'pointer', boxShadow: '0 4px 14px rgba(255, 46, 77, 0.4)' }} onClick={() => setActiveTab('profile')}>
+                  <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'var(--accent)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '800', fontSize: '0.85rem', cursor: 'pointer', boxShadow: '0 4px 14px var(--accent-light)' }} onClick={() => setActiveTab('profile')}>
                     {user?.name ? user.name.split(' ').map(n=>n[0]).join('').slice(0,2).toUpperCase() : 'CA'}
                   </div>
                 </div>
@@ -3556,16 +3556,16 @@ export default function Home() {
               <div className="card" style={{ background: '#11151E', marginBottom: '20px', padding: '24px', borderRadius: '14px', border: '1px solid rgba(255,255,255,0.08)' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
                   <div>
-                    <span style={{ fontSize: '0.7rem', color: '#FF2E4D', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '1.5px', display: 'block', marginBottom: '4px' }}>AURA WORKSPACE</span>
+                    <span style={{ fontSize: '0.7rem', color: 'var(--accent)', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '1.5px', display: 'block', marginBottom: '4px' }}>PRIMALISOMETRIC CONSULTANCY</span>
                     <h1 style={{ fontSize: '1.6rem', fontWeight: '800', margin: 0, color: '#FFFFFF' }}>
-                      👋 Welcome back, <span style={{ color: '#FF2E4D' }}>{user?.name || 'Chandru Admin'}</span>
+                      ⚙️ {activeProjects.length} Active Projects &bull; {pendingTasks.length} Pending Deliverables &bull; {invoices.filter(i => i.payment_status === 'Pending').length} Invoices Awaiting Payment
                     </h1>
-                    <p style={{ color: '#9CA3AF', fontSize: '0.85rem', margin: '6px 0 0 0' }}>
-                      {new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+                    <p style={{ color: '#9CA3AF', fontSize: '0.85rem', marginTop: '6px' }}>
+                      Industrial Marine Engineering Operations Portal &bull; {new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
                     </p>
                   </div>
                   <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-                    <button className="btn btn-primary" style={{ background: '#FF2E4D', height: '42px', padding: '0 20px', borderRadius: '10px', fontWeight: '700', fontSize: '0.88rem', border: 'none' }} onClick={() => setShowTaskModal(true)}>+ Add Task</button>
+                    <button className="btn btn-primary" style={{ background: 'var(--accent)', height: '42px', padding: '0 20px', borderRadius: '10px', fontWeight: '700', fontSize: '0.88rem', border: 'none' }} onClick={() => setShowTaskModal(true)}>+ Add Task</button>
                     {hasPermission(user?.role, 'canManageUsers') && (
                       <button className="btn btn-secondary" style={{ background: '#1A1F2B', height: '42px', padding: '0 20px', borderRadius: '10px', fontWeight: '600', fontSize: '0.88rem', border: '1px solid rgba(255,255,255,0.08)', color: '#FFFFFF' }} onClick={() => setShowClientModal(true)}>+ Add Client</button>
                     )}
@@ -3631,28 +3631,47 @@ export default function Home() {
                   {activeProjects.length === 0 ? (
                     <div style={{ textAlign: 'center', padding: '24px', color: '#9CA3AF', fontSize: '0.85rem' }}>
                       No active projects.
-                      <button className="btn btn-primary" style={{ marginLeft: '12px', padding: '6px 14px', fontSize: '0.8rem', background: '#FF2E4D' }} onClick={triggerNewProjectFlow}>+ New Project</button>
+                      <button className="btn btn-primary" style={{ marginLeft: '12px', padding: '6px 14px', fontSize: '0.8rem', background: 'var(--accent)' }} onClick={triggerNewProjectFlow}>+ New Project</button>
                     </div>
                   ) : (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                       {activeProjects.slice(0, 4).map(p => {
                         const client = clients.find(c => c.id === (p.clientId || p.client_id));
                         const daysLeft = p.deadline ? Math.ceil((new Date(p.deadline) - new Date()) / 86400000) : 101;
+                        
+                        let typeTag = 'Industrial Design';
+                        let specializedTag = '3D Modeling';
+                        const titleLower = p.title.toLowerCase();
+                        if (titleLower.includes('hull') || titleLower.includes('marine') || titleLower.includes('ship') || titleLower.includes('resistance') || titleLower.includes('stability')) {
+                          typeTag = 'Marine Systems';
+                          specializedTag = titleLower.includes('stability') ? 'Stability Analysis' : 'Ship Resistance';
+                        } else if (titleLower.includes('piping') || titleLower.includes('pipe') || titleLower.includes('routing')) {
+                          typeTag = 'Piping Design';
+                          specializedTag = '3D Routing / Flow';
+                        } else if (titleLower.includes('wtp') || titleLower.includes('water') || titleLower.includes('treatment') || titleLower.includes('plant')) {
+                          typeTag = 'WTP Engineering';
+                          specializedTag = 'Process Design';
+                        }
+
                         return (
                           <div key={p.id} style={{ background: '#0D1017', padding: '16px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.06)' }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                              <div>
-                                <span style={{ fontWeight: '800', fontSize: '1rem', color: '#FFFFFF' }}>{p.title}</span>
-                                <span style={{ fontSize: '0.75rem', color: '#9CA3AF', marginLeft: '10px' }}>{client?.name || client?.company || 'akisiity'}</span>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px', flexWrap: 'wrap', gap: '8px' }}>
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                                  <span style={{ fontWeight: '800', fontSize: '1rem', color: '#FFFFFF' }}>{p.title}</span>
+                                  <span style={{ fontSize: '0.62rem', padding: '2px 8px', background: 'rgba(14, 165, 233, 0.15)', color: 'var(--accent)', borderRadius: '4px', fontWeight: '800', border: '1px solid rgba(14, 165, 233, 0.3)' }}>{typeTag}</span>
+                                  <span style={{ fontSize: '0.62rem', padding: '2px 8px', background: 'rgba(255, 255, 255, 0.05)', color: 'var(--text-secondary)', borderRadius: '4px', fontWeight: '600' }}>{specializedTag}</span>
+                                </div>
+                                <span style={{ fontSize: '0.75rem', color: '#9CA3AF' }}>Client: {client?.name || client?.company || 'Primalisometric Partner'} &bull; CAD Tool: {p.cadType || 'AutoCAD / Revit'}</span>
                               </div>
                               <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                                <span style={{ fontSize: '0.78rem', color: '#9CA3AF' }}>{daysLeft > 0 ? `${daysLeft}d left` : 'Overdue'}</span>
+                                <span style={{ fontSize: '0.78rem', color: daysLeft > 0 ? '#9CA3AF' : '#EF4444', background: daysLeft > 0 ? 'none' : 'rgba(239, 68, 68, 0.15)', padding: daysLeft > 0 ? 0 : '2px 6px', borderRadius: '4px' }}>{daysLeft > 0 ? `${daysLeft}d left` : 'Overdue'}</span>
                                 <span style={{ fontSize: '0.85rem', fontWeight: '800', color: '#FFFFFF' }}>{p.progress || 0}%</span>
                                 <button type="button" className="btn btn-secondary" style={{ background: '#1A1F2B', padding: '4px 12px', fontSize: '0.75rem', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.08)', color: '#FFFFFF' }} onClick={() => { setEditingProject(p); setShowProjectEditModal(true); }}>Update</button>
                               </div>
                             </div>
                             <div style={{ height: '6px', background: 'rgba(255,255,255,0.08)', borderRadius: '3px', overflow: 'hidden' }}>
-                              <div style={{ width: (p.progress || 0) + '%', height: '100%', background: '#10B981', borderRadius: '3px' }} />
+                              <div style={{ width: (p.progress || 0) + '%', height: '100%', background: 'var(--accent)', borderRadius: '3px' }} />
                             </div>
                           </div>
                         );

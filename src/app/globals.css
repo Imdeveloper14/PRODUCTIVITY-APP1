@@ -11,10 +11,10 @@
   --text-secondary: #9CA3AF;
   --text-muted: #6B7280;
   
-  --accent: #FF365E;          /* Accent Pink Red */
-  --accent-light: rgba(255, 54, 94, 0.1);
-  --accent-hover: #E0284D;
-  --accent-indigo: #FF365E;
+  --accent: #0EA5E9;          /* Sophisticated Tech Blue */
+  --accent-light: rgba(14, 165, 233, 0.1);
+  --accent-hover: #0284C7;
+  --accent-indigo: #06B6D4;     /* Deep Teal */
   --accent-purple: #8B5CF6;
   
   --color-success: #20C997;
@@ -26,7 +26,7 @@
   --border-radius-md: 10px;
   --border-radius-sm: 8px;
   --shadow-card: 0 4px 20px rgba(0, 0, 0, 0.4);
-  --shadow-hover: 0 8px 24px rgba(255, 54, 94, 0.05);
+  --shadow-hover: 0 8px 24px rgba(14, 165, 233, 0.05);
 }
 
 /* Dark Mode overrides (forced identical dark variables) */
@@ -40,10 +40,10 @@ html.dark {
   --text-secondary: #9CA3AF;
   --text-muted: #6B7280;
   
-  --accent: #FF365E;
-  --accent-light: rgba(255, 54, 94, 0.1);
+  --accent: #0EA5E9;
+  --accent-light: rgba(14, 165, 233, 0.1);
   --shadow-card: 0 4px 20px rgba(0, 0, 0, 0.4);
-  --shadow-hover: 0 8px 24px rgba(255, 54, 94, 0.05);
+  --shadow-hover: 0 8px 24px rgba(14, 165, 233, 0.05);
 }
 
 body {
